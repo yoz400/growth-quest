@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Growth Quest</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles/app.css">
+</head>
+<body>
+
+<!-- ─── LAUNCH SCREEN ─── -->
+<div id="launch-screen">
+  <div id="launch-particles"></div>
+  <div id="launch-content">
+    <div id="launch-logo-text">⚔ Growth Quest</div>
+    <div id="launch-subtitle">あなたの学習を、冒険に変えよう</div>
+    <div id="launch-bar-track"><div id="launch-bar-fill"></div></div>
+    <div id="launch-tagline">学習記録 × ゲーミフィケーション</div>
+  </div>
+</div>
+
+<!-- ─── APP ─────────────────────────────── -->
+<div id="app">
+
+  <!-- HEADER -->
+  <header class="glass">
+    <div class="header-left">
+      <div class="logo">⚔ Growth Quest</div>
+      <button id="avatar-btn" title="アバターを見る"></button>
+    </div>
+    <div class="header-right">
+      <button class="icon-btn" id="board-btn" title="すごろく">🎲</button>
+      <button class="icon-btn" id="skill-btn" title="スキルツリー">🌳</button>
+      <button class="icon-btn" id="review-btn" title="週次レビュー">📊</button>
+      <button class="icon-btn" id="badges-btn" title="バッジ">🏅</button>
+      <button class="icon-btn" id="equipment-btn" title="装備">🎒</button>
+      <button class="icon-btn" id="genre-btn" title="ジャンル管理">📚</button>
+      <button class="icon-btn" id="words-btn" title="響く言葉">💬</button>
+      <button class="icon-btn" id="settings-btn" title="設定">⚙</button>
+    </div>
+  </header>
+
+  <!-- XP PANEL -->
+  <div class="glass widget" id="xp-panel">
+    <div class="widget-grip" title="ドラッグして並べ替え">⠿</div>
+    <div class="xp-top">
+      <span class="level-badge" id="level-label">Lv 1</span>
+      <span class="xp-numbers" id="xp-numbers">0 / 100 XP</span>
+    </div>
+    <div class="xp-bar-track">
+      <div class="xp-bar-fill" id="xp-bar" style="width:0%"></div>
+    </div>
+    <div class="total-time" id="total-time-label">累計学習 0分</div>
+    <div class="skill-count-label" id="skill-count-label">🌳 スキル 0 / 0 解放</div>
+  </div>
+
+  <!-- DAILY QUOTE -->
+  <div class="glass widget" id="daily-quote-card">
+    <div class="widget-grip" title="ドラッグして並べ替え">⠿</div>
+    <span class="dq-scene-tag" id="dq-scene-tag">今日の一言</span>
+    <div class="dq-text" id="dq-text"></div>
+    <div class="dq-author" id="dq-author"></div>
+    <div class="dq-actions">
+      <button class="dq-action-btn" id="dq-fav-btn">♡</button>
+      <button class="dq-action-btn" id="dq-share-btn">📤 コピー</button>
+      <button class="dq-refresh-btn" id="dq-refresh-btn" title="別の言葉">↺</button>
+    </div>
+  </div>
+
+  <!-- GENRE SELECTOR -->
+  <div class="glass widget" id="genre-card">
+    <div class="widget-grip" title="ドラッグして並べ替え">⠿</div>
+    <div class="genre-section-label">学習ジャンル</div>
+    <div class="genre-tabs" id="genre-tabs"></div>
+  </div>
+
+  <!-- MODE SELECTOR -->
+  <div class="glass widget" id="mode-panel">
+    <div class="widget-grip" title="ドラッグして並べ替え">⠿</div>
+    <div class="mode-label">タイマーモード</div>
+    <div class="mode-tabs">
+      <div class="mode-tab active" data-mode="pomodoro">
+        <span class="mode-name">🍅 ポモドーロ</span>
+        <span class="mode-desc">25 + 5 分</span>
+      </div>
+      <div class="mode-tab" data-mode="deep">
+        <span class="mode-name">🔵 ディープ</span>
+        <span class="mode-desc">50 + 10 分</span>
+      </div>
+      <div class="mode-tab" data-mode="flow">
+        <span class="mode-name">🌊 フロー</span>
+        <span class="mode-desc">∞ 自由時間</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- TIMER CARD -->
+  <div class="glass widget" id="timer-card">
+    <div class="widget-grip" title="ドラッグして並べ替え">⠿</div>
+    <div id="anim-stage"></div>
+    <div class="time-wrapper" id="time-wrapper">
+      <div id="timer-display">25:00</div>
+      <div class="phase-label" id="phase-label">集中タイム</div>
+    </div>
+    <div class="timer-btns">
+      <button id="start-btn">START</button>
+      <button id="stop-btn" style="display:none">■ リセット</button>
+    </div>
+    <button id="pip-btn" title="小窓で表示 (PiP)" style="display:none">⧉ PiP</button>
+  </div>
+
+  <!-- BREAK BANNER -->
+  <div id="break-banner">
+    <div class="break-title">☕ 休憩タイム</div>
+    <div id="break-timer-display">05:00</div>
+    <button class="break-skip-btn" id="break-skip-btn">スキップ</button>
+  </div>
+
+  <!-- STATS -->
+  <div class="glass widget" id="stats-strip">
+    <div class="widget-grip" title="ドラッグして並べ替え">⠿</div>
+    <div class="stat-item">
+      <div class="stat-val" id="stat-sessions">0</div>
+      <div class="stat-lbl">セッション</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val" id="stat-today">0</div>
+      <div class="stat-lbl">今日 (分)</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val" id="stat-streak">0</div>
+      <div id="stat-freeze"></div>
+      <div class="stat-lbl">🔥 連続日数</div>
+    </div>
+  </div>
+
+  <!-- CALENDAR -->
+  <div class="glass widget" id="calendar-panel">
+    <div class="widget-grip" title="ドラッグして並べ替え">⠿</div>
+    <div class="cal-nav">
+      <button class="cal-nav-btn" id="cal-prev-btn">◀ 前月</button>
+      <span class="cal-title" id="cal-title"></span>
+      <button class="cal-nav-btn cal-today-btn" id="cal-today-btn">今月</button>
+      <button class="cal-nav-btn" id="cal-next-btn">次月 ▶</button>
+    </div>
+    <div class="cal-weekdays">
+      <div class="cal-wd sun">日</div>
+      <div class="cal-wd">月</div>
+      <div class="cal-wd">火</div>
+      <div class="cal-wd">水</div>
+      <div class="cal-wd">木</div>
+      <div class="cal-wd">金</div>
+      <div class="cal-wd sat">土</div>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+    <div class="cal-stats" id="cal-stats"></div>
+  </div>
+
+</div><!-- #app -->
+
+<!-- ─── 告 OVERLAY ─── -->
+<div id="koku-overlay">
+  <div id="koku-content">
+    <span id="koku-char">告</span>
+    <div id="koku-result"></div>
+    <div id="koku-quote-box" style="display:none">
+      <div class="koku-quote-text" id="koku-quote-text"></div>
+      <div class="koku-quote-author" id="koku-quote-author"></div>
+      <div class="koku-quote-actions">
+        <button class="koku-q-btn" id="koku-fav-btn">♡ お気に入り</button>
+        <button class="koku-q-btn" id="koku-share-btn">📤 コピー</button>
+      </div>
+    </div>
+    <button class="koku-close-btn" id="koku-close-btn">つぎへ ›</button>
+  </div>
+</div>
+
+<!-- ─── DAY DETAIL POPUP ─── -->
+<div id="cal-day-popup" class="hidden">
+  <button id="cdp-close-btn">✕</button>
+  <div class="cdp-date" id="cdp-date"></div>
+  <div class="cdp-row"  id="cdp-mins"></div>
+  <div class="cdp-row"  id="cdp-sessions"></div>
+  <div class="cdp-genres" id="cdp-genres"></div>
+</div>
+
+<!-- ─── GENRE MODAL ─── -->
+<div id="genre-overlay">
+  <div id="genre-modal-panel" class="gq-panel">
+    <div class="settings-header">
+      <span class="settings-title">📚 ジャンル管理</span>
+      <button class="icon-btn" id="genre-close-btn">✕</button>
+    </div>
+    <div id="genre-list"></div>
+    <button class="genre-add-new-btn" id="genre-add-btn">＋ 新しいジャンルを追加</button>
+    <div class="genre-form" id="genre-form" style="display:none">
+      <div class="genre-form-title" id="genre-form-title">新規ジャンル</div>
+      <div class="genre-form-row">
+        <span class="genre-form-label">名前</span>
+        <input class="genre-input" id="genre-name-input" type="text" placeholder="例: 英語" maxlength="20">
+      </div>
+      <div class="genre-form-row">
+        <span class="genre-form-label">絵文字</span>
+        <div class="emoji-picker" id="emoji-picker"></div>
+      </div>
+      <div class="genre-form-row">
+        <span class="genre-form-label">カラー</span>
+        <div class="color-picker" id="color-picker"></div>
+      </div>
+      <div class="genre-form-btns">
+        <button class="genre-cancel-btn" id="genre-form-cancel">キャンセル</button>
+        <button class="genre-save-btn" id="genre-form-save">保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── BADGE TOAST ─── -->
+<div id="badge-toast">
+  <div class="badge-toast-emoji" id="badge-toast-emoji"></div>
+  <div class="badge-toast-body">
+    <div class="badge-toast-label">🏅 バッジ獲得！</div>
+    <div class="badge-toast-name" id="badge-toast-name"></div>
+    <div class="badge-toast-rarity" id="badge-toast-rarity"></div>
+  </div>
+</div>
+
+<!-- ─── BADGES MODAL ─── -->
+<div id="badges-overlay">
+  <div id="badges-modal-panel" class="gq-panel">
+    <div class="settings-header">
+      <div>
+        <span class="settings-title">🏅 バッジコレクション</span>
+        <div class="badges-progress"><strong id="badges-earned-count">0</strong> / 20 獲得済み</div>
+      </div>
+      <button class="icon-btn" id="badges-close-btn">✕</button>
+    </div>
+    <div class="words-filter-row" id="badges-filter-row">
+      <button class="words-filter-tab active" data-bf="all">すべて</button>
+      <button class="words-filter-tab" data-bf="earned">獲得済み</button>
+      <button class="words-filter-tab" data-bf="locked">未獲得</button>
+    </div>
+    <div class="badge-grid" id="badge-grid"></div>
+  </div>
+</div>
+
+<!-- ─── EQUIPMENT MODAL ─── -->
+<div id="equipment-overlay">
+  <div id="equipment-modal-panel" class="gq-panel">
+    <div class="settings-header">
+      <span class="settings-title">🎒 装備</span>
+      <button class="icon-btn" id="equipment-close-btn">✕</button>
+    </div>
+    <div class="eq-section-title">現在の装備</div>
+    <div class="eq-slot-list" id="equipment-slot-list"></div>
+    <div class="eq-section-title">所持アイテム</div>
+    <div id="equipment-owned-list"></div>
+  </div>
+</div>
+
+<!-- ─── EQUIPMENT GET CELEBRATION MODAL ─── -->
+<div id="equipment-get-overlay">
+  <div id="equipment-get-panel" class="gq-panel">
+    <div class="eq-get-label">✦ 装備発見 ✦</div>
+    <div class="eq-get-icon-wrap" id="eq-get-icon-wrap"></div>
+    <div class="eq-get-name" id="eq-get-name"></div>
+    <div class="eq-get-rarity-tag" id="eq-get-rarity-tag"></div>
+    <div class="eq-get-effect" id="eq-get-effect"></div>
+    <div class="eq-get-flavor" id="eq-get-flavor"></div>
+    <button class="eq-get-close-btn" id="eq-get-close-btn">手に入れた！</button>
+  </div>
+</div>
+
+<!-- ─── SUGOROKU BOARD MODAL ─── -->
+<div id="board-overlay">
+  <div id="board-panel" class="gq-panel">
+    <div class="board-panel-header">
+      <div>
+        <div class="board-panel-title">🎲 すごろく</div>
+        <div class="board-panel-sub" id="board-panel-sub">マス 0 / 100</div>
+      </div>
+      <button class="icon-btn" id="board-close-btn">✕</button>
+    </div>
+    <div id="board-body">
+      <div id="board-svg-wrapper">
+        <div id="sg-walker"></div>
+      </div>
+      <div id="board-legend">
+        <span class="bl-item">🟩 通常</span>
+        <span class="bl-item">📦 アイテム</span>
+        <span class="bl-item">✨ イベント</span>
+        <span class="bl-item">⭐ レア</span>
+        <span class="bl-item">🏁 CP</span>
+        <span class="bl-item">🏆 ゴール</span>
+      </div>
+      <div class="board-section-title" id="board-items-title" style="display:none">取得アイテム</div>
+      <div id="board-items-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── SKILL TREE MODAL ─── -->
+<div id="skill-overlay">
+  <div id="skill-panel" class="gq-panel">
+    <div class="skill-panel-header">
+      <div>
+        <div class="skill-panel-title">🌳 スキルツリー</div>
+        <div class="skill-panel-sub" id="skill-panel-sub"></div>
+      </div>
+      <button class="icon-btn" id="skill-close-btn">✕</button>
+    </div>
+    <div id="skill-svg-wrapper"></div>
+    <div id="skill-detail">
+      <div class="sd-row">
+        <div class="sd-emoji" id="sd-emoji"></div>
+        <div class="sd-info">
+          <div class="sd-name" id="sd-name"></div>
+          <div class="sd-desc" id="sd-desc"></div>
+          <div class="sd-status" id="sd-status"></div>
+          <div class="sd-prog"><div class="sd-prog-fill" id="sd-prog-fill" style="width:0%"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── WEEKLY REVIEW AUTO-PROMPT ─── -->
+<div id="review-prompt">
+  <div class="review-prompt-text">
+    <strong>📊 週次レビュータイム！</strong>
+    <span id="review-prompt-msg">今週の学習を振り返りませんか？</span>
+  </div>
+  <button class="review-prompt-open-btn" id="review-prompt-open">開く</button>
+  <button class="review-prompt-x" id="review-prompt-dismiss">✕</button>
+</div>
+
+<!-- ─── WEEKLY REVIEW MODAL ─── -->
+<div id="review-overlay">
+  <div id="review-panel" class="gq-panel">
+    <div class="review-header">
+      <div>
+        <div class="review-title">📊 週次レビュー</div>
+        <div class="review-week-label" id="review-week-label"></div>
+      </div>
+      <div class="review-header-right">
+        <button class="review-btn-secondary" style="padding:5px 11px;font-size:.72rem" id="review-past-btn">過去の振り返り</button>
+        <button class="icon-btn" id="review-close-btn">✕</button>
+      </div>
+    </div>
+    <div class="review-body" id="review-body"></div>
+    <div class="review-footer" id="review-footer">
+      <button class="review-btn-secondary" id="review-skip-btn">後で見る</button>
+      <button class="review-btn-primary"   id="review-save-btn">保存して完了</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── AVATAR MODAL ─── -->
+<div id="avatar-overlay">
+  <div id="avatar-panel" class="gq-panel">
+    <div class="settings-header">
+      <span class="settings-title">⚔ アバター</span>
+      <button class="icon-btn" id="avatar-close-btn">✕</button>
+    </div>
+    <div id="avatar-display-large"></div>
+    <div id="avatar-type-selector"></div>
+    <div id="avatar-stage-info"></div>
+    <div id="avatar-equipment"></div>
+    <div id="avatar-journey"></div>
+  </div>
+</div>
+
+<!-- ─── WORDS COLLECTION ─── -->
+<div id="words-overlay">
+  <div id="words-modal-panel" class="gq-panel">
+    <div class="settings-header">
+      <span class="settings-title">💬 響く言葉</span>
+      <button class="icon-btn" id="words-close-btn">✕</button>
+    </div>
+    <div class="words-filter-row" id="words-filter-row">
+      <button class="words-filter-tab active" data-wf="all">すべて</button>
+      <button class="words-filter-tab" data-wf="favs">♡ お気に入り</button>
+      <button class="words-filter-tab" data-wf="custom">マイ言葉</button>
+    </div>
+    <input class="words-search-input" id="words-search" type="text" placeholder="🔍 検索...">
+    <div class="words-list" id="words-list"></div>
+    <button class="genre-add-new-btn" id="words-add-btn">＋ 新しい言葉を追加</button>
+    <div class="words-add-form" id="words-add-form" style="display:none">
+      <div class="words-form-title" id="words-form-title">新しい言葉</div>
+      <div class="genre-form-row">
+        <span class="genre-form-label">言葉</span>
+        <textarea class="genre-input" id="words-text-input" rows="3"
+          placeholder="名言・セリフ・あなたの言葉..." maxlength="200"
+          style="resize:vertical; min-height:60px"></textarea>
+      </div>
+      <div class="genre-form-row">
+        <span class="genre-form-label">発言者</span>
+        <input class="genre-input" id="words-author-input" type="text" placeholder="例: ゲーテ（任意）" maxlength="40">
+      </div>
+      <div class="genre-form-row">
+        <span class="genre-form-label">出典</span>
+        <input class="genre-input" id="words-source-input" type="text" placeholder="例: 若きウェルテルの悩み（任意）" maxlength="60">
+      </div>
+      <div class="genre-form-row" style="align-items:flex-start">
+        <span class="genre-form-label" style="padding-top:6px">シーン</span>
+        <div class="words-scene-picks" id="words-scene-picks"></div>
+      </div>
+      <div class="genre-form-btns">
+        <button class="genre-cancel-btn" id="words-form-cancel">キャンセル</button>
+        <button class="genre-save-btn" id="words-form-save">保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── SETTINGS ─── -->
+<div id="settings-overlay">
+  <div id="settings-panel" class="gq-panel">
+    <div class="settings-header">
+      <span class="settings-title">⚙ 設定</span>
+      <button class="icon-btn" id="settings-close-btn">✕</button>
+    </div>
+
+    <div class="setting-group">
+      <div class="setting-group-label">デフォルトモード</div>
+      <div class="setting-row">
+        <span class="setting-row-label">起動時のモード</span>
+        <select class="setting-select" id="set-default-mode">
+          <option value="pomodoro">ポモドーロ (25+5)</option>
+          <option value="deep">ディープ (50+10)</option>
+          <option value="flow">フロー (∞)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="setting-group">
+      <div class="setting-group-label">「告」デザイン</div>
+      <div class="setting-row">
+        <span class="setting-row-label">スタイル</span>
+        <select class="setting-select" id="set-koku-style">
+          <option value="fude">毛筆・朱色</option>
+          <option value="cyber">サイバーパンク</option>
+          <option value="mono">ミニマル</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="setting-group">
+      <div class="setting-group-label">タイマー表示</div>
+      <div class="setting-row">
+        <span class="setting-row-label">普段は時間を非表示（ホバーで表示）</span>
+        <label class="toggle">
+          <input type="checkbox" id="set-hide-time">
+          <div class="toggle-track"></div>
+        </label>
+      </div>
+    </div>
+
+    <div class="setting-group">
+      <div class="setting-group-label">アニメーション</div>
+      <div class="setting-row">
+        <span class="setting-row-label">固定アニメーション</span>
+        <select class="setting-select" id="set-anim">
+          <option value="random">ランダム</option>
+          <option value="fire">🔥 焚き火</option>
+          <option value="plant">🌱 植物</option>
+          <option value="nebula">🌌 星雲</option>
+          <option value="water">💧 水</option>
+          <option value="particle">✨ パーティクル</option>
+          <option value="gradient">🎨 グラデーション</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="setting-group">
+      <div class="setting-group-label">通知・サウンド</div>
+      <div class="setting-row">
+        <span class="setting-row-label">完了チャイム音</span>
+        <label class="toggle">
+          <input type="checkbox" id="set-sound">
+          <div class="toggle-track"></div>
+        </label>
+      </div>
+      <div class="setting-row">
+        <span class="setting-row-label">デスクトップ通知</span>
+        <label class="toggle">
+          <input type="checkbox" id="set-notif">
+          <div class="toggle-track"></div>
+        </label>
+      </div>
+    </div>
+
+    <div class="setting-group">
+      <div class="setting-group-label">ウィジェット並び順</div>
+      <div class="setting-row">
+        <span class="setting-row-label">並び順をデフォルトに戻す</span>
+        <button id="reset-widget-order-btn" style="
+          padding: 4px 12px;
+          font-size: .8rem;
+          border-radius: 6px;
+          border: 1px solid rgba(255,255,255,.2);
+          background: rgba(255,255,255,.08);
+          color: var(--text);
+          cursor: pointer;
+        ">リセット</button>
+      </div>
+    </div>
+
+    <div class="setting-group">
+      <div class="setting-group-label">Growth Quest について</div>
+      <div class="about-block">
+        <div class="about-app-name">⚔ Growth Quest</div>
+        <div class="about-copy-wrap">
+          <p class="about-copy">
+            努力がすごろくを回し、<br>
+            出会ったマスで、何かを得る。<br>
+            何が得られるかは、わからない。<br>
+            でも、やれば必ず変われる。<br>
+            楽しいから、また、やりたくなる。<br>
+            気がついたら、変わっていた自分に出会う。
+            <span class="about-copy-brand">— Growth Quest</span>
+          </p>
+        </div>
+        <div class="about-version">Version 1.0.0 &nbsp;·&nbsp; 2026年5月</div>
+        <div class="about-desc">このアプリは、自分を整えたいすべての人へ</div>
+        <div class="about-credit">Made by ヨージ × クロ ☕</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="scripts/app.js"></script>
+</body>
+</html>
