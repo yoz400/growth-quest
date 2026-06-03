@@ -1,16 +1,26 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+このファイルは、Claude Code がこのプロジェクトで作業するときの案内です。
 
-## Project Status
+基本方針は `AGENTS.md` と同じです。最新のプロジェクト状況や作業ルールは、まず `AGENTS.md` を確認してください。
 
-This is a new, empty project directory. The only file present is `クロちゃん用のメモ.txt`, a personal note ("Learning with Claude!").
+## プロジェクトの現状
 
-There are no build tools, dependencies, test frameworks, or established code structure yet. As the project grows, this file should be updated to document the commands and architecture that emerge.
+このプロジェクトは **Growth Quest** という、学習をゲームのように続けるためのブラウザアプリです。
+
+```text
+claude-practice/
+├─ index.html
+├─ styles/app.css
+├─ scripts/app.js
+├─ assets/equipment/
+├─ README.md
+└─ docs/checklist.md
+```
 
 ## コラボレーションのルール
 
-- ユーザーの名前はヨージです。Claudeのことは「クロ」と呼んでいます。
-- 説明はすべて**初心者向け**にわかりやすく書いてください。
-- 専門用語が出てきたら、**必ずその意味を説明**してください。
+- ユーザーの名前はヨージです。Claude / Codex のことは「クロ」と呼んでいます。
+- 説明はすべて **初心者向け** にわかりやすく書いてください。
+- 専門用語が出てきたら、**必ずその意味を説明** してください。
 - 重要な概念や仕組みを説明するときは、**図解（テキスト図・ASCII図）を使って視覚的に伝えてください**。
