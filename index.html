@@ -4,6 +4,26 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Growth Quest</title>
+
+<!-- ─── PWA / Icons ─── -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a0a0f">
+
+<!-- iOS ホーム画面追加対応 -->
+<link rel="apple-touch-icon" href="assets/icons/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Growth Quest">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<!-- Android / 一般 -->
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="application-name" content="Growth Quest">
+
+<!-- favicon（複数サイズ） -->
+<link rel="icon" href="assets/icons/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/icons/icon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="assets/icons/icon-16.png">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles/app.css">
@@ -14,6 +34,7 @@
 <div id="launch-screen">
   <div id="launch-particles"></div>
   <div id="launch-content">
+    <img src="assets/logo/logo-mark-64.png" alt="" class="launch-logo-mark" onerror="this.hidden=true">
     <div id="launch-logo-text">⚔ Growth Quest</div>
     <div id="launch-subtitle">あなたの学習を、冒険に変えよう</div>
     <div id="launch-bar-track"><div id="launch-bar-fill"></div></div>
@@ -27,7 +48,10 @@
   <!-- HEADER -->
   <header class="glass">
     <div class="header-left">
-      <div class="logo">⚔ Growth Quest</div>
+      <div class="logo">
+        <img src="assets/logo/logo-mark-64.png" alt="" class="logo-mark" onerror="this.hidden=true">
+        <span>Growth Quest</span>
+      </div>
       <button id="avatar-btn" title="アバターを見る"></button>
     </div>
     <div class="header-right">
