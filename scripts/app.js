@@ -12,6 +12,9 @@ const DEFAULT_DATA = {
   sessions: 0, todayMinutes: 0, lastDate: '',
   streak: 0, streakLastDate: '', freezeItems: 1, lastFreezeGrantYM: '',
   streakProtectUsedFor: '',  // 装備 streak_protect の発動済みトリガー日（同一日で二重発動を防ぐ）
+  streakWasBroken: false,    // 連続記録が途切れた直後フラグ。次回のセッションで復帰ボーナス発火
+  confidence: 0,             // 自信ゲージの値（0..99、100到達でレベルアップ）
+  confidenceLevel: 1,        // 自信レベル
   history: {}, historyDetails: {},
   morningSessions: 0, nightSessions: 0, flowSessions: 0, freezeEverUsed: false,
 };
@@ -1031,7 +1034,308 @@ function renderXP() {
   document.getElementById('xp-bar').style.width = pct + '%';
   document.getElementById('total-time-label').textContent = `累計学習 ${data.totalMinutes}分`;
   renderSkillCount();
+  renderConfidence();  // 自信ゲージも同時に更新
 }
+
+// ── 自信ゲージ（XPと独立、努力の積み上げを別軸で可視化）─────────
+const CONFIDENCE_MESSAGES = {
+  session_complete:   '自信が少し育ちました',
+  session_5min:       '小さな一歩が、未来の自分を作ります',
+  first_today:        '今日の始まり、よく動き出しましたね',
+  resume_after_break: '戻ってきたことが、もう成長です',
+  weekly_review:      '振り返りは、自信を確かなものにします',
+  praise_log:         'これは未来の自信の証拠です',
+};
+
+let _confPending = { amount: 0, lastMsg: '', levelUp: 0 };
+let _confFlushTimer = null;
+
+// 自信ゲージを加算（reason は CONFIDENCE_MESSAGES のキー）
+function addConfidence(amount, reason) {
+  if (!amount || amount <= 0) return;
+  const oldLevel = data.confidenceLevel || 1;
+  data.confidence = (data.confidence || 0) + amount;
+  while (data.confidence >= 100) {
+    data.confidence -= 100;
+    data.confidenceLevel = (data.confidenceLevel || 1) + 1;
+  }
+  saveData(data);
+  renderConfidence();
+  // トースト用に累積
+  _confPending.amount += amount;
+  if (CONFIDENCE_MESSAGES[reason]) _confPending.lastMsg = CONFIDENCE_MESSAGES[reason];
+  if (data.confidenceLevel > oldLevel) _confPending.levelUp = data.confidenceLevel;
+  // デバウンスでまとめて表示（同じセッション完了で複数回呼ばれても1つに集約）
+  clearTimeout(_confFlushTimer);
+  _confFlushTimer = setTimeout(_flushConfidenceToast, 120);
+}
+
+function _flushConfidenceToast() {
+  if (_confPending.amount <= 0) return;
+  const total = _confPending.amount;
+  const msg   = _confPending.lastMsg || '自信が育ちました';
+  const lvl   = _confPending.levelUp;
+  _confPending = { amount: 0, lastMsg: '', levelUp: 0 };
+  showConfidenceToast(total, msg);
+  if (lvl) setTimeout(() => showConfidenceLevelUp(lvl), 1500);
+}
+
+function showConfidenceToast(amount, message) {
+  const t = document.getElementById('confidence-toast');
+  if (!t) return;
+  t.innerHTML = `💪 +${amount} <span style="opacity:.85;font-weight:400">${message}</span>`;
+  t.classList.remove('levelup');
+  void t.offsetWidth;          // アニメ再生のため reflow
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+function showConfidenceLevelUp(newLevel) {
+  const t = document.getElementById('confidence-toast');
+  if (!t) return;
+  t.innerHTML = `🎉 自信レベルアップ！ <strong>Lv ${newLevel}</strong>`;
+  t.classList.add('show', 'levelup');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show', 'levelup'), 3500);
+}
+
+function renderConfidence() {
+  const conf  = data.confidence || 0;
+  const level = data.confidenceLevel || 1;
+  const lbl = document.getElementById('confidence-label');
+  const num = document.getElementById('confidence-numbers');
+  const bar = document.getElementById('confidence-bar');
+  if (lbl) lbl.textContent = `💪 自信 Lv ${level}`;
+  if (num) num.textContent = `${conf} / 100`;
+  if (bar) bar.style.width = Math.min(100, conf) + '%';
+}
+
+// ═══════════════════════════════════════════════════════
+//  PRAISE LOG（今日の自分を褒める）
+//  - localStorage: growthPraiseLogs = { "YYYY-MM-DD": [{ text, createdAt }] }
+//  - セッション完了後に任意の入力モーダルを表示
+//  - 保存時 confidence +2
+// ═══════════════════════════════════════════════════════
+function loadPraiseLogs() {
+  try { return JSON.parse(localStorage.getItem('growthPraiseLogs') || '{}'); }
+  catch { return {}; }
+}
+function savePraiseLogs() {
+  localStorage.setItem('growthPraiseLogs', JSON.stringify(praiseLogs));
+}
+let praiseLogs = loadPraiseLogs();
+
+// 1日1回だけの confidence 報酬を管理（褒めログ等の繰返し付与防止）
+// localStorage: gq_confidence_rewards = { "praise_log": "YYYY-MM-DD", ... }
+function loadConfidenceRewards() {
+  try {
+    const v = JSON.parse(localStorage.getItem('gq_confidence_rewards') || '{}');
+    // 想定外データ（配列・文字列・null等）が入っていても安全に {} へ
+    return (v && typeof v === 'object' && !Array.isArray(v)) ? v : {};
+  } catch {
+    return {};
+  }
+}
+function saveConfidenceRewards(rewards) {
+  localStorage.setItem('gq_confidence_rewards', JSON.stringify(rewards));
+}
+// 同じ key × dateKey なら何もしない。新規発火なら addConfidence して true を返す
+function addDailyConfidenceOnce(key, amount, reason, dateKey = todayKey()) {
+  const rewards = loadConfidenceRewards();
+  if (rewards[key] === dateKey) return false;
+  rewards[key] = dateKey;
+  saveConfidenceRewards(rewards);
+  addConfidence(amount, reason);
+  return true;
+}
+
+// 状態：セッション完了後に告→モーダルへ遷移させるためのフラグ
+let _pendingPraisePrompt = false;
+let _praiseSessionDate   = '';
+
+function openPraiseModal(dateKey) {
+  _praiseSessionDate = dateKey || todayKey();
+  const ta = document.getElementById('praise-text');
+  ta.value = '';
+  updatePraiseCounter();
+  document.getElementById('praise-save-btn').disabled = true;
+  document.getElementById('praise-overlay').classList.add('open');
+  setTimeout(() => ta.focus(), 240);
+}
+function closePraiseModal() {
+  document.getElementById('praise-overlay').classList.remove('open');
+}
+
+function updatePraiseCounter() {
+  const ta  = document.getElementById('praise-text');
+  const cnt = document.getElementById('praise-counter');
+  const len = (ta.value || '').length;
+  if (cnt) cnt.textContent = `${len} / 200`;
+  // 空欄では保存不可（前後空白も無効）
+  document.getElementById('praise-save-btn').disabled = (ta.value.trim().length === 0);
+}
+
+function savePraise() {
+  const btn  = document.getElementById('praise-save-btn');
+  const text = (document.getElementById('praise-text').value || '').trim();
+  // 空欄ガード ＋ 連打ガード（既に処理中なら無視）
+  if (!text || btn.disabled) return;
+  btn.disabled = true;
+
+  const dateKey = _praiseSessionDate || todayKey();
+  if (!praiseLogs[dateKey]) praiseLogs[dateKey] = [];
+  praiseLogs[dateKey].push({
+    text,
+    createdAt: new Date().toISOString(),
+  });
+  savePraiseLogs();
+  closePraiseModal();
+
+  // 同一日では confidence +2 は1回のみ（複数件保存OKだが報酬は1回）
+  const gained = addDailyConfidenceOnce('praise_log', 2, 'praise_log', dateKey);
+
+  // デイリークエスト: 褒めログ自体は何件でも保存可、クエスト報酬は1日1回
+  completeQuest('praise_self');
+
+  // 加算ありはレベルアップ演出（addConfidenceから1.5s後発火・3.5s表示）を上書きしないよう
+  // 5.6s 後に保存トーストを出す。加算なしは 1.8s 後に単独表示
+  setTimeout(showPraiseSavedToast, gained ? 5600 : 1800);
+}
+
+function showPraiseSavedToast() {
+  const t = document.getElementById('confidence-toast');
+  if (!t) return;
+  t.innerHTML = `💛 今日の成長を記録しました<br>` +
+                `<span style="opacity:.85;font-weight:400">これは未来の自信の証拠です</span>`;
+  t.classList.remove('levelup');
+  t.classList.add('multiline');
+  void t.offsetWidth;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => {
+    t.classList.remove('show');
+    setTimeout(() => t.classList.remove('multiline'), 400);
+  }, 3500);
+}
+
+// イベントリスナー
+document.getElementById('praise-text').addEventListener('input', updatePraiseCounter);
+document.getElementById('praise-save-btn').addEventListener('click', savePraise);
+document.getElementById('praise-skip-btn').addEventListener('click', closePraiseModal);
+document.getElementById('praise-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('praise-overlay')) closePraiseModal();
+});
+document.addEventListener('keydown', e => {
+  const ov = document.getElementById('praise-overlay');
+  if (!ov || !ov.classList.contains('open')) return;
+  if (e.key === 'Escape') { e.preventDefault(); closePraiseModal(); }
+  else if ((e.key === 'Enter') && (e.metaKey || e.ctrlKey)) {
+    e.preventDefault(); savePraise();    // Cmd/Ctrl + Enter で保存
+  }
+});
+
+// 指定週の褒めログをフラット化して返す: [{ dateKey, text, createdAt }, ...]
+function getPraiseLogsForWeek(weekKey) {
+  const dates = getWeekDates(weekKey).map(dkey);
+  const out = [];
+  dates.forEach(dk => {
+    (praiseLogs[dk] || []).forEach(log => out.push({ dateKey: dk, ...log }));
+  });
+  return out;
+}
+
+// ═══════════════════════════════════════════════════════
+//  DAILY QUEST（今日のクエスト）
+//  - 小さな行動を肯定する3つの定義
+//  - localStorage: gq_daily_quests = { "YYYY-MM-DD": { [questId]: true } }
+//  - 報酬は同じ日付では1回だけ（XP・confidence ともに二重加算なし）
+// ═══════════════════════════════════════════════════════
+const DAILY_QUESTS = [
+  { id:'start_5min',        label:'5分だけ始める',
+    desc:'STARTを押した時点で、一歩前進',
+    xp:5,  confidence:1 },
+  { id:'complete_session',  label:'1セッションを終える',
+    desc:'今日の学びに区切りをつけた証拠',
+    xp:10, confidence:2 },
+  { id:'praise_self',       label:'今日の自分を一言ほめる',
+    desc:'未来の自信の証拠を残す',
+    xp:5,  confidence:2 },
+];
+
+function loadDailyQuests() {
+  try {
+    const v = JSON.parse(localStorage.getItem('gq_daily_quests') || '{}');
+    return (v && typeof v === 'object' && !Array.isArray(v)) ? v : {};
+  } catch { return {}; }
+}
+function saveDailyQuests() {
+  localStorage.setItem('gq_daily_quests', JSON.stringify(dailyQuests));
+}
+let dailyQuests = loadDailyQuests();
+
+function isQuestDone(questId, dateKey) {
+  const dk = dateKey || todayKey();
+  const day = dailyQuests[dk];
+  return !!(day && day[questId]);
+}
+
+// クエスト達成。同じ key × 日付では2回目以降は無視（XP/自信 二重加算防止）
+function completeQuest(questId) {
+  const today = todayKey();
+  if (isQuestDone(questId, today)) return false;
+  const quest = DAILY_QUESTS.find(q => q.id === questId);
+  if (!quest) return false;
+  // 達成状態を保存（XP・confidence加算の前に書き込み＝以後の同日呼び出しはガードされる）
+  if (!dailyQuests[today] || typeof dailyQuests[today] !== 'object' || Array.isArray(dailyQuests[today])) {
+    dailyQuests[today] = {};
+  }
+  dailyQuests[today][questId] = true;
+  saveDailyQuests();
+  // 報酬付与（既存パイプを再利用、時間統計には影響しない addBonusXP を使用）
+  if (quest.xp > 0)         addBonusXP(quest.xp);
+  if (quest.confidence > 0) addConfidence(quest.confidence, 'daily_quest');
+  renderDailyQuests();
+  setTimeout(() => showQuestDoneToast(quest), quest.confidence > 0 ? 3000 : 0);
+  return true;
+}
+
+function renderDailyQuests() {
+  const wrap = document.getElementById('quest-list');
+  if (!wrap) return;
+  const today = todayKey();
+  const done  = dailyQuests[today] || {};
+  wrap.innerHTML = DAILY_QUESTS.map(q => {
+    const isDone = !!done[q.id];
+    return `<div class="quest-item${isDone ? ' done' : ''}">
+      <div class="quest-check">${isDone ? '✓' : '○'}</div>
+      <div class="quest-body">
+        <div class="quest-title">${q.label}</div>
+        <div class="quest-desc">${q.desc}</div>
+        <div class="quest-reward">${isDone ? '達成！' : '報酬'}：XP +${q.xp} / 自信 +${q.confidence}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function showQuestDoneToast(quest) {
+  const t = document.getElementById('confidence-toast');
+  if (!t) return;
+  t.innerHTML = `📜 クエスト達成！<br>` +
+                `<span style="opacity:.85;font-weight:400">${quest.label}</span>`;
+  t.classList.remove('levelup');
+  t.classList.add('multiline');
+  void t.offsetWidth;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => {
+    t.classList.remove('show');
+    setTimeout(() => t.classList.remove('multiline'), 400);
+  }, 2600);
+}
+
+// 起動時の初期描画（DOM 構築済みのスクリプト末尾実行を前提）
+renderDailyQuests();
 
 function renderStats() {
   document.getElementById('stat-sessions').textContent = data.sessions;
@@ -1081,6 +1385,7 @@ function updateStreak(today) {
   const lastMs = new Date(last).getTime();
   const todayMs = new Date(today).getTime();
   const diffDays = Math.round((todayMs - lastMs) / msPerDay);
+  const prevStreak = data.streak || 0;   // ← 切れ検知のため事前値を保存
 
   if (diffDays === 1) {
     // 連続継続
@@ -1103,6 +1408,11 @@ function updateStreak(today) {
     }
   } else if (diffDays > 1) {
     data.streak = 0;
+  }
+
+  // 連続が「切れた瞬間」を記録（次回のセッションで復帰ボーナス用）
+  if (prevStreak > 0 && data.streak === 0) {
+    data.streakWasBroken = true;
   }
 }
 
@@ -1237,6 +1547,8 @@ function startTimer() {
     startAnim();
     intervalId = setInterval(tick, 1000);
     requestNotifPermission();
+    // デイリークエスト: STARTを押した時点で1日1回達成
+    completeQuest('start_5min');
 
   } else if (timerState === 'running') {
     // ── PAUSE ──
@@ -1279,6 +1591,10 @@ function stopTimer() {
   // 1分以上経過していればXP付与（1分未満は何も起きなかった扱い＝告も出さない）
   const mins = Math.floor(sessionMinutes / 60);
   if (mins > 0) {
+    // 自信ゲージ用フラグ：recordSessionCompletion 前に取得
+    const _today = todayKey();
+    const _isFirstToday      = !data.history[_today];
+    const _isResumeFromBreak = !!data.streakWasBroken;
     if (currentMode === 'flow') data.sessions++;
     recordSessionCompletion(mins);
     addXP(mins);
@@ -1291,6 +1607,12 @@ function stopTimer() {
     // 装備の xp_mult を適用（baseXp = mins）。bonus分だけ別途加算
     const _eq = applyEquipmentXpBonus(mins);
     if (_eq.bonusXp > 0) addBonusXP(_eq.bonusXp);
+
+    // 自信ゲージ加算（XPとは別軸）
+    addConfidence(3, 'session_complete');
+    if (mins >= 5)          addConfidence(1, 'session_5min');
+    if (_isFirstToday)      addConfidence(2, 'first_today');
+    if (_isResumeFromBreak) { addConfidence(5, 'resume_after_break'); data.streakWasBroken = false; saveData(data); }
 
     const cfg = MODES[currentMode];
     const _pc = getEquipmentComment();   // ペット装備のひとこと（null可）
@@ -1309,6 +1631,11 @@ function stopTimer() {
       addBonusXP(_sgResult.bonusXP);
       showKoku(mins, cfg.break, 'partial', _eq.bonusXp, _pc);
     }
+    // デイリークエスト: 手動停止でも実質「セッションを終えた」とみなす（1日1回限定）
+    completeQuest('complete_session');
+    // 告が閉じたら「褒めログ入力」モーダルを案内
+    _pendingPraisePrompt = true;
+    _praiseSessionDate   = _today;
   }
   sessionMinutes = 0;
   setTimerForMode(currentMode);
@@ -1407,6 +1734,10 @@ function completeSession() {
   const cfg = MODES[currentMode];
   const mins = cfg.focus || Math.floor(sessionMinutes / 60);
   data.sessions++;
+  // 自信ゲージ用フラグ：recordSessionCompletion で値が変わる前に取得
+  const _today = todayKey();
+  const _isFirstToday      = !data.history[_today];
+  const _isResumeFromBreak = !!data.streakWasBroken;
   recordSessionCompletion(mins);
   const { newlyUnlocked: _sk } = checkSkillUnlocks();
   pendingNewSkills = _sk;
@@ -1417,11 +1748,21 @@ function completeSession() {
   const _eq = applyEquipmentXpBonus(mins);
   if (_eq.bonusXp > 0) addBonusXP(_eq.bonusXp);
   addBonusXP(_sgResult.bonusXP);
+  // 自信ゲージ加算（XPとは別軸、デバウンスで1回のトーストに集約）
+  addConfidence(3, 'session_complete');
+  if (mins >= 5)             addConfidence(1, 'session_5min');
+  if (_isFirstToday)         addConfidence(2, 'first_today');
+  if (_isResumeFromBreak)    { addConfidence(5, 'resume_after_break'); data.streakWasBroken = false; saveData(data); }
   checkBadges();
   playChime();
   showTimerNotif('セッション完了！', `${mins}分間、集中できました！`);
   resetTabTitle();
   showKoku(mins, cfg.break, 'complete', _eq.bonusXp, getEquipmentComment());
+  // デイリークエスト: セッション完了（1日1回限定）
+  completeQuest('complete_session');
+  // 告が閉じたら「褒めログ入力」モーダルを案内
+  _pendingPraisePrompt = true;
+  _praiseSessionDate   = _today;
 
   // break
   if (cfg.break > 0) {
@@ -1586,6 +1927,11 @@ function closeKoku() {
   clearInterval(_sgSpinInt); clearInterval(_sgAutoClose);
   clearTimeout(_sgSpinT1); clearTimeout(_sgSpinT2);
   _sgSpinInt = _sgSpinT1 = _sgSpinT2 = _sgAutoClose = null;
+  // セッション完了後に告を閉じたら、褒めログ入力モーダルを案内
+  if (_pendingPraisePrompt) {
+    _pendingPraisePrompt = false;
+    setTimeout(() => openPraiseModal(_praiseSessionDate), 420);
+  }
 }
 
 document.getElementById('koku-close-btn').addEventListener('click', closeKoku);
@@ -2814,9 +3160,23 @@ function showDayPopup(dateKey, cellEl) {
   }
   document.getElementById('cdp-genres').innerHTML = genreHTML;
 
-  // ポップアップ位置調整
+  // ─ その日の褒めログを表示 ─
+  const praiseEl = document.getElementById('cdp-praise');
+  if (praiseEl) {
+    const logs = praiseLogs[dateKey] || [];
+    if (logs.length > 0) {
+      praiseEl.innerHTML = `<div class="cdp-praise-title">💛 今日の褒めログ</div>` +
+        logs.map(l => `<div class="cdp-praise-item">「${escHtml(l.text)}」</div>`).join('');
+    } else {
+      praiseEl.innerHTML = '';
+    }
+  }
+
+  // ポップアップ位置調整（高さは実測してはみ出し回避）
+  popup.classList.remove('hidden');
+  const PW = 250;
+  const PH = popup.offsetHeight || 140;
   const rect = cellEl.getBoundingClientRect();
-  const PW = 250, PH = 140;
   let left = rect.left + rect.width / 2 - PW / 2;
   let top  = rect.bottom + 8;
   if (left < 8) left = 8;
@@ -2825,7 +3185,6 @@ function showDayPopup(dateKey, cellEl) {
 
   popup.style.left = left + 'px';
   popup.style.top  = top  + 'px';
-  popup.classList.remove('hidden');
 }
 
 document.getElementById('cdp-close-btn').addEventListener('click', () => {
@@ -3163,6 +3522,29 @@ function renderReviewBody() {
     </div>
   </div>`;
 
+  // ─ Section 4.5: 今週の褒めログ（自分への記録）───────
+  const weekLogs = getPraiseLogsForWeek(rvWeekKey);
+  html += `<div class="review-section">
+    <div class="review-section-title">今週の褒めログ</div>`;
+  if (weekLogs.length === 0) {
+    html += `<div class="review-praise-empty">この週は褒めログがまだありません。<br>今日のセッションを完了したら、ひとこと残してみよう。</div>`;
+  } else {
+    html += `<div class="review-praise-list">` +
+      weekLogs.map(l => {
+        const [_y, _m, _d] = l.dateKey.split('-');
+        const dateLbl = `${parseInt(_m)}/${parseInt(_d)}`;
+        const time = l.createdAt
+          ? new Date(l.createdAt).toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit'})
+          : '';
+        return `<div class="review-praise-card">
+          <div class="review-praise-card-date">💛 ${dateLbl}${time ? ' &nbsp;'+time : ''}</div>
+          <div class="review-praise-card-text">${escHtml(l.text)}</div>
+        </div>`;
+      }).join('') +
+      `</div>`;
+  }
+  html += `</div>`;
+
   // ─ Section 5: アドバイス ────────────────────────────
   html += `<div class="review-section">
     <div class="review-section-title">来週へのアドバイス</div>`;
@@ -3228,6 +3610,7 @@ function renderReviewBody() {
 
 function saveAndCloseReview() {
   if (!rvWeekKey) return;
+  const _isFirstSaveForWeek = !weeklyReviews[rvWeekKey];   // 同週の再保存は重複加算しない
   const an = analyzeWeek(rvWeekKey);
   weeklyReviews[rvWeekKey] = {
     weekKey:    rvWeekKey,
@@ -3244,6 +3627,8 @@ function saveAndCloseReview() {
   saveReviewStatus();
   document.getElementById('review-overlay').classList.remove('open');
   setReviewDot(false);
+  // 自信ゲージ: 新規保存のときだけ +5
+  if (_isFirstSaveForWeek) addConfidence(5, 'weekly_review');
 }
 
 function skipReview() {
@@ -3587,6 +3972,53 @@ function getAvatarStageIndex(level) {
 
 let _avId = 0;
 
+function buildEvolutionBadgeSVG(stageIdx, w, h) {
+  w = w || 44; h = h || 44;
+  const idx = Math.min(stageIdx, AVATAR_STAGES.length - 1);
+  const stage = AVATAR_STAGES[idx];
+  const uid = 'evb' + (++_avId);
+  const badges = [
+    {
+      glyph: '見',
+      path: '<rect x="23" y="18" width="19" height="24" rx="3" fill="#d8d8e6"/><rect x="26" y="21" width="10" height="2" fill="#9898aa"/><rect x="26" y="26" width="12" height="2" fill="#9898aa"/><rect x="26" y="31" width="8" height="2" fill="#9898aa"/>'
+    },
+    {
+      glyph: '学',
+      path: '<path d="M42 15 25 38" stroke="#e8fbff" stroke-width="4" stroke-linecap="round"/><path d="M41 15c8 2 13 7 15 14-7 0-12-2-15-7-2 6-6 10-12 13 0-8 4-15 12-20Z" fill="#baf7ff"/><circle cx="25" cy="38" r="3" fill="#fbbf24"/>'
+    },
+    {
+      glyph: '修',
+      path: '<path d="M19 20h13l6 4h12v24H37l-6-4H19V20Z" fill="#dff7fb"/><path d="M32 20v24M38 24v24" stroke="#0891b2" stroke-width="2"/><path d="M24 28h5M42 32h5M23 37h6M42 41h4" stroke="#06b6d4" stroke-width="2" stroke-linecap="round"/>'
+    },
+    {
+      glyph: '賢',
+      path: '<path d="m37 13 5 14 15 1-12 9 4 15-12-8-12 8 4-15-12-9 15-1 5-14Z" fill="#ffd6db"/><path d="m37 20 3 8 9 1-7 5 2 9-7-5-7 5 2-9-7-5 9-1 3-8Z" fill="#e63946"/>'
+    },
+    {
+      glyph: '極',
+      path: '<path d="M18 44h38l-3-22-9 10-7-16-7 16-9-10-3 22Z" fill="#ffe08a"/><rect x="20" y="44" width="34" height="6" rx="2" fill="#d97706"/><circle cx="21" cy="22" r="4" fill="#fff2bd"/><circle cx="37" cy="15" r="4" fill="#fff2bd"/><circle cx="53" cy="22" r="4" fill="#fff2bd"/>'
+    }
+  ];
+  const badge = badges[idx];
+
+  return `<svg class="av-evolution-badge" viewBox="0 0 74 74" width="${w}" height="${h}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${stage.title}バッジ">
+    <defs>
+      <linearGradient id="${uid}g" x1="12" y1="8" x2="62" y2="66" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stop-color="${stage.c1}"/>
+        <stop offset="100%" stop-color="${stage.c2}"/>
+      </linearGradient>
+      <filter id="${uid}s" x="-30%" y="-30%" width="160%" height="160%">
+        <feDropShadow dx="0" dy="5" stdDeviation="4" flood-color="${stage.c1}" flood-opacity=".25"/>
+      </filter>
+    </defs>
+    <rect x="7" y="7" width="60" height="60" rx="14" fill="rgba(255,255,255,.045)" stroke="rgba(255,255,255,.12)" stroke-width="2"/>
+    <rect x="11" y="11" width="52" height="52" rx="12" fill="url(#${uid}g)" opacity=".86" filter="url(#${uid}s)"/>
+    <rect x="15" y="15" width="44" height="44" rx="10" fill="#12121f" opacity=".55"/>
+    ${badge.path}
+    <text x="37" y="60" text-anchor="middle" fill="#f8fbff" font-size="15" font-weight="800" font-family="system-ui, -apple-system, sans-serif">${badge.glyph}</text>
+  </svg>`;
+}
+
 // ── ピクセルアート共通レンダラー ──────────────────────────
 function _buildPixelSprite(rows, pal, w, h) {
   const PS = 5; // 1ドット = 5×5 (viewBox 80×100)
@@ -3818,7 +4250,11 @@ const AVATAR_EQUIP_LAYOUT = {
 };
 
 function buildRichAvatarSVG_0(type) {
-  const srcs = { A:'adventurer-a.png', B:'adventurer-b.png', C:'adventurer-c.png' };
+  const srcs = {
+    A:'assets/avatar/adventurer-a-fixed.png',
+    B:'assets/avatar/adventurer-b-fixed-v3.png',
+    C:'assets/avatar/adventurer-c-fixed.png'
+  };
   const src = srcs[type] || srcs.A;
   const fallback = buildAvatarSVG(0, 160, 200);
   // 装備中の各カテゴリをオーバーレイとして組み立て
@@ -3891,9 +4327,9 @@ function checkAvatarEvolution() {
 // アバター円アイコン: 各キャラ静止画から「顔（首から上）」を切り抜く設定。
 // size=background-size, pos=background-position（PNG頭部解析で算出）
 const AV_FACE_FRAME = {
-  A: { src: 'adventurer-a.png', size: '153.8%', pos: '91.4% 16.0%' },
-  B: { src: 'adventurer-b.png', size: '165.9%', pos: '75.9% 28.5%' },
-  C: { src: 'adventurer-c.png', size: '122.8%', pos: '85.4% 24.2%' },
+  A: { src: 'assets/avatar/adventurer-a-face.png' },
+  B: { src: 'assets/avatar/adventurer-b-face-v3.png' },
+  C: { src: 'assets/avatar/adventurer-c-face.png' },
 };
 
 function renderAvatarBtn() {
@@ -3903,8 +4339,8 @@ function renderAvatarBtn() {
   const f = AV_FACE_FRAME[avatarType] || AV_FACE_FRAME.A;
   btn.innerHTML = '';
   btn.style.backgroundImage    = `url('${f.src}')`;
-  btn.style.backgroundSize     = f.size;
-  btn.style.backgroundPosition = f.pos;
+  btn.style.backgroundSize     = 'cover';
+  btn.style.backgroundPosition = 'center';
 }
 
 // ── Avatar モーダル ────────────────────────────────────
@@ -3920,6 +4356,7 @@ function fmtMinsHint(mins) {
 function openAvatarModal() {
   document.getElementById('avatar-overlay').classList.add('open');
   renderAvatarModal();
+  document.getElementById('avatar-panel').scrollTop = 0;
 }
 
 function renderAvatarModal() {
@@ -3981,7 +4418,7 @@ function renderAvatarModal() {
       const s       = AVATAR_STAGES[h.stage];
       const isCur   = i === 0;
       return `<div class="av-journey-item">
-        <div>${buildAvatarSVG(h.stage, 38, 47)}</div>
+        <div class="av-journey-badge-wrap">${buildEvolutionBadgeSVG(h.stage, 46, 46)}</div>
         <div class="av-journey-meta">
           <div class="av-journey-title" style="color:${isCur ? s.c1 : 'var(--text-dim)'}">${s.title}</div>
           <div class="av-journey-date">Lv ${h.level} &nbsp;·&nbsp; ${h.date}</div>
@@ -4045,6 +4482,7 @@ document.getElementById('avatar-panel').addEventListener('click', e => {
   saveAvatarType();
   renderAvatarBtn();   // ヘッダーのアイコン更新
   renderAvatarModal(); // モーダル内のアバター＋ボタン状態更新
+  document.getElementById('avatar-panel').scrollTo({ top: 0, behavior: 'smooth' });
 });
 
 // ═══════════════════════════════════════════════════════
@@ -4262,7 +4700,7 @@ document.addEventListener('keydown', e => {
 
   // 並べ替え対象ウィジェットの既知IDリスト（HTMLのデフォルト順）
   const KNOWN_IDS = [
-    'xp-panel', 'daily-quote-card', 'genre-card', 'mode-panel',
+    'xp-panel', 'daily-quest-card', 'daily-quote-card', 'genre-card', 'mode-panel',
     'timer-card', 'stats-strip', 'calendar-panel'
   ];
   const STORAGE_KEY = 'gq_widget_order';
@@ -4396,3 +4834,111 @@ document.addEventListener('keydown', e => {
     if (grip) grip.addEventListener('pointerdown', onGripDown);
   });
 })();
+
+// ═══════════════════════════════════════════════════════
+//  ONBOARDING TUTORIAL — 初回チュートリアル
+//  - 初回起動時のみ自動表示
+//  - localStorage: gq_tutorial_seen = '1' で抑制
+//  - 設定モーダルから再表示可能
+// ═══════════════════════════════════════════════════════
+const TUTORIAL_STEPS = [
+  { icon:'⚔', title:'Growth Quest へようこそ',
+    body:'このアプリは、学習や自己成長を冒険に変えるアプリです。' },
+  { icon:'📚', title:'まずはジャンルを選ぼう',
+    body:'英語、投資、救急、読書、アプリ開発など、今日取り組むテーマを選びます。' },
+  { icon:'⏱', title:'STARTを押して冒険開始',
+    body:'5分でもOK。始めた時点で、もう一歩前進です。' },
+  { icon:'✨', title:'完了すると成長',
+    body:'XP、すごろく、装備、バッジなどで努力が見える形になります。' },
+  { icon:'🌱', title:'自信は証拠から育つ',
+    body:'小さな行動の積み重ねが、未来の自分を作ります。' },
+];
+
+let tutorialStep = 0;
+
+function renderTutorial() {
+  const step = TUTORIAL_STEPS[tutorialStep];
+  if (!step) return;
+  document.getElementById('tutorial-icon').textContent = step.icon;
+  document.getElementById('tutorial-title').textContent = step.title;
+  document.getElementById('tutorial-body').textContent = step.body;
+
+  // ステップドット更新
+  document.querySelectorAll('.tut-dot').forEach((d, i) => {
+    d.classList.toggle('active', i === tutorialStep);
+    d.classList.toggle('passed', i < tutorialStep);
+  });
+
+  // 戻るボタン: 最初なら非表示
+  document.getElementById('tutorial-prev-btn').disabled = (tutorialStep === 0);
+
+  // 次へボタン: 最終ステップなら「冒険を始める」へ変身
+  const nextBtn = document.getElementById('tutorial-next-btn');
+  const isLast  = (tutorialStep === TUTORIAL_STEPS.length - 1);
+  if (isLast) {
+    nextBtn.textContent = '⚔ 冒険を始める';
+    nextBtn.classList.add('start');
+  } else {
+    nextBtn.textContent = '次へ →';
+    nextBtn.classList.remove('start');
+  }
+}
+
+function openTutorial() {
+  tutorialStep = 0;
+  renderTutorial();
+  document.getElementById('tutorial-overlay').classList.add('open');
+}
+function closeTutorial() {
+  document.getElementById('tutorial-overlay').classList.remove('open');
+  // 一度でも閉じたら「見た」扱い → 次回以降は自動表示しない
+  localStorage.setItem('gq_tutorial_seen', '1');
+}
+function tutorialNext() {
+  if (tutorialStep < TUTORIAL_STEPS.length - 1) {
+    tutorialStep++;
+    renderTutorial();
+  } else {
+    closeTutorial();   // 最終ステップで「冒険を始める」→ 閉じる
+  }
+}
+function tutorialPrev() {
+  if (tutorialStep > 0) {
+    tutorialStep--;
+    renderTutorial();
+  }
+}
+
+// イベントリスナー
+document.getElementById('tutorial-next-btn').addEventListener('click', tutorialNext);
+document.getElementById('tutorial-prev-btn').addEventListener('click', tutorialPrev);
+document.getElementById('tutorial-skip-btn').addEventListener('click', closeTutorial);
+// 背景クリックでも閉じる
+document.getElementById('tutorial-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('tutorial-overlay')) closeTutorial();
+});
+// キーボード操作（←→ / Enter / Space / Esc）
+document.addEventListener('keydown', e => {
+  const ov = document.getElementById('tutorial-overlay');
+  if (!ov || !ov.classList.contains('open')) return;
+  if (e.key === 'Escape')      { e.preventDefault(); closeTutorial(); }
+  else if (e.key === 'ArrowLeft')  { e.preventDefault(); tutorialPrev(); }
+  else if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'Enter') {
+    e.preventDefault(); tutorialNext();
+  }
+});
+
+// 設定モーダルからの再表示
+const _showTutBtn = document.getElementById('show-tutorial-btn');
+if (_showTutBtn) {
+  _showTutBtn.addEventListener('click', () => {
+    // 設定モーダルを閉じてからチュートリアルを開く
+    document.getElementById('settings-overlay').classList.remove('open');
+    setTimeout(openTutorial, 320);   // 設定のフェードアウト後
+  });
+}
+
+// 初回起動時の自動表示（ローンチ画面が消えた後）
+if (!localStorage.getItem('gq_tutorial_seen')) {
+  setTimeout(openTutorial, 3200);   // ローンチ 2400ms + fade 650ms より後
+}

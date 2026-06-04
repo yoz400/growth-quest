@@ -1057,7 +1057,12 @@ header {
   max-height: 88vh; overflow-y: auto;
 }
 
-#avatar-display-large { display: flex; justify-content: center; padding: 4px 0 4px; min-height: 300px; align-items: center; }
+#avatar-display-large {
+  display: flex; justify-content: center; align-items: center;
+  min-height: clamp(270px, 44vh, 320px);
+  padding: 18px 0 12px;
+  overflow: visible;
+}
 
 .av-title {
   text-align: center; font-size: 1.6rem; font-weight: 900;
@@ -1087,6 +1092,14 @@ header {
 .av-journey-item {
   display: flex; align-items: center; gap: 12px;
   padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,.05);
+}
+.av-journey-badge-wrap {
+  width: 46px; height: 46px; flex: 0 0 46px;
+  display: grid; place-items: center;
+}
+.av-evolution-badge {
+  display: block;
+  filter: drop-shadow(0 4px 10px rgba(0,0,0,.22));
 }
 .av-journey-meta { flex: 1; }
 .av-journey-title { font-size: .88rem; font-weight: 700; }
@@ -1128,6 +1141,7 @@ header {
   position: relative;
   display: inline-block;
   line-height: 0;
+  overflow: visible;
   z-index: 1;
   animation: avBreathe 3.2s ease-in-out infinite;
   filter:
@@ -1613,7 +1627,9 @@ header {
 #skill-overlay.open  .gq-panel,
 #board-overlay.open  .gq-panel,
 #equipment-overlay.open .gq-panel,
-#equipment-get-overlay.open .gq-panel {
+#equipment-get-overlay.open .gq-panel,
+#tutorial-overlay.open .gq-panel,
+#praise-overlay.open .gq-panel {
   transform: none;
 }
 
@@ -1661,14 +1677,17 @@ header {
 }
 @keyframes avBreathe {
   0%,100% { transform: translateY(0); }
-  32%     { transform: translateY(-5px); }
+  32%     { transform: translateY(-2px); }
   50%     { transform: translateY(0); }
-  82%     { transform: translateY(3px); }
+  82%     { transform: translateY(1px); }
 }
 .av-char-img-wrap {
   display: flex; justify-content: center; align-items: flex-end;
-  min-height: 310px; padding: 16px 0 0;
+  width: 100%;
+  min-height: clamp(270px, 44vh, 320px);
+  padding: 18px 0 6px;
   position: relative;
+  overflow: visible;
 }
 /* キャラ足元のグロー */
 .av-char-img-wrap::after {
@@ -1681,14 +1700,14 @@ header {
   pointer-events: none;
 }
 .av-char-img {
-  height: 300px; max-height: 72vw; width: auto; max-width: 90%;
+  height: clamp(220px, 52vw, 260px); width: auto; max-width: 80%;
   object-fit: contain;
   background: transparent;
   animation: avBreathe 3.2s ease-in-out infinite;
   /* 外側シアングロー → エッジを自然に馴染ませる / 下影で立体感 */
   filter:
-    drop-shadow(0 0 14px rgba(6,182,212,0.28))
-    drop-shadow(0 10px 22px rgba(0,0,0,0.75));
+    drop-shadow(0 0 12px rgba(6,182,212,0.22))
+    drop-shadow(0 8px 18px rgba(0,0,0,0.65));
   image-rendering: auto;
   position: relative; z-index: 1;
 }
@@ -1961,3 +1980,467 @@ header {
 .eq-get-rarity-tag.rarity-rare      { background: rgba(59,130,246,.2); color: #93c5fd; }
 .eq-get-rarity-tag.rarity-epic      { background: rgba(168,85,247,.2); color: #d8b4fe; }
 .eq-get-rarity-tag.rarity-legendary { background: rgba(251,191,36,.2); color: #fde68a; }
+
+/* ═══════════════════════════════════════
+   CONFIDENCE GAUGE（自信ゲージ）
+═══════════════════════════════════════ */
+.confidence-section {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255,255,255,.08);
+}
+.confidence-top {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-bottom: 5px;
+}
+.confidence-label {
+  font-size: .82rem; font-weight: 700;
+  color: #fbbf24;                   /* XPはシアン、自信は金で差別化 */
+  letter-spacing: .03em;
+}
+.confidence-numbers {
+  font-size: .72rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+}
+.confidence-bar-track {
+  background: rgba(255,255,255,.06);
+  border-radius: 999px;
+  height: 6px;
+  overflow: hidden;
+}
+.confidence-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #fbbf24, #ef4444);
+  border-radius: 999px;
+  transition: width .55s cubic-bezier(.34, 1.56, .64, 1);
+  box-shadow: 0 0 8px rgba(251,191,36,.4);
+}
+
+/* 自信獲得トースト（画面下にふわっと） */
+#confidence-toast {
+  position: fixed;
+  bottom: 24px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: linear-gradient(135deg, rgba(251,191,36,.95), rgba(239,68,68,.95));
+  color: white;
+  padding: 10px 20px;
+  border-radius: 999px;
+  font-size: .82rem; font-weight: 700;
+  font-family: inherit;
+  letter-spacing: .04em;
+  box-shadow:
+    0 6px 22px rgba(251,191,36,.45),
+    0 0 0 1px rgba(255,255,255,.12);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 120;                     /* 告(100) の上に出す */
+  transition: opacity .4s, transform .45s cubic-bezier(.34, 1.56, .64, 1);
+  white-space: nowrap;
+  max-width: calc(100vw - 32px);
+  text-align: center;
+}
+#confidence-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+/* レベルアップ時の大きめスタイル */
+#confidence-toast.levelup {
+  font-size: .94rem;
+  padding: 14px 28px;
+  background: linear-gradient(135deg, #f59e0b, #ef4444 60%, #a855f7);
+  box-shadow: 0 8px 32px rgba(245,158,11,.6);
+  letter-spacing: .06em;
+}
+/* 多行メッセージ用（褒めログ保存時など）*/
+#confidence-toast.multiline {
+  white-space: normal;
+  text-align: center;
+  line-height: 1.55;
+  border-radius: 18px;
+  max-width: min(320px, calc(100vw - 32px));
+  padding: 14px 22px;
+}
+@media (max-width: 360px) {
+  #confidence-toast { font-size: .76rem; padding: 9px 16px; bottom: 20px; }
+  #confidence-toast.levelup { font-size: .86rem; padding: 12px 22px; }
+  .confidence-label { font-size: .78rem; }
+}
+
+/* ═══════════════════════════════════════
+   ONBOARDING TUTORIAL
+═══════════════════════════════════════ */
+#tutorial-overlay {
+  position: fixed; inset: 0; z-index: 95;     /* koku(100) より下、通常モーダル(90) より上 */
+  background: rgba(0,0,0,.82);
+  backdrop-filter: blur(14px);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity .4s;
+  padding: 16px;
+}
+#tutorial-overlay.open { opacity: 1; pointer-events: auto; }
+
+#tutorial-panel {
+  width: min(420px, calc(100vw - 32px));
+  background: linear-gradient(180deg, #1c1828, #12121f 70%);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  padding: 28px 24px 20px;
+  text-align: center;
+  position: relative;
+  box-shadow:
+    0 0 40px rgba(6,182,212,.18),
+    0 20px 60px rgba(0,0,0,.5);
+}
+
+/* ステップインジケーター（5つのドット） */
+.tutorial-step-indicator {
+  display: flex; justify-content: center; gap: 8px;
+  margin-bottom: 18px;
+}
+.tut-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: rgba(255,255,255,.15);
+  transition: all .3s;
+}
+.tut-dot.active {
+  background: var(--cyan);
+  transform: scale(1.5);
+  box-shadow: 0 0 10px rgba(6,182,212,.7);
+}
+.tut-dot.passed { background: rgba(6,182,212,.45); }
+
+/* アイコン（ふんわり浮遊） */
+.tutorial-icon {
+  font-size: 52px; line-height: 1;
+  margin: 4px 0 18px;
+  filter: drop-shadow(0 0 14px rgba(6,182,212,.45));
+  animation: tutIconFloat 2.6s ease-in-out infinite;
+}
+@keyframes tutIconFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-7px); }
+}
+
+.tutorial-title {
+  font-size: 1.22rem; font-weight: 700;
+  background: linear-gradient(135deg, var(--cyan), #818cf8);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  margin-bottom: 14px;
+  letter-spacing: .03em;
+}
+
+.tutorial-body {
+  font-size: .92rem; line-height: 1.75;
+  color: rgba(255,255,255,.85);
+  margin-bottom: 22px;
+  padding: 0 6px;
+  min-height: 84px;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.tutorial-actions {
+  display: flex; gap: 10px; justify-content: center; align-items: center;
+}
+.tutorial-btn-prev, .tutorial-btn-next {
+  font-family: inherit;
+  font-size: .85rem; font-weight: 700;
+  border-radius: 999px;
+  padding: 10px 22px;
+  cursor: pointer;
+  transition: transform .15s, box-shadow .2s, opacity .25s;
+}
+.tutorial-btn-prev {
+  background: transparent;
+  border: 1px solid var(--glass-border);
+  color: var(--text-dim);
+}
+.tutorial-btn-prev:hover:not(:disabled) { color: var(--text); border-color: var(--cyan); }
+.tutorial-btn-prev:disabled {
+  opacity: 0; pointer-events: none;
+}
+.tutorial-btn-next {
+  background: linear-gradient(135deg, var(--cyan), #818cf8);
+  border: none;
+  color: white;
+  letter-spacing: .06em;
+}
+.tutorial-btn-next:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(6,182,212,.45);
+}
+/* 最終ステップは "冒険を始める"（暖色グラデで特別感）*/
+.tutorial-btn-next.start {
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
+  font-size: .92rem;
+  padding: 12px 28px;
+  box-shadow: 0 0 18px rgba(245,158,11,.35);
+}
+.tutorial-btn-next.start:hover {
+  box-shadow: 0 8px 22px rgba(245,158,11,.5);
+}
+
+.tutorial-skip {
+  background: none; border: none;
+  color: var(--text-dim);
+  font-family: inherit; font-size: .72rem;
+  cursor: pointer;
+  margin-top: 14px;
+  letter-spacing: .04em;
+  opacity: .55;
+  transition: opacity .2s;
+}
+.tutorial-skip:hover { opacity: 1; }
+
+/* 設定モーダル内の "再表示" ボタン */
+.setting-action-btn {
+  padding: 5px 14px;
+  font-size: .78rem; font-family: inherit;
+  background: rgba(6,182,212,.12);
+  border: 1px solid var(--cyan);
+  color: var(--cyan);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all .15s;
+  letter-spacing: .04em;
+}
+.setting-action-btn:hover {
+  background: rgba(6,182,212,.25);
+  transform: translateY(-1px);
+}
+
+/* ═══════════════════════════════════════
+   PRAISE MODAL（今日の自分を褒める）
+═══════════════════════════════════════ */
+#praise-overlay {
+  position: fixed; inset: 0; z-index: 92;       /* 通常モーダル(90)より上、koku(100)より下 */
+  background: rgba(0,0,0,.75);
+  backdrop-filter: blur(10px);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity .35s;
+  padding: 16px;
+}
+#praise-overlay.open { opacity: 1; pointer-events: auto; }
+
+#praise-panel {
+  width: min(380px, calc(100vw - 32px));
+  background: linear-gradient(180deg, #1c1820, #12121f 70%);
+  border: 1px solid rgba(251,191,36,.25);
+  border-radius: 20px;
+  padding: 26px 22px 20px;
+  text-align: center;
+  box-shadow:
+    0 0 28px rgba(251,191,36,.18),
+    0 18px 50px rgba(0,0,0,.5);
+}
+
+.praise-title {
+  font-size: 1.12rem; font-weight: 700;
+  background: linear-gradient(135deg, #fbbf24, #ef4444);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  margin-bottom: 6px;
+  letter-spacing: .03em;
+}
+.praise-subtitle {
+  font-size: .78rem;
+  color: var(--text-dim);
+  margin-bottom: 16px;
+  font-style: italic;
+}
+.praise-textarea {
+  width: 100%;
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 12px;
+  padding: 11px 13px;
+  color: var(--text);
+  font-family: inherit; font-size: .9rem;
+  line-height: 1.7;
+  resize: none;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color .2s, background .2s;
+}
+.praise-textarea::placeholder {
+  color: rgba(255,255,255,.32);
+  font-style: italic;
+}
+.praise-textarea:focus {
+  border-color: rgba(251,191,36,.55);
+  background: rgba(255,255,255,.08);
+}
+.praise-counter {
+  text-align: right;
+  font-size: .65rem;
+  color: var(--text-dim);
+  margin: 4px 2px 14px;
+  font-variant-numeric: tabular-nums;
+}
+.praise-actions {
+  display: flex; gap: 10px; justify-content: center;
+}
+.praise-btn-skip, .praise-btn-save {
+  font-family: inherit;
+  font-size: .85rem; font-weight: 700;
+  border-radius: 999px;
+  padding: 10px 22px;
+  cursor: pointer;
+  transition: transform .15s, box-shadow .2s, opacity .25s;
+}
+.praise-btn-skip {
+  background: transparent;
+  border: 1px solid var(--glass-border);
+  color: var(--text-dim);
+}
+.praise-btn-skip:hover { color: var(--text); border-color: rgba(251,191,36,.4); }
+.praise-btn-save {
+  background: linear-gradient(135deg, #fbbf24, #ef4444);
+  border: none;
+  color: white;
+  letter-spacing: .06em;
+  box-shadow: 0 0 16px rgba(251,191,36,.35);
+}
+.praise-btn-save:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 22px rgba(251,191,36,.5);
+}
+.praise-btn-save:disabled {
+  opacity: .35;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* ─ カレンダー日付ポップアップの褒めログ ─ */
+.cdp-praise {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(255,255,255,.1);
+  text-align: left;
+}
+.cdp-praise:empty { display: none; }
+.cdp-praise-title {
+  font-size: .65rem;
+  color: #fbbf24;
+  letter-spacing: .06em;
+  margin-bottom: 5px;
+  font-weight: 700;
+}
+.cdp-praise-item {
+  font-size: .73rem;
+  line-height: 1.55;
+  color: rgba(255,255,255,.85);
+  background: rgba(251,191,36,.06);
+  border-left: 2px solid rgba(251,191,36,.4);
+  border-radius: 4px;
+  padding: 5px 8px;
+  margin: 3px 0;
+}
+
+/* ═══════════════════════════════════════
+   DAILY QUEST CARD（今日のクエスト）
+═══════════════════════════════════════ */
+#daily-quest-card {
+  padding: 14px 18px;
+}
+.quest-header {
+  font-size: .85rem; font-weight: 700;
+  color: var(--text);
+  letter-spacing: .04em;
+  margin-bottom: 11px;
+}
+.quest-list {
+  display: flex; flex-direction: column; gap: 7px;
+}
+.quest-item {
+  display: flex; gap: 11px; align-items: flex-start;
+  padding: 9px 11px;
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 11px;
+  transition: background .25s, border-color .25s, opacity .25s;
+}
+.quest-item.done {
+  background: rgba(251,191,36,.07);
+  border-color: rgba(251,191,36,.32);
+}
+.quest-check {
+  width: 22px; flex-shrink: 0;
+  font-size: 1rem; font-weight: 700;
+  color: rgba(255,255,255,.32);
+  text-align: center;
+  line-height: 1.5;
+  font-family: ui-monospace, monospace;
+}
+.quest-item.done .quest-check {
+  color: #fbbf24;
+  text-shadow: 0 0 8px rgba(251,191,36,.5);
+}
+.quest-body { flex: 1; min-width: 0; }
+.quest-title {
+  font-size: .85rem; font-weight: 700;
+  color: var(--text);
+  margin-bottom: 2px;
+  letter-spacing: .02em;
+}
+.quest-item.done .quest-title {
+  color: var(--text-dim);
+  text-decoration: line-through;
+  text-decoration-color: rgba(251,191,36,.45);
+  text-decoration-thickness: 1.5px;
+}
+.quest-desc {
+  font-size: .7rem;
+  color: var(--text-dim);
+  line-height: 1.55;
+  margin-bottom: 4px;
+}
+.quest-reward {
+  font-size: .64rem;
+  color: var(--cyan);
+  letter-spacing: .06em;
+  font-weight: 700;
+}
+.quest-item.done .quest-reward {
+  color: #fbbf24;
+  opacity: .8;
+}
+@media (max-width: 375px) {
+  #daily-quest-card { padding: 12px 14px; }
+  .quest-item { padding: 8px 10px; gap: 9px; }
+  .quest-check { width: 18px; font-size: .92rem; }
+  .quest-title { font-size: .82rem; }
+  .quest-desc { font-size: .67rem; }
+  .quest-reward { font-size: .6rem; }
+}
+
+/* ─ 週次レビューの褒めログ一覧 ─ */
+.review-praise-list {
+  display: flex; flex-direction: column; gap: 7px;
+  margin-top: 8px;
+}
+.review-praise-card {
+  background: rgba(251,191,36,.06);
+  border: 1px solid rgba(251,191,36,.22);
+  border-left: 3px solid #fbbf24;
+  border-radius: 10px;
+  padding: 9px 12px;
+}
+.review-praise-card-date {
+  font-size: .62rem;
+  color: #fbbf24;
+  letter-spacing: .04em;
+  margin-bottom: 4px;
+  font-weight: 700;
+}
+.review-praise-card-text {
+  font-size: .82rem;
+  line-height: 1.6;
+  color: rgba(255,255,255,.92);
+}
+.review-praise-empty {
+  font-size: .76rem;
+  color: var(--text-dim);
+  font-style: italic;
+  text-align: center;
+  padding: 10px 6px;
+}

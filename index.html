@@ -54,6 +54,23 @@
     </div>
     <div class="total-time" id="total-time-label">累計学習 0分</div>
     <div class="skill-count-label" id="skill-count-label">🌳 スキル 0 / 0 解放</div>
+    <!-- 自信ゲージ：努力の積み上げを別ゲージで可視化 -->
+    <div class="confidence-section">
+      <div class="confidence-top">
+        <span class="confidence-label" id="confidence-label">💪 自信 Lv 1</span>
+        <span class="confidence-numbers" id="confidence-numbers">0 / 100</span>
+      </div>
+      <div class="confidence-bar-track">
+        <div class="confidence-bar-fill" id="confidence-bar" style="width:0%"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DAILY QUEST -->
+  <div class="glass widget" id="daily-quest-card">
+    <div class="widget-grip" title="ドラッグして並べ替え">⠿</div>
+    <div class="quest-header">📜 今日のクエスト</div>
+    <div class="quest-list" id="quest-list"></div>
   </div>
 
   <!-- DAILY QUOTE -->
@@ -184,6 +201,7 @@
   <div class="cdp-row"  id="cdp-mins"></div>
   <div class="cdp-row"  id="cdp-sessions"></div>
   <div class="cdp-genres" id="cdp-genres"></div>
+  <div class="cdp-praise" id="cdp-praise"></div>
 </div>
 
 <!-- ─── GENRE MODAL ─── -->
@@ -509,6 +527,14 @@
     </div>
 
     <div class="setting-group">
+      <div class="setting-group-label">チュートリアル</div>
+      <div class="setting-row">
+        <span class="setting-row-label">使い方ガイドをもう一度見る</span>
+        <button id="show-tutorial-btn" class="setting-action-btn">▶ 表示</button>
+      </div>
+    </div>
+
+    <div class="setting-group">
       <div class="setting-group-label">Growth Quest について</div>
       <div class="about-block">
         <div class="about-app-name">⚔ Growth Quest</div>
@@ -531,6 +557,45 @@
   </div>
 </div>
 
-<script src="scripts/app.js"></script>
+<!-- ─── CONFIDENCE TOAST（自信ゲージの祝福表示） ─── -->
+<div id="confidence-toast"></div>
+
+<!-- ─── PRAISE MODAL（今日の自分を褒める） ─── -->
+<div id="praise-overlay">
+  <div id="praise-panel" class="gq-panel">
+    <div class="praise-title">💛 今日の自分を、褒める</div>
+    <div class="praise-subtitle">小さな一歩も、立派な前進です。</div>
+    <textarea id="praise-text" class="praise-textarea" rows="4" maxlength="200"
+      placeholder="例：眠かったけど5分だけ始められた。えらい。"></textarea>
+    <div class="praise-counter" id="praise-counter">0 / 200</div>
+    <div class="praise-actions">
+      <button class="praise-btn-skip" id="praise-skip-btn">スキップ</button>
+      <button class="praise-btn-save" id="praise-save-btn" disabled>記録する</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── ONBOARDING TUTORIAL ─── -->
+<div id="tutorial-overlay">
+  <div id="tutorial-panel" class="gq-panel">
+    <div class="tutorial-step-indicator">
+      <span class="tut-dot" data-step="0"></span>
+      <span class="tut-dot" data-step="1"></span>
+      <span class="tut-dot" data-step="2"></span>
+      <span class="tut-dot" data-step="3"></span>
+      <span class="tut-dot" data-step="4"></span>
+    </div>
+    <div class="tutorial-icon" id="tutorial-icon">⚔</div>
+    <div class="tutorial-title" id="tutorial-title"></div>
+    <div class="tutorial-body" id="tutorial-body"></div>
+    <div class="tutorial-actions">
+      <button class="tutorial-btn-prev" id="tutorial-prev-btn">← 戻る</button>
+      <button class="tutorial-btn-next" id="tutorial-next-btn">次へ →</button>
+    </div>
+    <button class="tutorial-skip" id="tutorial-skip-btn">スキップ</button>
+  </div>
+</div>
+
+<script src="scripts/app.js?v=avatar-fix-2"></script>
 </body>
 </html>
