@@ -26,7 +26,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles/app.css">
+<link rel="stylesheet" href="styles/app.css?v=guild-42">
 </head>
 <body>
 
@@ -53,62 +53,58 @@
         <span>Growth Quest</span>
       </div>
       <button id="avatar-btn" title="アバターを見る"></button>
+      <div id="header-motiv" class="header-motiv"></div>
     </div>
     <div class="header-right">
-      <button class="icon-btn" id="board-btn" title="すごろく">🎲</button>
-      <button class="icon-btn" id="skill-btn" title="スキルツリー">🌳</button>
-      <button class="icon-btn" id="review-btn" title="週次レビュー">📊</button>
-      <button class="icon-btn" id="badges-btn" title="バッジ">🏅</button>
-      <button class="icon-btn" id="equipment-btn" title="装備">🎒</button>
+      <button class="icon-btn" id="fairy-guide-btn" title="導きの妖精（迷ったら押す）">🧚</button>
+      <button class="icon-btn feat-locked" id="guild-btn" data-unlock="guild" title="冒険者ギルド">🏰</button>
+      <button class="icon-btn feat-locked" id="board-btn" data-unlock="board" title="すごろく">🎲</button>
+      <button class="icon-btn feat-locked" id="skill-btn" data-unlock="skill" title="スキルツリー">🌳</button>
+      <button class="icon-btn feat-locked" id="review-btn" data-unlock="review" title="週次レビュー">📊</button>
       <button class="icon-btn" id="genre-btn" title="ジャンル管理">📚</button>
-      <button class="icon-btn" id="words-btn" title="響く言葉">💬</button>
       <button class="icon-btn" id="settings-btn" title="設定">⚙</button>
+    </div>
+    <!-- ヘッダー内 XP/レベルゲージ -->
+    <div id="header-xp" class="header-xp">
+      <span class="hx-lv" id="hx-lv">Lv 1</span>
+      <div class="hx-bar"><div class="hx-fill" id="hx-fill" style="width:0%"></div></div>
+      <span class="hx-num" id="hx-num">0 / 100 XP</span>
     </div>
   </header>
 
-  <!-- XP PANEL -->
-  <div class="glass widget" id="xp-panel">
-    <div class="widget-grip" title="ドラッグして並べ替え">⠿</div>
-    <div class="xp-top">
-      <span class="level-badge" id="level-label">Lv 1</span>
-      <span class="xp-numbers" id="xp-numbers">0 / 100 XP</span>
-    </div>
-    <div class="xp-bar-track">
-      <div class="xp-bar-fill" id="xp-bar" style="width:0%"></div>
-    </div>
-    <div class="total-time" id="total-time-label">累計学習 0分</div>
-    <div class="skill-count-label" id="skill-count-label">🌳 スキル 0 / 0 解放</div>
-    <!-- 自信ゲージ：努力の積み上げを別ゲージで可視化 -->
-    <div class="confidence-section">
-      <div class="confidence-top">
-        <span class="confidence-label" id="confidence-label">💪 自信 Lv 1</span>
-        <span class="confidence-numbers" id="confidence-numbers">0 / 100</span>
-      </div>
-      <div class="confidence-bar-track">
-        <div class="confidence-bar-fill" id="confidence-bar" style="width:0%"></div>
-      </div>
-    </div>
+
+  <!-- 🎁 ログインボーナス（1日1回・開いた時に出る達成感の演出） -->
+  <div id="login-bonus-overlay">
+    <div id="login-bonus-card"></div>
   </div>
 
-  <!-- DAILY QUEST -->
+  <!-- はじめの一歩（新規ユーザー向けガイド・完了で自動的に消える） -->
+  <div class="glass" id="onboard-card" style="display:none">
+    <div class="onboard-head">
+      <span class="onboard-fairy">🧚</span>
+      <div>
+        <div class="onboard-title">はじめの一歩</div>
+        <div class="onboard-sub" id="onboard-sub">むずかしいことは無し。まず5分だけ。</div>
+      </div>
+    </div>
+    <div class="onboard-steps" id="onboard-steps"></div>
+  </div>
+
+  <!-- DAILY QUEST（基本クエスト＋選択肢クエストを1枚に統合） -->
   <div class="glass widget" id="daily-quest-card">
     <div class="widget-grip" title="ドラッグして並べ替え">⠿</div>
     <div class="quest-header">📜 今日のクエスト</div>
     <div class="quest-list" id="quest-list"></div>
+    <div id="nudge-body"></div>
   </div>
 
-  <!-- DAILY QUOTE -->
-  <div class="glass widget" id="daily-quote-card">
+  <!-- ⚔ あなたの使命（召喚で決めた目標・育てる/断つ） -->
+  <div class="glass widget" id="mission-card" style="display:none">
     <div class="widget-grip" title="ドラッグして並べ替え">⠿</div>
-    <span class="dq-scene-tag" id="dq-scene-tag">今日の一言</span>
-    <div class="dq-text" id="dq-text"></div>
-    <div class="dq-author" id="dq-author"></div>
-    <div class="dq-actions">
-      <button class="dq-action-btn" id="dq-fav-btn">♡</button>
-      <button class="dq-action-btn" id="dq-share-btn">📤 コピー</button>
-      <button class="dq-refresh-btn" id="dq-refresh-btn" title="別の言葉">↺</button>
-    </div>
+    <div class="quest-header mc-header">⚔ あなたの使命</div>
+    <div id="mission-body"></div>
   </div>
+
 
   <!-- GENRE SELECTOR -->
   <div class="glass widget" id="genre-card">
@@ -117,39 +113,42 @@
     <div class="genre-tabs" id="genre-tabs"></div>
   </div>
 
-  <!-- MODE SELECTOR -->
-  <div class="glass widget" id="mode-panel">
-    <div class="widget-grip" title="ドラッグして並べ替え">⠿</div>
-    <div class="mode-label">タイマーモード</div>
-    <div class="mode-tabs">
-      <div class="mode-tab active" data-mode="pomodoro">
-        <span class="mode-name">🍅 ポモドーロ</span>
-        <span class="mode-desc">25 + 5 分</span>
-      </div>
-      <div class="mode-tab" data-mode="deep">
-        <span class="mode-name">🔵 ディープ</span>
-        <span class="mode-desc">50 + 10 分</span>
-      </div>
-      <div class="mode-tab" data-mode="flow">
-        <span class="mode-name">🌊 フロー</span>
-        <span class="mode-desc">∞ 自由時間</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- TIMER CARD -->
+  <!-- TIMER CARD（タイマー＝上 / アニメ / ボタン / モード選択＝下 に統合） -->
   <div class="glass widget" id="timer-card">
     <div class="widget-grip" title="ドラッグして並べ替え">⠿</div>
-    <div id="anim-stage"></div>
-    <div class="time-wrapper" id="time-wrapper">
-      <div id="timer-display">25:00</div>
-      <div class="phase-label" id="phase-label">集中タイム</div>
+    <!-- アニメーションの中央にタイマーを重ねて表示 -->
+    <div class="anim-wrap">
+      <div id="anim-stage"></div>
+      <div class="time-wrapper" id="time-wrapper">
+        <div class="phase-label" id="phase-label">集中タイム</div>
+        <div id="timer-display">25:00</div>
+      </div>
     </div>
+    <!-- ③ スタート / リセット（アニメ下） -->
     <div class="timer-btns">
       <button id="start-btn">START</button>
       <button id="stop-btn" style="display:none">■ リセット</button>
     </div>
     <button id="pip-btn" title="小窓で表示 (PiP)" style="display:none">⧉ PiP</button>
+    <!-- ④ タイマーモード（最下部） -->
+    <div class="mode-label">タイマーモード</div>
+    <div class="mode-tabs">
+      <div class="mode-tab active" data-mode="pomodoro">
+        <div class="mode-fill"></div>
+        <span class="mode-name">🍅 ポモドーロ</span>
+        <span class="mode-desc">25 + 5 分</span>
+      </div>
+      <div class="mode-tab" data-mode="deep">
+        <div class="mode-fill"></div>
+        <span class="mode-name">🔵 ディープ</span>
+        <span class="mode-desc">50 + 10 分</span>
+      </div>
+      <div class="mode-tab" data-mode="flow">
+        <div class="mode-fill"></div>
+        <span class="mode-name">🌊 フロー</span>
+        <span class="mode-desc">∞ 自由時間</span>
+      </div>
+    </div>
   </div>
 
   <!-- BREAK BANNER -->
@@ -177,6 +176,14 @@
     </div>
   </div>
 
+  <!-- ⏱ いまから何する？（打刻：タップした瞬間からタイムログに記録） -->
+  <div class="glass widget" id="punch-card" style="display:none">
+    <div class="widget-grip" title="ドラッグして並べ替え">⠿</div>
+    <div class="quest-header">⏱ いまから何する？</div>
+    <div class="tl-punch-status" id="tl-punch-status"></div>
+    <div id="tl-punch-chips"></div>
+  </div>
+
   <!-- CALENDAR -->
   <div class="glass widget" id="calendar-panel">
     <div class="widget-grip" title="ドラッグして並べ替え">⠿</div>
@@ -197,6 +204,20 @@
     </div>
     <div class="cal-grid" id="cal-grid"></div>
     <div class="cal-stats" id="cal-stats"></div>
+    <!-- 累計学習・スキル・自信ゲージ（旧XPパネルから統合） -->
+    <div class="cal-extra">
+      <div class="total-time" id="total-time-label">累計学習 0分</div>
+      <div class="skill-count-label" id="skill-count-label">🌳 スキル 0 / 0 解放</div>
+      <div class="confidence-section">
+        <div class="confidence-top">
+          <span class="confidence-label" id="confidence-label">💪 自信 Lv 1</span>
+          <span class="confidence-numbers" id="confidence-numbers">0 / 100</span>
+        </div>
+        <div class="confidence-bar-track">
+          <div class="confidence-bar-fill" id="confidence-bar" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
   </div>
 
 </div><!-- #app -->
@@ -218,7 +239,8 @@
   </div>
 </div>
 
-<!-- ─── DAY DETAIL POPUP ─── -->
+<!-- ─── DAY DETAIL / PLANNER MODAL ─── -->
+<div id="cal-day-backdrop" class="hidden"></div>
 <div id="cal-day-popup" class="hidden">
   <button id="cdp-close-btn">✕</button>
   <div class="cdp-date" id="cdp-date"></div>
@@ -226,6 +248,31 @@
   <div class="cdp-row"  id="cdp-sessions"></div>
   <div class="cdp-genres" id="cdp-genres"></div>
   <div class="cdp-praise" id="cdp-praise"></div>
+  <button class="cdp-timelog-btn" id="cdp-timelog-btn">⏱ この日のタイムログを見る</button>
+
+  <div class="cdp-planner">
+    <div class="cdp-sec-title">📅 予定・TODO</div>
+    <div id="cdp-planner-list"></div>
+    <div class="cdp-add">
+      <div class="cdp-kind">
+        <button type="button" class="cdp-kind-btn active" data-kind="task">✓ やること</button>
+        <button type="button" class="cdp-kind-btn" data-kind="event">📌 予定</button>
+      </div>
+      <input id="cdp-task-text" type="text" maxlength="80" placeholder="やること・予定を入力" class="cdp-add-text">
+      <div class="cdp-add-opts">
+        <input id="cdp-task-time" type="time" class="cdp-add-time" title="時刻（任意）">
+        <select id="cdp-task-repeat" class="cdp-add-rep" title="繰り返し">
+          <option value="none">繰り返しなし</option>
+          <option value="daily">毎日</option>
+          <option value="weekly">毎週</option>
+          <option value="monthly">毎月</option>
+        </select>
+        <label class="cdp-add-remind" title="時刻に通知（アプリを開いている間）"><input type="checkbox" id="cdp-task-remind">🔔</label>
+        <button id="cdp-task-add" class="cdp-add-btn">追加</button>
+      </div>
+      <div class="cdp-plan-hint">🔔 通知は時刻つきの予定に、アプリを開いている間に届きます</div>
+    </div>
+  </div>
 </div>
 
 <!-- ─── GENRE MODAL ─── -->
@@ -275,7 +322,7 @@
     <div class="settings-header">
       <div>
         <span class="settings-title">🏅 バッジコレクション</span>
-        <div class="badges-progress"><strong id="badges-earned-count">0</strong> / 20 獲得済み</div>
+        <div class="badges-progress"><strong id="badges-earned-count">0</strong> / <span id="badges-total-count">20</span> 獲得済み</div>
       </div>
       <button class="icon-btn" id="badges-close-btn">✕</button>
     </div>
@@ -299,12 +346,21 @@
     <div class="eq-slot-list" id="equipment-slot-list"></div>
     <div class="eq-section-title">所持アイテム</div>
     <div id="equipment-owned-list"></div>
+    <div class="eq-section-title eq-collection-title">
+      📖 コレクション
+      <span class="eq-collection-progress" id="eq-collection-progress"></span>
+    </div>
+    <!-- ▼ テスト用ボタン（確認が済んだらこの1行を削除でOK） -->
+    <button id="eq-test-grant-btn" class="eq-test-btn">🎲 テスト入手（確認用・あとで外せます）</button>
+    <div class="eq-collection-grid" id="equipment-collection-grid"></div>
   </div>
 </div>
 
 <!-- ─── EQUIPMENT GET CELEBRATION MODAL ─── -->
 <div id="equipment-get-overlay">
   <div id="equipment-get-panel" class="gq-panel">
+    <div class="eq-get-shine"></div>
+    <div class="eq-get-sparkles" id="eq-get-sparkles"></div>
     <div class="eq-get-label">✦ 装備発見 ✦</div>
     <div class="eq-get-icon-wrap" id="eq-get-icon-wrap"></div>
     <div class="eq-get-name" id="eq-get-name"></div>
@@ -326,19 +382,45 @@
       <button class="icon-btn" id="board-close-btn">✕</button>
     </div>
     <div id="board-body">
-      <div id="board-svg-wrapper">
-        <div id="sg-walker"></div>
+
+      <!-- ① RPG冒険マップ エリアビュー -->
+      <div id="board-area-view">
+        <div id="ba-zone-header" class="ba-zone-header">
+          <div class="ba-particles" id="ba-particles"></div>
+          <div class="ba-zone-info">
+            <span id="ba-zone-icon">🌿</span>
+            <span id="ba-zone-label">草　原</span>
+          </div>
+        </div>
+        <div id="ba-path-scroll">
+          <div id="ba-path-row"></div>
+        </div>
+        <div id="board-next-rewards"></div>
       </div>
-      <div id="board-legend">
-        <span class="bl-item">🟩 通常</span>
-        <span class="bl-item">📦 アイテム</span>
-        <span class="bl-item">✨ イベント</span>
-        <span class="bl-item">⭐ レア</span>
-        <span class="bl-item">🏁 CP</span>
-        <span class="bl-item">🏆 ゴール</span>
+
+      <!-- ② 世界地図（折りたたみ） -->
+      <div id="board-map-section">
+        <button id="board-map-toggle">🗺 世界地図を見る ▾</button>
+        <div id="board-map-content">
+          <div id="board-svg-wrapper">
+            <div id="sg-walker"></div>
+          </div>
+          <div id="board-legend">
+            <span class="bl-item">📦 アイテム</span>
+            <span class="bl-item">✨ イベント</span>
+            <span class="bl-item">⭐ レア</span>
+            <span class="bl-item">🏁 CP</span>
+            <span class="bl-item">🏆 ゴール</span>
+          </div>
+        </div>
       </div>
-      <div class="board-section-title" id="board-items-title" style="display:none">取得アイテム</div>
+
+      <!-- ③ 取得アイテム -->
+      <div class="board-section-title" id="board-items-title" style="display:none">🎒 取得アイテム</div>
       <div id="board-items-list"></div>
+
+      <!-- ④ アイテム図鑑 -->
+      <button id="board-dex-btn" onclick="openItemDex()">📖 アイテム図鑑を見る</button>
     </div>
   </div>
 </div>
@@ -348,12 +430,18 @@
   <div id="skill-panel" class="gq-panel">
     <div class="skill-panel-header">
       <div>
-        <div class="skill-panel-title">🌳 スキルツリー</div>
+        <div class="skill-panel-title">🌳 世界樹</div>
         <div class="skill-panel-sub" id="skill-panel-sub"></div>
       </div>
       <button class="icon-btn" id="skill-close-btn">✕</button>
     </div>
+    <!-- 🌳 樹のビュー / 📖 ことばの記録帳 を切り替え -->
+    <div class="skill-tabs">
+      <button class="skill-tab active" id="sk-tab-tree">🌳 世界樹</button>
+      <button class="skill-tab" id="sk-tab-journal">📖 実りの記録</button>
+    </div>
     <div id="skill-svg-wrapper"></div>
+    <div id="skill-journal" style="display:none"></div>
     <div id="skill-detail">
       <div class="sd-row">
         <div class="sd-emoji" id="sd-emoji"></div>
@@ -391,7 +479,53 @@
         <button class="icon-btn" id="review-close-btn">✕</button>
       </div>
     </div>
+    <!-- 期間タブ＋日付ナビ（常に表示・スクロール領域の外に固定） -->
+    <div id="review-period-bar"></div>
     <div class="review-body" id="review-body"></div>
+    <!-- ─── 日タブ：タイムログ（rvPeriod==='day'のときのみ表示） ─── -->
+    <div id="rv-day-panel">
+      <div id="tl-timeline"></div>
+      <div id="tl-suggest"></div>
+      <div class="tl-palette-hint">↓ カテゴリをバーにドラッグして追加</div>
+      <div id="tl-palette"></div>
+      <div id="tl-summary"></div>
+      <div id="tl-day-insights"></div>
+      <div class="tl-add-title">記録を追加（ドラムで時刻入力）</div>
+      <div class="tl-add-form">
+        <select id="tl-cat" class="tl-input"></select>
+        <span class="tl-drum-group">
+          <select id="tl-sh" class="tl-drum"></select><span class="tl-colon">:</span><select id="tl-sm" class="tl-drum"></select>
+        </span>
+        <span class="tl-tilde">〜</span>
+        <span class="tl-drum-group">
+          <select id="tl-eh" class="tl-drum"></select><span class="tl-colon">:</span><select id="tl-em" class="tl-drum"></select>
+        </span>
+        <button id="tl-add-btn" class="tl-add-btn">追加</button>
+      </div>
+      <div class="tl-tpl-row">
+        <span class="tl-tpl-label">📋 テンプレ</span>
+        <span id="tl-tpl-chips"></span>
+        <button id="tl-tpl-save" class="tl-tpl-save">💾 この日を保存</button>
+      </div>
+      <div class="tl-tpl-row">
+        <span class="tl-tpl-label">🔁 ルーチン</span>
+        <span class="tl-rt-summary" id="tl-rt-summary"></span>
+        <button id="tl-rt-toggle" class="tl-tpl-save">⚙ 設定</button>
+      </div>
+      <div id="tl-rt-box" style="display:none">
+        <div id="tl-rt-list"></div>
+        <div class="tl-add-form">
+          <select id="tl-rt-cat" class="tl-input"></select>
+          <span class="tl-drum-group"><select id="tl-rt-sh" class="tl-drum"></select><span class="tl-colon">:</span><select id="tl-rt-sm" class="tl-drum"></select></span>
+          <span class="tl-tilde">〜</span>
+          <span class="tl-drum-group"><select id="tl-rt-eh" class="tl-drum"></select><span class="tl-colon">:</span><select id="tl-rt-em" class="tl-drum"></select></span>
+          <button id="tl-rt-add" class="tl-add-btn">登録</button>
+        </div>
+        <div class="tl-rt-days" id="tl-rt-days"></div>
+        <div class="setting-hint">登録した予定は、毎日その曜日のタイムログへ自動で入ります（既にある記録の上には入りません）。睡眠・仕事・食事を登録しておくと、毎日の入力がほぼ不要になります。</div>
+      </div>
+      <div id="tl-list"></div>
+    </div>
     <div class="review-footer" id="review-footer">
       <button class="review-btn-secondary" id="review-skip-btn">後で見る</button>
       <button class="review-btn-primary"   id="review-save-btn">保存して完了</button>
@@ -410,6 +544,10 @@
     <div id="avatar-type-selector"></div>
     <div id="avatar-stage-info"></div>
     <div id="avatar-equipment"></div>
+    <div id="avatar-actions">
+      <button class="av-action-btn" id="avatar-open-equipment">🎒 装備を変える</button>
+      <button class="av-action-btn" id="avatar-open-badges">🏅 バッジを見る</button>
+    </div>
     <div id="avatar-journey"></div>
   </div>
 </div>
@@ -559,6 +697,42 @@
     </div>
 
     <div class="setting-group">
+      <div class="setting-group-label">データのバックアップ</div>
+      <div class="setting-row">
+        <span class="setting-row-label">記録をファイルに書き出す</span>
+        <button id="data-export-btn" class="setting-action-btn">⬇ エクスポート</button>
+      </div>
+      <div class="setting-row">
+        <span class="setting-row-label">バックアップから復元する</span>
+        <button id="data-import-btn" class="setting-action-btn">⬆ インポート</button>
+      </div>
+      <input type="file" id="data-import-file" accept="application/json,.json" hidden>
+      <div class="setting-hint">※ 記録はこの端末のブラウザに保存されています。機種変更や万一に備え、ときどき書き出しておくと安心です。</div>
+    </div>
+
+    <div class="setting-group">
+      <div class="setting-group-label">記録のメンテナンス</div>
+      <div class="setting-row">
+        <span class="setting-row-label">怪しい記録（止め忘れ等）を直す</span>
+        <button id="data-repair-btn" class="setting-action-btn">🔧 チェック</button>
+      </div>
+      <div class="setting-hint">※ 1日に長すぎる記録（例：27時間）を見つけて、正しい時間に直したり消したりできます。AI分析の精度が上がります。</div>
+    </div>
+
+    <div class="setting-group">
+      <div class="setting-group-label">クラウド連携（LINE / Googleカレンダー）</div>
+      <div class="setting-row" style="flex-direction:column; align-items:stretch; gap:8px">
+        <span class="setting-row-label">GASウェブアプリのURL</span>
+        <input type="url" id="set-cloud-url" class="setting-select" style="width:100%" placeholder="https://script.google.com/macros/s/…/exec">
+      </div>
+      <div class="setting-row">
+        <span class="setting-row-label">テスト送信</span>
+        <button id="cloud-test-btn" class="setting-action-btn">📤 テスト</button>
+      </div>
+      <div class="setting-hint">※ 同じURLで、予定をLINE通知＆Googleカレンダーへ自動追加できます（アプリを閉じていてもOK・要セットアップ）。手順は <strong>docs/cloud-notify-setup.md</strong> を参照。</div>
+    </div>
+
+    <div class="setting-group">
       <div class="setting-group-label">Growth Quest について</div>
       <div class="about-block">
         <div class="about-app-name">⚔ Growth Quest</div>
@@ -584,6 +758,9 @@
 <!-- ─── CONFIDENCE TOAST（自信ゲージの祝福表示） ─── -->
 <div id="confidence-toast"></div>
 
+<!-- ─── REMINDER TOAST（予定の通知バナー） ─── -->
+<div id="reminder-toast"></div>
+
 <!-- ─── PRAISE MODAL（今日の自分を褒める） ─── -->
 <div id="praise-overlay">
   <div id="praise-panel" class="gq-panel">
@@ -596,6 +773,68 @@
       <button class="praise-btn-skip" id="praise-skip-btn">スキップ</button>
       <button class="praise-btn-save" id="praise-save-btn" disabled>記録する</button>
     </div>
+  </div>
+</div>
+
+
+<!-- ─── 🏰 冒険者ギルド（クエスト掲示板） ─── -->
+<div id="guild-overlay">
+  <div id="guild-panel" class="gq-panel">
+    <div class="guild-header">
+      <div class="guild-head-left">
+        <div class="guild-title">🏰 冒険者ギルド</div>
+        <div class="guild-sub" id="guild-sub"></div>
+      </div>
+      <button class="icon-btn" id="guild-close-btn">✕</button>
+    </div>
+    <div class="guild-body" id="guild-body"></div>
+  </div>
+</div>
+
+<!-- ─── ⛩️ 誓いの成就：妖精の祝福 ─── -->
+<div id="vow-blessing-overlay">
+  <div id="vow-blessing-card">
+    <div class="vb-sparkles" id="vb-sparkles"></div>
+    <div class="vb-ray"></div>
+    <div class="vb-fairy">🧚</div>
+    <div class="vb-title">誓いを、果たした</div>
+    <div class="vb-vow" id="vb-vow"></div>
+    <div class="vb-praise" id="vb-praise"></div>
+    <div class="vb-reward" id="vb-reward"></div>
+    <button class="vb-close" id="vb-close-btn">ありがとう</button>
+  </div>
+</div>
+
+<!-- ─── 世界樹の妖精（セッション後の問いかけ） ─── -->
+<div id="fairy-overlay">
+  <div id="fairy-panel" class="gq-panel">
+    <div class="fairy-sprite">🧚</div>
+    <div class="fairy-speech" id="fairy-speech">今日、できるようになったこと…<br>向き合えたことは、なんだった？</div>
+    <div class="fairy-genre" id="fairy-genre"></div>
+    <textarea id="fairy-text" class="fairy-textarea" rows="3" maxlength="200"
+      placeholder="例：分数の割り算が解けるようになった"></textarea>
+    <div class="fairy-stage-label">どんな成長だった？</div>
+    <div class="fairy-stages" id="fairy-stages"></div>
+    <div class="fairy-actions">
+      <button class="fairy-btn-skip" id="fairy-skip-btn">そっと閉じる</button>
+      <button class="fairy-btn-save" id="fairy-save-btn" disabled>🌳 実らせる</button>
+    </div>
+    <!-- 持っているアイテムがある時だけ表示：すごろく盤面（アイテム使用）へジャンプ -->
+    <button class="fairy-item-link" id="fairy-item-link" style="display:none"></button>
+  </div>
+</div>
+
+<!-- ─── 🧚 導きの妖精ガイド（迷ったら押す） ─── -->
+<div id="fairy-guide-overlay">
+  <div id="fairy-guide-panel" class="gq-panel">
+    <div class="fg-header">
+      <div class="fg-title"><span class="fg-sprite">🧚</span> 導きの妖精</div>
+      <button class="icon-btn" id="fairy-guide-close-btn">✕</button>
+    </div>
+    <div class="fg-oracle" id="fg-oracle"></div>
+    <div class="fg-planner" id="fg-planner"></div>
+    <div class="fg-guide-head">📖 遊び方ガイド <span class="fg-guide-hint">（「？」で説明がひらきます）</span></div>
+    <div class="fg-guide-list" id="fg-guide-list"></div>
   </div>
 </div>
 
@@ -620,6 +859,37 @@
   </div>
 </div>
 
-<script src="scripts/app.js?v=avatar-fix-2"></script>
+<!-- ─── ✦ 召喚オンボーディング（初回体験） ─── -->
+<div id="summon-overlay">
+  <div id="summon-stars"></div>
+  <div id="summon-panel">
+    <div class="summon-dots" id="summon-dots"></div>
+    <div class="summon-stage" id="summon-stage">
+      <div class="summon-icon" id="summon-icon">⚔</div>
+      <div class="summon-title" id="summon-title"></div>
+      <div class="summon-body" id="summon-body"></div>
+      <div class="summon-slot" id="summon-slot"></div>
+    </div>
+    <div class="summon-actions">
+      <button class="summon-btn-prev" id="summon-prev-btn">← 戻る</button>
+      <button class="summon-btn-next" id="summon-next-btn">次へ →</button>
+    </div>
+    <button class="summon-skip" id="summon-skip-btn">あとで設定する（スキップ）</button>
+  </div>
+</div>
+
+<script src="scripts/app.js?v=guild-42"></script>
+<script src="scripts/otomon.js?v=otomon-6"></script>
+
+<script>
+// ── Service Worker 登録 ────────────────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => console.log('[GQ] SW registered:', reg.scope))
+      .catch(err => console.warn('[GQ] SW registration failed:', err));
+  });
+}
+</script>
 </body>
 </html>

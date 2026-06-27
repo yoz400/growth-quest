@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="slBody2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#c4f7f3"/>
+      <stop offset="0.55" stop-color="#56d4e2"/>
+      <stop offset="1" stop-color="#21a3c9"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 地面の影 -->
+  <ellipse cx="256" cy="458" rx="108" ry="16" fill="#0a0f18" opacity="0.22"/>
+
+  <!-- 頭の上のちいさなしずく -->
+  <path d="M256 30 C 248 44 238 52 238 64 a 18 18 0 0 0 36 0 C 274 52 264 44 256 30 Z"
+        fill="#56d4e2" stroke="#1d5f7e" stroke-width="8" stroke-linejoin="round"/>
+
+  <!-- 短い手 -->
+  <ellipse cx="168" cy="316" rx="22" ry="34" fill="#56d4e2" stroke="#1d5f7e" stroke-width="9" transform="rotate(16 168 316)"/>
+  <ellipse cx="344" cy="316" rx="22" ry="34" fill="#56d4e2" stroke="#1d5f7e" stroke-width="9" transform="rotate(-16 344 316)"/>
+
+  <!-- ぷるぷるボディ -->
+  <path d="M256 92 C 232 136 162 188 162 288 C 162 374 204 434 256 434 C 308 434 350 374 350 288 C 350 188 280 136 256 92 Z"
+        fill="url(#slBody2)" stroke="#1d5f7e" stroke-width="10" stroke-linejoin="round"/>
+
+  <!-- 体の中の小さな泡 -->
+  <circle cx="300" cy="340" r="15" fill="#9af0f2" opacity="0.55"/>
+  <circle cx="212" cy="368" r="10" fill="#9af0f2" opacity="0.55"/>
+
+  <!-- つや -->
+  <ellipse cx="206" cy="172" rx="40" ry="22" fill="#ffffff" opacity="0.9" transform="rotate(-32 206 172)"/>
+
+  <!-- うるうるの瞳 -->
+  <ellipse cx="212" cy="258" rx="24" ry="30" fill="#173744"/>
+  <ellipse cx="300" cy="258" rx="24" ry="30" fill="#173744"/>
+  <circle cx="204" cy="247" r="9" fill="#fff"/>
+  <circle cx="292" cy="247" r="9" fill="#fff"/>
+  <circle cx="219" cy="266" r="4" fill="#fff" opacity="0.9"/>
+  <circle cx="307" cy="266" r="4" fill="#fff" opacity="0.9"/>
+  <circle cx="213" cy="273" r="5" fill="#7fe3f0" opacity="0.85"/>
+  <circle cx="301" cy="273" r="5" fill="#7fe3f0" opacity="0.85"/>
+
+  <!-- にっこりあいた口 -->
+  <path d="M226 302 Q256 338 286 302 Z" fill="#0f4763" stroke="#1d5f7e" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M240 310 Q256 324 272 310 Z" fill="#2c89ad"/>
+
+  <!-- ほっぺ -->
+  <ellipse cx="158" cy="296" rx="17" ry="11" fill="#59c4dd" opacity="0.85"/>
+  <ellipse cx="354" cy="296" rx="17" ry="11" fill="#59c4dd" opacity="0.85"/>
+</svg>

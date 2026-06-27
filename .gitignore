@@ -6,3 +6,13 @@ build/
 coverage/
 .env
 .env.*
+
+# 生成・作業用フォルダ
+outputs/
+_archive_unused_images/
+_review_lowquality/
+folder1/
+folder2/
+folder3/
+memo/
+scripts/__pycache__/

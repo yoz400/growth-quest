@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="dgBody" cx="0.45" cy="0.25" r="1">
+      <stop offset="0" stop-color="#8fe0ae"/>
+      <stop offset="1" stop-color="#41b173"/>
+    </radialGradient>
+    <linearGradient id="dgWing" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffab73"/>
+      <stop offset="1" stop-color="#ff7d4d"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 地面の影 -->
+  <ellipse cx="256" cy="468" rx="118" ry="18" fill="#0a0f18" opacity="0.22"/>
+
+  <!-- まるい角 -->
+  <path d="M204 90 Q210 38 228 34 Q242 38 240 92 Z" fill="#ffd166" stroke="#2c5e44" stroke-width="9" stroke-linejoin="round"/>
+  <path d="M308 90 Q302 38 284 34 Q270 38 272 92 Z" fill="#ffd166" stroke="#2c5e44" stroke-width="9" stroke-linejoin="round"/>
+
+  <!-- ちいさな丸い翼 -->
+  <path d="M150 250 Q92 222 86 174 Q120 168 156 196 Q176 214 172 244 Z"
+        fill="url(#dgWing)" stroke="#2c5e44" stroke-width="9" stroke-linejoin="round"/>
+  <path d="M362 250 Q420 222 426 174 Q392 168 356 196 Q336 214 340 244 Z"
+        fill="url(#dgWing)" stroke="#2c5e44" stroke-width="9" stroke-linejoin="round"/>
+
+  <!-- しっぽ（先は葉っぱ形） -->
+  <path d="M366 408 C 444 398 464 336 428 314" fill="none" stroke="#2c5e44" stroke-width="34" stroke-linecap="round"/>
+  <path d="M366 408 C 444 398 464 336 428 314" fill="none" stroke="#57c188" stroke-width="16" stroke-linecap="round"/>
+  <ellipse cx="430" cy="312" rx="21" ry="14" fill="#57c188" stroke="#2c5e44" stroke-width="8" transform="rotate(-30 430 312)"/>
+
+  <!-- まんまるボディ -->
+  <path d="M256 84 C 170 84 132 172 128 262 C 124 354 180 442 256 442 C 332 442 380 354 376 262 C 372 172 342 84 256 84 Z"
+        fill="url(#dgBody)" stroke="#2c5e44" stroke-width="10"/>
+
+  <!-- 耳ひれ -->
+  <path d="M134 200 Q108 188 104 168 Q124 162 146 182 Z" fill="#57c188" stroke="#2c5e44" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M378 200 Q404 188 408 168 Q388 162 366 182 Z" fill="#57c188" stroke="#2c5e44" stroke-width="8" stroke-linejoin="round"/>
+
+  <!-- おなか -->
+  <ellipse cx="256" cy="354" rx="86" ry="78" fill="#f7dd8e"/>
+  <g stroke="#ddb964" stroke-width="5" stroke-linecap="round" fill="none">
+    <path d="M212 342 Q256 354 300 342"/>
+    <path d="M216 386 Q256 398 296 386"/>
+  </g>
+
+  <!-- 短い手 -->
+  <ellipse cx="160" cy="330" rx="25" ry="38" fill="#57c188" stroke="#2c5e44" stroke-width="9" transform="rotate(18 160 330)"/>
+  <ellipse cx="352" cy="330" rx="25" ry="38" fill="#57c188" stroke="#2c5e44" stroke-width="9" transform="rotate(-18 352 330)"/>
+
+  <!-- あんよ -->
+  <ellipse cx="200" cy="428" rx="34" ry="17" fill="#57c188" stroke="#2c5e44" stroke-width="8"/>
+  <ellipse cx="312" cy="428" rx="34" ry="17" fill="#57c188" stroke="#2c5e44" stroke-width="8"/>
+
+  <!-- うるうるの瞳 -->
+  <ellipse cx="200" cy="218" rx="27" ry="33" fill="#2e2a28"/>
+  <ellipse cx="312" cy="218" rx="27" ry="33" fill="#2e2a28"/>
+  <circle cx="191" cy="206" r="10" fill="#fff"/>
+  <circle cx="303" cy="206" r="10" fill="#fff"/>
+  <circle cx="208" cy="227" r="4.5" fill="#fff" opacity="0.9"/>
+  <circle cx="320" cy="227" r="4.5" fill="#fff" opacity="0.9"/>
+  <circle cx="201" cy="235" r="6" fill="#ffb84d" opacity="0.85"/>
+  <circle cx="313" cy="235" r="6" fill="#ffb84d" opacity="0.85"/>
+
+  <!-- 鼻・あいた口・きば -->
+  <circle cx="244" cy="258" r="4" fill="#1f5c38"/>
+  <circle cx="268" cy="258" r="4" fill="#1f5c38"/>
+  <path d="M230 282 Q256 312 282 282 Z" fill="#194f33" stroke="#2c5e44" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M266 286 L272 300 L280 284 Z" fill="#fff"/>
+
+  <!-- ほっぺ -->
+  <ellipse cx="148" cy="264" rx="20" ry="13" fill="#ff9e8a" opacity="0.6"/>
+  <ellipse cx="364" cy="264" rx="20" ry="13" fill="#ff9e8a" opacity="0.6"/>
+</svg>

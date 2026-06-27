@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="fxBody" cx="0.45" cy="0.25" r="1">
+      <stop offset="0" stop-color="#f8b06a"/>
+      <stop offset="1" stop-color="#e2762a"/>
+    </radialGradient>
+    <linearGradient id="fxGem" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d8f9ff"/>
+      <stop offset="1" stop-color="#5fd3e8"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 地面の影 -->
+  <ellipse cx="256" cy="468" rx="120" ry="18" fill="#0a0f18" opacity="0.22"/>
+
+  <!-- 大きな耳 -->
+  <path d="M150 150 Q128 30 150 22 Q186 26 232 96 Z" fill="#ef8c3e" stroke="#6b3d1f" stroke-width="10" stroke-linejoin="round"/>
+  <path d="M362 150 Q384 30 362 22 Q326 26 280 96 Z" fill="#ef8c3e" stroke="#6b3d1f" stroke-width="10" stroke-linejoin="round"/>
+  <path d="M164 126 Q152 60 160 50 Q182 58 216 100 Z" fill="#8a4520"/>
+  <path d="M348 126 Q360 60 352 50 Q330 58 296 100 Z" fill="#8a4520"/>
+
+  <!-- ふさふさのしっぽ -->
+  <path d="M400 410 C 488 386 492 280 424 252" fill="none" stroke="#6b3d1f" stroke-width="56" stroke-linecap="round"/>
+  <path d="M400 410 C 488 386 492 280 424 252" fill="none" stroke="#ef8c3e" stroke-width="34" stroke-linecap="round"/>
+  <circle cx="424" cy="254" r="20" fill="#f6ead6"/>
+
+  <!-- まんまるボディ -->
+  <path d="M256 86 C 172 86 134 172 130 262 C 126 354 182 442 256 442 C 330 442 386 354 382 262 C 378 172 340 86 256 86 Z"
+        fill="url(#fxBody)" stroke="#6b3d1f" stroke-width="10"/>
+
+  <!-- 額の宝石 -->
+  <path d="M256 92 L274 120 L256 148 L238 120 Z" fill="url(#fxGem)" stroke="#6b3d1f" stroke-width="7" stroke-linejoin="round"/>
+  <path d="M256 100 L266 120 L256 140 L246 120 Z" fill="#fff" opacity="0.4"/>
+
+  <!-- おなか -->
+  <ellipse cx="256" cy="356" rx="88" ry="76" fill="#f8ecd8"/>
+
+  <!-- 短い手 -->
+  <ellipse cx="160" cy="330" rx="25" ry="38" fill="#ef8c3e" stroke="#6b3d1f" stroke-width="9" transform="rotate(18 160 330)"/>
+  <ellipse cx="352" cy="330" rx="25" ry="38" fill="#ef8c3e" stroke="#6b3d1f" stroke-width="9" transform="rotate(-18 352 330)"/>
+
+  <!-- あんよ -->
+  <ellipse cx="200" cy="428" rx="34" ry="17" fill="#7c4a26" stroke="#6b3d1f" stroke-width="8"/>
+  <ellipse cx="312" cy="428" rx="34" ry="17" fill="#7c4a26" stroke="#6b3d1f" stroke-width="8"/>
+
+  <!-- うるうるの瞳 -->
+  <ellipse cx="198" cy="222" rx="27" ry="33" fill="#332a26"/>
+  <ellipse cx="314" cy="222" rx="27" ry="33" fill="#332a26"/>
+  <circle cx="189" cy="210" r="10" fill="#fff"/>
+  <circle cx="305" cy="210" r="10" fill="#fff"/>
+  <circle cx="206" cy="231" r="4.5" fill="#fff" opacity="0.9"/>
+  <circle cx="322" cy="231" r="4.5" fill="#fff" opacity="0.9"/>
+  <circle cx="199" cy="239" r="6" fill="#4fd38f" opacity="0.8"/>
+  <circle cx="315" cy="239" r="6" fill="#4fd38f" opacity="0.8"/>
+
+  <!-- 鼻と口 -->
+  <path d="M247 268 Q256 262 265 268 Q256 277 247 268 Z" fill="#5a3320"/>
+  <path d="M236 286 Q256 300 276 286" fill="none" stroke="#5a3320" stroke-width="6" stroke-linecap="round"/>
+
+  <!-- ほっぺ -->
+  <ellipse cx="146" cy="270" rx="20" ry="13" fill="#ff9e8a" opacity="0.6"/>
+  <ellipse cx="366" cy="270" rx="20" ry="13" fill="#ff9e8a" opacity="0.6"/>
+</svg>
