@@ -1467,6 +1467,21 @@
     if (_nudgeTimer) clearTimeout(_nudgeTimer);
     _nudgeTimer = setTimeout(() => el.classList.remove('show'), 4800);
   }
+  // ── bond段階別の共通応援トーン（home_open の汎用挨拶に使う）──
+  //  案1：個体固有の nudge が優先。nudge を持たない/汎用挨拶に落ちる体だけ、
+  //  bond段階に応じたトーンで声をかける。候補からランダムで単調さを避ける。
+  const BOND_TONE = {
+    'であったばかり': ['少しずつで大丈夫だよ', '無理しなくていいからね', 'できるところから始めよう'],
+    'きになる':       ['今日もちょっとだけ一緒にやってみよう', '気楽にいこう', '少しだけ、のぞいてみない？'],
+    'なかよし':       ['いい感じ！この調子でいこう', '今日も一緒にがんばろう', 'その調子、いいね'],
+    'しんらい':       ['ここまで積み重ねてきた君なら大丈夫', '焦らず、いつものペースで', 'いつも頑張ってるの、知ってるよ'],
+    '相棒':           ['大丈夫、今日も一緒に進もう。君ならできるよ', '何があっても、そばにいるよ', '君を信じてる。いこう'],
+  };
+  function pickTone(tierName) {
+    const arr = BOND_TONE[tierName] || BOND_TONE['であったばかり'];
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
   // 今のお供オトモンの nudge.trigger が一致したら応援を出す（home_open は挨拶も兼ねる）
   function fireNudge(trigger) {
     let st; try { st = O.getState().otomon; } catch (e) { return; }
@@ -1477,11 +1492,14 @@
     if (_lastNudge[trigger] && now - _lastNudge[trigger] < 25000) return;   // 連発防止
     let text = null;
     if (a.nudge && a.nudge.trigger === trigger) {
-      text = a.nudge.text;
+      text = a.nudge.text;                                   // 個体固有を優先（既存flavor保持）
     } else if (trigger === 'home_open') {
       const h = new Date().getHours();
       if ((h >= 21 || h < 5) && a.nudge && a.nudge.trigger === 'night') text = a.nudge.text;
-      else text = a.name + 'がお供しているよ。今日もいっしょにがんばろう！';
+      else {
+        const bond = (st.discovered && st.discovered[a.id] || {}).bond || 0;
+        text = pickTone(O.bondTier(bond).name);              // 汎用挨拶→bond段階別トーン
+      }
     }
     if (!text) return;
     _lastNudge[trigger] = now;
