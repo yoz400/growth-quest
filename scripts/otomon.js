@@ -1473,7 +1473,8 @@
         '<div class="otomon-buddy-meta">一緒に過ごした日数：' + met + '日</div>' +
         streakBadge(rec);
     } else {
-      const line = (BOND_TONE[t.name] || [''])[0] || '';    // 段階別の固定一言（先頭要素）
+      // 個体別セリフ優先 → 無ければ共通トーンの固定一言（先頭要素）
+      const line = getBuddyLine(o.id, t.name) || (BOND_TONE[t.name] || [''])[0] || '';
       inner = nameLine +
         '<div class="ohb-line">' + line + '</div>' +
         streakBadge(rec) +
@@ -1574,6 +1575,50 @@
     return arr[Math.floor(Math.random() * arr.length)];
   }
 
+  // ── 個体別bond段階セリフ（第1弾5体）。あれば共通BOND_TONEより優先 ──
+  //  ホームカードの一言／home_openの挨拶に使う。他trigger(timer_start等)には使わない。
+  const BUDDY_LINES = {
+    guide_fairy: {
+      'であったばかり': 'ようこそ。ここから、ゆっくり始めよう。',
+      'きになる':       '今日はどこから行く？そばで見ているよ。',
+      'なかよし':       '君の歩幅、わかってきたよ。いい調子。',
+      'しんらい':       '大丈夫、道はちゃんと続いてる。一歩ずつでいい。',
+      '相棒':           '君となら、どんな道でも照らしていけるね。',
+    },
+    echo_slime: {
+      'であったばかり': '…やあ。（ぽよん）ちょっとずつ、ね。',
+      'きになる':       'きょうも、きょうも！ちょっとだけやろっ。',
+      'なかよし':       'いい感じ、いい感じ〜！はねちゃう！',
+      'しんらい':       '君の声、ちゃんと届いてるよ。がんばれ、がんばれ！',
+      '相棒':           'ずーっと一緒。君の“できた”、何回でもこだまするよ。',
+    },
+    hidamari_gorira: {
+      'であったばかり': 'ま、のんびりいこう。ひなたは逃げないさ。',
+      'きになる':       '今日もあったかいよ。ちょっと日向ぼっこ、どう？',
+      'なかよし':       'よし、いい顔してる。その調子でいこう。',
+      'しんらい':       '疲れたら背中、貸すからな。無理すんなよ。',
+      '相棒':           '君がいると、毎日がぽかぽかだよ。ありがとな。',
+    },
+    mame_drako: {
+      'であったばかり': 'よろしくな！…ちょっとだけ、燃えてみる？',
+      'きになる':       'ひと踏ん張り、いってみよう！おれもやる！',
+      'なかよし':       'うおー！のってきた！このまま行こうぜ！',
+      'しんらい':       '君の本気、知ってる。だから安心して任せられる。',
+      '相棒':           '相棒！君とならどこまでも飛べる気がするよ！',
+    },
+    niji_slime: {
+      'であったばかり': 'はじめまして。少しずつ、色がついていくよ。',
+      'きになる':       '今日はどんな色の日かな？のぞいてみよ。',
+      'なかよし':       'きらきら、増えてきたね。いい積み重ね。',
+      'しんらい':       '君の毎日に、そっと虹をかけておくね。',
+      '相棒':           '七色ぜんぶ、君と見つけた色だよ。',
+    },
+  };
+  function getBuddyLine(id, tierName) {
+    const m = BUDDY_LINES[id];
+    return (m && m[tierName]) || null;   // 無ければ null（呼び出し側で共通トーンにフォールバック）
+  }
+
   // 今のお供オトモンの nudge.trigger が一致したら応援を出す（home_open は挨拶も兼ねる）
   function fireNudge(trigger) {
     let st; try { st = O.getState().otomon; } catch (e) { return; }
@@ -1583,15 +1628,19 @@
     const now = Date.now();
     if (_lastNudge[trigger] && now - _lastNudge[trigger] < 25000) return;   // 連発防止
     let text = null;
-    if (a.nudge && a.nudge.trigger === trigger) {
-      text = a.nudge.text;                                   // 個体固有を優先（既存flavor保持）
-    } else if (trigger === 'home_open') {
+    if (trigger === 'home_open') {
       const h = new Date().getHours();
-      if ((h >= 21 || h < 5) && a.nudge && a.nudge.trigger === 'night') text = a.nudge.text;
-      else {
+      if ((h >= 21 || h < 5) && a.nudge && a.nudge.trigger === 'night') {
+        text = a.nudge.text;                                  // 夜間特別は維持
+      } else {
         const bond = (st.discovered && st.discovered[a.id] || {}).bond || 0;
-        text = pickTone(O.bondTier(bond).name);              // 汎用挨拶→bond段階別トーン
+        const tierName = O.bondTier(bond).name;
+        text = getBuddyLine(a.id, tierName)                   // ① 個体別bond段階セリフ（優先）
+            || (a.nudge && a.nudge.trigger === 'home_open' ? a.nudge.text : null)  // ② 個体home_open固有
+            || pickTone(tierName);                            // ③ 共通bond段階トーン
       }
+    } else if (a.nudge && a.nudge.trigger === trigger) {
+      text = a.nudge.text;                                    // timer_start/session_complete等の個体nudgeは従来どおり
     }
     if (!text) return;
     _lastNudge[trigger] = now;
