@@ -611,6 +611,11 @@
   function setOnHatch(fn)        { _onHatch = (typeof fn === 'function') ? fn : null; }
   function notifyHatch(otomon)   { if (_onHatch) { try { _onHatch(otomon); } catch (_) {} } }
 
+  // ── なつき段階の昇格フック（UI層が昇格トーストを出す。未設定なら何もしない）──
+  let _onBondUp = null;
+  function setOnBondUp(fn)             { _onBondUp = (typeof fn === 'function') ? fn : null; }
+  function notifyBondUp(otomon, tier)  { if (_onBondUp) { try { _onBondUp(otomon, tier); } catch (_) {} } }
+
   // ═══ ① 卵入手 ═════════════════════════════════════════
   // 双六ステージ → 旅先 を循環で対応づけ（stage1=森, 2=洞窟 … 8=ギルド, 以降くり返し）
   function habitatForStage(stage) {
@@ -804,7 +809,12 @@
     opts = opts || {};
     const rec = id && otomonState.discovered[id];
     if (!rec) return null;                       // 未所持なら何もしない（エラーにしない）
-    rec.bond = Math.max(0, (rec.bond || 0) + (Number(amount) || 0));
+    const amt = Number(amount) || 0;
+    const beforeMin = bondTier(rec.bond).min;    // 加算前の段階しきい値
+    rec.bond = Math.max(0, (rec.bond || 0) + amt);
+    const afterTier = bondTier(rec.bond);        // 加算後の段階
+    // 段階が上がった時だけ、最終到達段階の昇格を1回通知（複数段飛びも1回）
+    if (amt > 0 && afterTier.min > beforeMin) notifyBondUp(OTOMON_BY_ID[id], afterTier);
     if (!opts.noSave) saveOtomon();
     return rec.bond;
   }
@@ -991,7 +1001,7 @@
     // なつき度（bond）
     addBond, bondTier, touchActiveOtomon, isTouchedToday,
     // UI層との連携（第2 IIFE が使う）
-    setOnChange, setOnHatch,
+    setOnChange, setOnHatch, setOnBondUp,
     // デバッグ
     getState, _reset,
   };
@@ -1478,6 +1488,24 @@
     showNudge(a.emoji, text);
   }
 
+  // ── なつき段階の昇格トースト（既存 showNudge を流用）──
+  //  昇格先の段階名 → メッセージ末尾（名前に続ける形。助詞まで含める）。
+  //  「であったばかり」は初期段階なので載せない＝通知しない。
+  const TIER_UP_MSG = {
+    'きになる': 'が少し心をひらいてくれたみたい',
+    'なかよし': 'とだいぶ打ち解けてきた！',
+    'しんらい': 'があなたを信頼しているようです',
+    '相棒':     'は、あなたの大切な相棒になった！',
+  };
+  let _bondUpFired = false;   // この回、昇格トーストを出したか（応援nudge抑制用）
+  O.setOnBondUp(function (oto, tier) {
+    if (!oto || !tier) return;
+    const suffix = TIER_UP_MSG[tier.name];
+    if (!suffix) return;                                  // 対象外の段階は何もしない
+    showNudge(tier.face || oto.emoji, oto.name + suffix);
+    _bondUpFired = true;                                  // 昇格優先：直後の応援を抑制
+  });
+
   // データ層フックを包んで、応援トーストも出す（app.js から呼ばれる）
   const _dataOnTimerStart      = O.onTimerStart;
   const _dataOnSessionComplete = O.onSessionComplete;
@@ -1486,9 +1514,10 @@
     fireNudge('timer_start');
   };
   O.onSessionComplete = function (mins) {
+    _bondUpFired = false;                                 // 判定リセット
     let r = null;
     try { if (_dataOnSessionComplete) r = _dataOnSessionComplete(mins); } catch (e) {}
-    fireNudge('session_complete');
+    if (!_bondUpFired) fireNudge('session_complete');     // 昇格を出した回は応援をスキップ
     return r;
   };
 
