@@ -542,10 +542,9 @@
   const EGG_BY_ID    = Object.fromEntries(EGG_MASTER.map(e => [e.id, e]));
 
   // ── 小道具（app.js に依存しない自前実装）──────────────
-  const todayKey = () => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-  };
+  const dayKey = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const todayKey = () => dayKey(new Date());
+  const yesterdayKey = () => { const d = new Date(); d.setDate(d.getDate() - 1); return dayKey(d); };
   const newUid = () => 'e' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   const pick   = arr => arr[Math.floor(Math.random() * arr.length)];
 
@@ -615,6 +614,11 @@
   let _onBondUp = null;
   function setOnBondUp(fn)             { _onBondUp = (typeof fn === 'function') ? fn : null; }
   function notifyBondUp(otomon, tier)  { if (_onBondUp) { try { _onBondUp(otomon, tier); } catch (_) {} } }
+
+  // ── 連続ふれあい節目フック（UI層が祝福トーストを出す。未設定なら何もしない）──
+  let _onStreak = null;
+  function setOnStreak(fn)                { _onStreak = (typeof fn === 'function') ? fn : null; }
+  function notifyStreak(otomon, streak)  { if (_onStreak) { try { _onStreak(otomon, streak); } catch (_) {} } }
 
   // ═══ ① 卵入手 ═════════════════════════════════════════
   // 双六ステージ → 旅先 を循環で対応づけ（stage1=森, 2=洞窟 … 8=ギルド, 以降くり返し）
@@ -861,21 +865,37 @@
     const rec = id && otomonState.discovered[id];
     return !!(rec && rec.lastSeen === todayKey());
   }
+  // 連続ふれあい日数 → bond付与量＆節目祝福（1-2:+1 / 3-6:+2 / 7:+3 / 8+:+2、7と30の倍数で祝福）
+  function touchBonus(streak) {
+    let amount;
+    if (streak <= 2)      amount = 1;
+    else if (streak <= 6) amount = 2;
+    else if (streak === 7) amount = 3;
+    else                  amount = 2;                         // 8日目以降・節目も +2
+    const milestone = (streak === 7) || (streak >= 8 && streak % 30 === 0);
+    return { amount, milestone };
+  }
   function touchActiveOtomon() {
     const id = otomonState.active;
     const rec = id && otomonState.discovered[id];
     if (!rec) return { error: 'お供オトモンがいません' };     // 何もしない
     const today = todayKey();
-    if (rec.lastSeen === today) {
+    if (rec.lastSeen === today) {                             // 同日2回目 → streakもbondも増やさない
       return { alreadyToday: true, bond: rec.bond || 0, tier: bondTier(rec.bond),
-               metDays: rec.metDays || 0, totalMins: rec.totalMins || 0 };
+               metDays: rec.metDays || 0, totalMins: rec.totalMins || 0, streak: rec.streak || 0 };
     }
-    addBond(id, 1, { noSave:true });                          // bond +1
+    // 連続判定：lastSeen 更新“前”の値を昨日と比較（途切れは静かに 1 へ戻す・罰なし）
+    const prev = rec.lastSeen;
+    rec.streak = (prev && prev === yesterdayKey()) ? (rec.streak || 0) + 1 : 1;
+    const bonus = touchBonus(rec.streak);
+    addBond(id, bonus.amount, { noSave:true });               // 連続に応じた bond付与（昇格通知もここ）
     rec.metDays = (rec.metDays || 0) + 1;                     // 一緒に過ごした日数 +1
     rec.lastSeen = today;                                     // 最後に会った日 = 今日
     saveOtomon();
+    if (bonus.milestone) notifyStreak(OTOMON_BY_ID[id], rec.streak);   // 節目祝福（UIで昇格優先制御）
     return { alreadyToday: false, touched: true, bond: rec.bond, tier: bondTier(rec.bond),
-             metDays: rec.metDays, totalMins: rec.totalMins || 0 };
+             metDays: rec.metDays, totalMins: rec.totalMins || 0,
+             streak: rec.streak, gained: bonus.amount, milestone: bonus.milestone };
   }
 
   function onSessionComplete(mins) {
@@ -1001,7 +1021,7 @@
     // なつき度（bond）
     addBond, bondTier, touchActiveOtomon, isTouchedToday,
     // UI層との連携（第2 IIFE が使う）
-    setOnChange, setOnHatch, setOnBondUp,
+    setOnChange, setOnHatch, setOnBondUp, setOnStreak,
     // デバッグ
     getState, _reset,
   };
@@ -1272,6 +1292,7 @@
           '<div class="otomon-gauge"><div class="otomon-gauge-fill" style="width:' + pct + '%"></div></div>' +
           '<div class="otomon-buddy-bondval">' + bondLabel + '</div>' +
           '<div class="otomon-buddy-meta">一緒に過ごした日数：' + met + '日　／　一緒に学習した時間：' + mins + '分</div>' +
+          streakBadge(rec) +
           action +
         '</div>' +
       '</div>';
@@ -1412,6 +1433,12 @@
     else (document.querySelector('main') || document.body).appendChild(card);
   }
 
+  // 連続ふれあいバッジ（streak≥2のときだけ「🔥 N日連続」。共通データ）
+  function streakBadge(rec) {
+    const s = (rec && rec.streak) || 0;
+    return s >= 2 ? '<div class="otomon-buddy-meta">🔥 ' + s + '日連続</div>' : '';
+  }
+
   // ── 描画：ホームのお供カード（お供がいる時だけ表示。図鑑と同じ共通データ）──
   function renderHomeBuddyCard() {
     const card = document.getElementById('otomon-buddy-card');
@@ -1443,11 +1470,13 @@
     if (O.isTouchedToday()) {
       inner = nameLine +
         '<div class="otomon-touch-done">🤝 今日はふれあい済み</div>' +
-        '<div class="otomon-buddy-meta">一緒に過ごした日数：' + met + '日</div>';
+        '<div class="otomon-buddy-meta">一緒に過ごした日数：' + met + '日</div>' +
+        streakBadge(rec);
     } else {
       const line = (BOND_TONE[t.name] || [''])[0] || '';    // 段階別の固定一言（先頭要素）
       inner = nameLine +
         '<div class="ohb-line">' + line + '</div>' +
+        streakBadge(rec) +
         '<button class="otomon-touch-btn" id="ohb-touch-btn">🤝 ふれあう</button>';
     }
     document.getElementById('otomon-buddy-card-body').innerHTML =
@@ -1579,12 +1608,28 @@
     '相棒':     'は、あなたの大切な相棒になった！',
   };
   let _bondUpFired = false;   // この回、昇格トーストを出したか（応援nudge抑制用）
+  let _lastBondUpAt = 0;      // 昇格トーストを出した時刻（連続節目祝福の優先制御用）
   O.setOnBondUp(function (oto, tier) {
     if (!oto || !tier) return;
     const suffix = TIER_UP_MSG[tier.name];
     if (!suffix) return;                                  // 対象外の段階は何もしない
     showNudge(tier.face || oto.emoji, oto.name + suffix);
     _bondUpFired = true;                                  // 昇格優先：直後の応援を抑制
+    _lastBondUpAt = Date.now();
+  });
+
+  // ── 連続ふれあいの節目祝福トースト（既存 showNudge を流用）──
+  //  同じふれあいで bond昇格 と 節目 が重なったら、昇格を優先して節目はスキップ。
+  function streakMsg(name, streak) {
+    if (streak === 7)  return name + 'と7日連続で会えたね。すごくいい積み重ね！';
+    if (streak === 30) return name + 'と30日も会い続けたんだね。これはもう立派な習慣！';
+    if (streak === 60) return name + 'との時間が、ちゃんと日常になってきたね。';
+    return name + 'と' + streak + '日連続！　この積み重ね、すてきだよ。';
+  }
+  O.setOnStreak(function (oto, streak) {
+    if (!oto || !streak) return;
+    if (Date.now() - _lastBondUpAt < 200) return;         // 同じふれあいで昇格が出た → 昇格優先
+    showNudge('🎉', streakMsg(oto.name, streak));
   });
 
   // データ層フックを包んで、応援トーストも出す（app.js から呼ばれる）
