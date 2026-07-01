@@ -1416,9 +1416,24 @@
   function renderHomeBuddyCard() {
     const card = document.getElementById('otomon-buddy-card');
     if (!card) return;
+    const head = card.querySelector('.quest-header');
     const o = O.getActiveOtomon();
-    if (!o) { card.style.display = 'none'; return; }        // お供なし → 非表示
+    if (!o) {
+      // お供なし。発見済み≥1体のときだけオンボーディング（選べる子がいる時だけ案内）
+      const owned = O.getDiscovered().length;
+      if (owned < 1) { card.style.display = 'none'; return; }  // 発見済み0体 → 非表示
+      card.style.display = '';
+      if (head) head.textContent = '🤝 お供オトモンを選ぼう';
+      document.getElementById('otomon-buddy-card-body').innerHTML =
+        '<div class="ohb-line">卵から出会ったオトモンを、お供にすると毎日ふれあえるよ。<br>' +
+        '図鑑のオトモンをタップして、お供にしてみよう。</div>' +
+        '<button class="oc-open-btn" id="ohb-open-btn" style="margin-top:6px;">📔 図鑑を開く</button>';
+      const ob = document.getElementById('ohb-open-btn');
+      if (ob) ob.addEventListener('click', openPanel);
+      return;
+    }
     card.style.display = '';
+    if (head) head.textContent = '🤝 お供オトモン';
     const rec  = O.getDiscovered().find(x => x.id === o.id) || {};
     const t    = O.bondTier(rec.bond || 0);
     const met  = rec.metDays || 0;
