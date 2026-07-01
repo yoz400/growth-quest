@@ -774,7 +774,62 @@
     // P3: お供オトモンの応援トーストをここで出す予定。開始だけでは達成にしない。
     return null;
   }
-  function onSessionComplete(/* mins */) {
+
+  // ═══ なつき度（bond）システム ═══════════════════════════
+  //  bond はクエスト達成では上げず、「一緒に過ごした実績」で上がる。
+  //  起点は3つ：①お供中の学習セッション完了（STEP1・ここ）
+  //            ②きずなのリボン使用（STEP2）③1日1回のふれあい（STEP3）
+  //  ── なつき段階（bond → 段階）。UI表示や演出はこの表を正とする ──
+  const BOND_TIERS = [
+    { min:0,   name:'であったばかり', face:'🥚' },
+    { min:10,  name:'きになる',       face:'👀' },
+    { min:30,  name:'なかよし',       face:'🙂' },
+    { min:60,  name:'しんらい',       face:'😊' },
+    { min:100, name:'相棒',           face:'💛' },
+  ];
+  function bondTier(bond) {
+    const b = Math.max(0, bond || 0);
+    let t = BOND_TIERS[0];
+    for (const x of BOND_TIERS) { if (b >= x.min) t = x; }
+    const next = BOND_TIERS.find(x => x.min > b) || null;  // 次段階（MAXなら null）
+    return { ...t, bond: b, next };
+  }
+
+  // ── bond加算の共通関数（蛇口）。所持している子だけ加算し 0 未満にしない ──
+  //  opts.noSave: 呼び出し側でまとめて保存したい時に true。
+  function addBond(id, amount, opts) {
+    opts = opts || {};
+    const rec = id && otomonState.discovered[id];
+    if (!rec) return null;                       // 未所持なら何もしない（エラーにしない）
+    rec.bond = Math.max(0, (rec.bond || 0) + (Number(amount) || 0));
+    if (!opts.noSave) saveOtomon();
+    return rec.bond;
+  }
+
+  // ── ①お供中の学習セッション完了 → bond ＆ totalMins ──
+  //  25分以上=+3 / 未満=+2。セッション由来のbondは1日 +6 まで（グラインド防止）。
+  //  totalMins は上限に関係なく毎回加算する。お供がいなければ安全に無処理。
+  const SESSION_BOND_DAILY_CAP = 6;
+  function grantSessionBond(mins) {
+    const id = otomonState.active;
+    const rec = id && otomonState.discovered[id];
+    if (!rec) return null;                       // お供未設定 → 何もしない
+    const m = Math.max(0, Number(mins) || 0);
+    rec.totalMins = (rec.totalMins || 0) + m;    // 過ごした時間の実績（上限なし）
+
+    const today = todayKey();
+    let sb = otomonState.sessionBond;
+    if (!sb || sb.date !== today) { sb = { date: today, amount: 0 }; otomonState.sessionBond = sb; }
+    const want = (m >= 25) ? 3 : 2;              // 25分以上=+3 / 未満=+2
+    const give = Math.min(want, Math.max(0, SESSION_BOND_DAILY_CAP - sb.amount));
+    if (give > 0) { addBond(id, give, { noSave:true }); sb.amount += give; }
+    saveOtomon();
+    return { id, gained: give, totalMins: rec.totalMins, bond: rec.bond, dailyUsed: sb.amount };
+  }
+
+  function onSessionComplete(mins) {
+    grantSessionBond(mins);                      // ① bond ＆ totalMins（お供へ）
+    // 既存：クエスト自動達成フックはそのまま維持
     if (!hatchQuest || hatchQuest.done) return null;
     if (SESSION_COMPLETE_KINDS.has(hatchQuest.kind)) return completeActiveQuest();
     return null;
@@ -892,6 +947,8 @@
     onTimerStart, onSessionComplete,
     // ⑥ 図鑑・お供
     getDiscovered, getActiveOtomon, setActive, setNudge,
+    // なつき度（bond）
+    addBond, bondTier,
     // UI層との連携（第2 IIFE が使う）
     setOnChange, setOnHatch,
     // デバッグ
