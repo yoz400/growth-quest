@@ -55,7 +55,7 @@
       emoji:'🟢', imageBase:'assets/otomon/echo_slime',
       nudge:{ trigger:'timer_start',      text:'学習を始めると跳ねて応援するよ' },
       flavorText:'学習音に反応して跳ねる相棒。' },
-    { id:'hidamari_moko',   name:'ひだまりモコ',   rarity:'R',   attribute:'recover',  role:'休憩・回復',
+    { id:'hidamari_gorira', name:'ひだまりゴリラ', rarity:'R',   attribute:'recover',  role:'休憩・回復',
       emoji:'🌤', imageBase:'assets/otomon/hidamari_moko',
       nudge:{ trigger:'break_start',      text:'休憩のとき、ぽかぽか包んでくれる' },
       flavorText:'ひだまりのように、あたたかい。' },
@@ -112,26 +112,7 @@
       emoji:'🪼', imageBase:'assets/otomon/madoromi_kurage',
       nudge:{ trigger:'long_focus',       text:'集中が切れそうな頃にゆらりと現れる' },
       flavorText:'ゆらゆらと、集中の波を整える。' },
-    { id:'tomoshibi_bat', name:'ともしびバット', rarity:'R', attribute:'focus', type:'focus',
-      subTypes:['adventure','night'], role:'夜道を照らす集中サポート役',
-      emoji:'🦇', imageBase:'assets/otomon/tomoshibi_bat',
-      image:{
-        original:'assets/otomon/tomoshibi_bat/source/tomoshibi_bat_original.png',
-        large:'assets/otomon/tomoshibi_bat/1024/tomoshibi_bat_1024.png',
-        medium:'assets/otomon/tomoshibi_bat/256/tomoshibi_bat_256.png',
-        small:'assets/otomon/tomoshibi_bat/64/tomoshibi_bat_64.png',
-      },
-      favoriteItem:'集中のロウソク',
-      wakeItems:['focus_candle','echo_flute','starter_seed'],
-      questExample:'通知をOFFにして5分だけ集中する',
-      quests:{
-        normal:'通知をOFFにして5分だけ集中する',
-        night:'夜の作業を5分だけ進める',
-        restart:'今やることを1つだけメモして開始する',
-      },
-      description:'胸元のランタンで、暗い道を照らしてくれる小さな翼獣。少し臆病だが、迷っている人を見つけると勇気を出してそばに飛んでくる。集中が切れそうな夜に、もう一歩だけ進む道を照らしてくれる。',
-      nudge:{ trigger:'night', text:'夜の学習で、もう一歩だけ進む道を照らしてくれる' },
-      flavorText:'胸元のランタンで、迷い道の一歩先を照らす。' },
+    // ※ tomoshibi_bat（ともしびバット）は100体ロスターから外したため削除（Step3）
     { id:'nemuke_baku',     name:'ねむけバク',     rarity:'R',   attribute:'sleep',    role:'眠気対策',
       emoji:'😪', imageBase:'assets/otomon/nemuke_baku',
       nudge:{ trigger:'drowsy',           text:'眠気を感じたら軽く動くよう促す' },
@@ -148,6 +129,9 @@
       emoji:'🌈', imageBase:'assets/otomon/niji_slime',
       nudge:{ trigger:'streak',           text:'続けるほど、虹色に輝いていく' },
       flavorText:'小さな継続が、七色になる。' },
+
+    // ※ 旧・装備ペット6体（pet_cat 等）は正式100体ロスター外のため OTOMON_MASTER から削除。
+    //   既存ユーザーの discovered/active は schemaVersion v3 で安全に除去・切替する。
   ];
 
   // ── 目覚めアイテム（基本10 + 特別5）────────────────
@@ -164,7 +148,7 @@
       questPool:[ {kind:'notif_off',    text:'通知をオフにする',     gauge:+1},
                   {kind:'focus_5min',   text:'5分だけ集中する',      gauge:+1},
                   {kind:'one_pomodoro', text:'1ポモドーロやってみる', gauge:+1} ],
-      favors:['madoromi_kurage','tomoshibi_bat'] },
+      favors:['madoromi_kurage'] },
     { id:'power_nut',      name:'ちからの木の実',     emoji:'🌰', attribute:'exercise',
       questPool:[ {kind:'pushup5', text:'腕立て5回',     gauge:+1},
                   {kind:'squat5',  text:'スクワット5回', gauge:+1},
@@ -174,7 +158,7 @@
       questPool:[ {kind:'breathe3',     text:'深呼吸を3回する',   gauge:+1},
                   {kind:'drink_water',  text:'水を一杯飲む',      gauge:+1},
                   {kind:'rest',         text:'少しだけ休憩する',  gauge:+1} ],
-      favors:['hidamari_moko','amedama_slime'] },
+      favors:['hidamari_gorira','amedama_slime'] },
     { id:'drowse_feather', name:'まどろみの羽',       emoji:'🪶', attribute:'sleep',
       questPool:[ {kind:'bed_prep',   text:'寝る準備を1つする',     gauge:+1},
                   {kind:'phone_away', text:'スマホを少し遠ざける',  gauge:+1} ],
@@ -237,6 +221,157 @@
       favors:[] /* 眠った卵を起こす（再挑戦） */ },
   ];
 
+  // ═══ 孵化プール配分（Step E）═══
+  //  各目覚めアイテムの favors を設計表どおりに上書き。属性ごとに N/R を広く、
+  //  SR少数、SSRは rainbow_drop へ集約（例外:guide_fairy/niji_slime）。
+  //  既存13体の導線＋ペット6体の現行配置を維持。
+  //  WAKE_ITEM_MASTER のオブジェクトを直接書き換える（WAKE_BY_ID も同一参照のため反映）。
+  (function setHatchPools() {
+    const POOL = {
+      echo_flute: ['kinokorisu', 'ringowaamu', 'echo_slime', 'donguritorent', 'kotukotusukeruton', 'urokorisuryu', 'irukahakase'],
+      read_bookmark: ['hapakamereon', 'tsuyukusa_pixie', 'aobadoreiku', 'morinopanpukin', 'echo_slime'],
+      focus_candle: ['manmarukouramusi', 'mizugumo', 'hotaruuruhu', 'runetokage', 'tubomimantisu', 'yuramekiwisupu', 'medamarantan', 'madoromi_kurage'],
+      power_nut: ['yukidamagoburin', 'doronkoookuretto', 'mame_drako', 'moguransa', 'hinokosaramanda', 'sirotunoboa', 'batibatisupaaku', 'nejiretunoyagi', 'oniuupaaruupaa', 'minaraifenikkusu', 'kimerachiitaa'],
+      sun_blanket: ['koripengin', 'awaawatatunoko', 'hidamari_gorira', 'sizukuseiren', 'kaigaramameido', 'amedama_slime'],
+      drop_bottle: ['mohumohuyeti', 'amedama_slime', 'sakurasupuraito', 'yoidoresiidora'],
+      drowse_feather: ['turaraharinezumi', 'suyasuyanomu', 'kogarasiusagi', 'nemuri_hitsuji', 'huwakumoramu', 'nemuke_baku', 'utatanedoragon', 'mayoityou'],
+      smile_bell: ['fuusenporuka', 'honewanko', 'pikapikabii', 'hyoutanntanuki', 'gokigentibinezumi', 'ponpokotanukin', 'wataamebiisuto', 'konpeitoufearii', 'arupakadaitouryou'],
+      tidy_broom: ['tenorimanmos', 'korokoro_iwamogu', 'sabinejiinpu', 'petit_mimic', 'kometubugoremu', 'marutabiibaa'],
+      repair_kit: ['nejimakigoremu', 'koganekoganemusi', 'karakurinezumi', 'kodaihaniwa', 'petit_mimic', 'korokoro_iwamogu'],
+      idea_shell: ['hosikuzukurage', 'mizutamakabankuru', 'kuristalrabit', 'kobinhomunkurusu', 'kaerusennin', 'edisonpanda', 'petit_mimic'],
+      confidence_bookmark: ['rubiisasori', 'sirotamayuniko', 'hosizorakitune', 'kiramekiinkoryuu', 'nazonazosufinkusu', 'guide_fairy'],
+      ward_charm: ['kogumanaito', 'suzumetengu', 'kuronekosyeido', 'sumirekoboruto', 'patapatagagoiru', 'majinaikarasu', 'komainubebii', 'tibinaaga', 'mayoke_fukurou', 'chibikeruberosu'],
+      adventure_map: ['soyokazeferet', 'kohakurizaado', 'chibigurifon', 'koorinotonakai', 'niji_slime'],
+      travel_compass: ['sunanekomata', 'himitumomonga', 'kazekiritubaneryu', 'niji_slime'],
+      starter_seed: ['tsuyukusa_pixie', 'kinokorisu', 'manmarukouramusi', 'yukidamagoburin', 'koripengin', 'turaraharinezumi', 'tenorimanmos', 'fuusenporuka', 'hapakamereon', 'mizugumo', 'doronkoookuretto', 'mohumohuyeti', 'echo_slime', 'mame_drako', 'nemuri_hitsuji', 'ponpokotanukin', 'hosikuzukurage', 'mizutamakabankuru'],
+      rainbow_drop: ['niji_slime', 'guide_fairy', 'gekkabyakko', 'taimuvanpaia', 'piisugenbu', 'kouhukufenikkusu'],
+    };
+    const byId = {};
+    WAKE_ITEM_MASTER.forEach(w => { byId[w.id] = w; });
+    Object.keys(POOL).forEach(id => { if (byId[id]) byId[id].favors = POOL[id]; });
+  })();
+
+  // ═══ オトモンクエスト questPool（4段階化：outputs/quest_pool_draft.tsv が正）═══
+  //  各目覚めアイテムの questPool を {N,R,SR,SSR} 構造へ上書き。
+  //  孵化候補オトモンの rarity と同じ帯から抽選（無ければ1段下へフォールバック）。
+  //  配列要素 = [text, 目安分, tag, note]。tag は達成カテゴリも兼ねる。
+  (function setQuestPools() {
+    const QP = {
+      echo_flute: {
+        N: [ [ '教科書やノートを開くだけ', 1, 'start', '開けたら達成' ], [ '今日やる範囲を1つ決める', 1, 'start', '' ] ],
+        R: [ [ '1ページだけ読む', 3, 'focus', '' ], [ '覚えたい単語を5個だけ見る', 4, 'focus', '' ] ],
+        SR: [ [ '1項目を最後まで通して学ぶ', 8, 'focus', '' ], [ '昨日の内容を5分で復習する', 6, 'focus', '' ] ],
+        SSR: [ [ '25分ポモドーロを1本完走する', 25, 'pomodoro', '💥基本運用' ], [ '学んだことを誰かに一言教える', 15, 'connect', '💛相手がいなければ未来の自分への説明メモでOK' ], [ '1テーマを15分かけて深掘りする', 18, 'focus', '' ] ],
+      },
+      read_bookmark: {
+        N: [ [ 'しおりの続きのページを開く', 1, 'start', '' ], [ '今読みたい本を1冊手に取る', 1, 'start', '' ] ],
+        R: [ [ '1ページだけ読む', 3, 'focus', '' ], [ '目次から気になる項目を1つ選ぶ', 3, 'focus', '' ] ],
+        SR: [ [ '覚えたことを3つ思い出して書く', 7, 'focus', '' ], [ '5分だけ読み進める', 6, 'focus', '' ] ],
+        SSR: [ [ '25分読書に集中する', 25, 'pomodoro', '💥' ], [ '面白かった内容を大切な人に話す', 15, 'connect', '💛相手がいなければ感想を下書きメモに残す' ], [ '1章を最後まで読み切る', 20, 'focus', '' ] ],
+      },
+      focus_candle: {
+        N: [ [ '通知をオフにする', 1, 'focus', '' ], [ '机の上を1つだけ片付けて始める', 2, 'start', '' ] ],
+        R: [ [ 'スマホを別の部屋に置いて2分座る', 3, 'focus', '' ], [ '3分だけ1つの作業に向き合う', 4, 'focus', '' ] ],
+        SR: [ [ '通知オフで10分1タスクに集中', 10, 'focus', '' ], [ 'タイマー5分で気が散らずに進める', 6, 'focus', '' ] ],
+        SSR: [ [ '25分ポモドーロを1本完走する', 25, 'pomodoro', '💥基本運用' ], [ '25分の集中を1本、区切りまでやり切る', 25, 'pomodoro', '' ], [ '集中して終えた成果を誰かに共有する', 15, 'connect', '💛相手がいなければ達成メモを未来の自分へ' ] ],
+      },
+      power_nut: {
+        N: [ [ 'その場で10秒伸びをする', 1, 'body', '' ], [ '肩を10回まわす', 1, 'body', '' ] ],
+        R: [ [ 'スクワットか腕立てを5回', 3, 'body', '' ], [ 'ラジオ体操を1曲する', 4, 'body', '' ] ],
+        SR: [ [ '5分散歩する', 7, 'body', '' ], [ '軽い筋トレを1種じっくり', 8, 'body', '' ] ],
+        SSR: [ [ '15〜20分ウォーキングする', 20, 'body', '' ], [ '好きな運動を15分続ける', 18, 'body', '' ], [ '大切な人を散歩や運動に誘う', 20, 'connect', '💛相手がいなければ今度誘いたい人をメモ' ] ],
+      },
+      sun_blanket: {
+        N: [ [ '深呼吸を3回する', 1, 'rest', '' ], [ '目を閉じて10秒休む', 1, 'rest', '' ] ],
+        R: [ [ '温かい飲み物を1杯ゆっくり飲む', 5, 'rest', '' ], [ '肩の力を抜いて3分ぼーっとする', 3, 'rest', '' ] ],
+        SR: [ [ '5分間なにもせず休む', 5, 'rest', '' ], [ '軽くストレッチして体をゆるめる', 7, 'rest', '' ] ],
+        SSR: [ [ '15分の意図的な休息をとる', 15, 'rest', '' ], [ '頑張っている人に「無理しないでね」と伝える', 15, 'connect', '💛相手がいなければ自分に労いの言葉を書く' ], [ 'スマホを置いて20分ゆっくり過ごす', 20, 'rest', '' ] ],
+      },
+      drop_bottle: {
+        N: [ [ '水を一杯飲む', 1, 'rest', '' ], [ '顔を洗う', 2, 'rest', '' ] ],
+        R: [ [ '保湿やスキンケアをする', 4, 'rest', '' ], [ '白湯やお茶を淹れて飲む', 5, 'rest', '' ] ],
+        SR: [ [ '5分ストレッチで体をゆるめる', 7, 'rest', '' ], [ '軽く体を動かして水分補給する', 6, 'rest', '' ] ],
+        SSR: [ [ 'ゆっくり入浴して心身を整える', 20, 'rest', '' ], [ '20分の休息で明日に備える', 20, 'rest', '' ], [ 'お世話になった人に元気か一言気にかける', 15, 'connect', '💛相手がいなければ自分の体調を1つ気遣う' ] ],
+      },
+      drowse_feather: {
+        N: [ [ '明日の寝る時間を決める', 1, 'sleep', '' ], [ '枕元を軽く整える', 2, 'sleep', '' ] ],
+        R: [ [ '寝る1時間前に画面を暗くする', 3, 'sleep', '' ], [ '部屋の照明を少し落とす', 3, 'sleep', '' ] ],
+        SR: [ [ '布団に入る準備を全部済ませる', 8, 'sleep', '' ], [ '寝る前のストレッチを5分する', 6, 'sleep', '' ] ],
+        SSR: [ [ 'いつもより30分早く布団に入る', 20, 'sleep', '' ], [ '大切な人に「おやすみ」を伝える', 15, 'connect', '💛相手がいなければ今日の自分に「おつかれさま」' ], [ '画面を消して15分リラックスして眠る', 15, 'sleep', '' ] ],
+      },
+      smile_bell: {
+        N: [ [ '誰か1人の顔を思い浮かべて、心の中でありがとうと言う', 1, 'connect', '💛' ], [ '最近助けてもらったことを1つ思い出す', 2, 'connect', '💛' ], [ '過去に助けてくれた人を思い出してメモする', 2, 'connect', '💛相手不要の代替案' ] ],
+        R: [ [ '家族・友人・同僚に短い感謝メッセージを送る', 4, 'connect', '💛' ], [ '誰かの話を途中で遮らずに聞く', 5, 'connect', '💛' ], [ '誰かに送る前提で感謝文を下書きする', 4, 'connect', '💛相手不要の代替案' ] ],
+        SR: [ [ '普段言えていないありがとうを1人に伝える', 8, 'connect', '💛' ], [ '大切な人のために5〜10分でできることを1つする', 10, 'connect', '💛' ], [ '未来の自分に一言、励ましを書く', 6, 'connect', '💛相手不要の代替案' ] ],
+        SSR: [ [ '大切な人に普段言えていない感謝を言葉で伝える', 15, 'connect', '💛' ], [ '誰かのためになる行動を25分かけて1つやる', 25, 'connect', '💛' ], [ '25分ポモドーロを1本完走する', 25, 'pomodoro', '💥' ], [ 'お世話になった人へ感謝の手紙を書く', 20, 'connect', '💛相手がいなくても下書きで達成OK' ] ],
+      },
+      tidy_broom: {
+        N: [ [ '目の前のゴミを1つ捨てる', 1, 'tidy', '' ], [ '机の上を1つだけ元に戻す', 1, 'tidy', '' ] ],
+        R: [ [ '机を1分リセットする', 3, 'tidy', '' ], [ '使ったものを3つ元の場所へ', 4, 'tidy', '' ] ],
+        SR: [ [ '引き出しかカバンを1つ整理する', 8, 'tidy', '' ], [ '散らかったエリアを5分片付ける', 6, 'tidy', '' ] ],
+        SSR: [ [ '部屋の1エリアを15分片付ける', 15, 'tidy', '' ], [ '家族の共用スペースを少し整える', 15, 'connect', '💛相手がいなければ一番気になる場所を整える' ], [ 'たまった書類やデータを20分整理する', 20, 'tidy', '' ] ],
+      },
+      repair_kit: {
+        N: [ [ '散らかりを1つ直す', 1, 'tidy', '' ], [ '持ち物を1つ元に戻す', 1, 'tidy', '' ] ],
+        R: [ [ '持ち物を1つ仕分ける', 4, 'tidy', '' ], [ 'ほつれやゆるみを1つ手直しする', 4, 'tidy', '' ] ],
+        SR: [ [ '壊れた・放置した物を1つ手入れする', 8, 'tidy', '' ], [ '使いにくい場所を5分改善する', 7, 'tidy', '' ] ],
+        SSR: [ [ '気になっていた物を15分かけて直す', 15, 'tidy', '' ], [ '誰かの物の修理や手入れを手伝う', 20, 'connect', '💛相手がいなければ家族共用の物を直す' ], [ '放置していた場所を20分かけて直す', 20, 'tidy', '' ] ],
+      },
+      idea_shell: {
+        N: [ [ '思いつきを1つメモする', 1, 'idea', '' ], [ '今日を1分振り返る', 2, 'idea', '' ] ],
+        R: [ [ '気になることを3分調べる', 4, 'idea', '' ], [ 'やりたいことを3つ書き出す', 4, 'idea', '' ] ],
+        SR: [ [ 'アイデアを5分書き出す', 7, 'idea', '' ], [ '1つの問いについて5分考える', 6, 'idea', '' ] ],
+        SSR: [ [ '1テーマで15分自由に発想する', 15, 'idea', '' ], [ '浮かんだアイデアを誰かに話してみる', 15, 'connect', '💛相手がいなければ未来の自分へ提案として書く' ], [ '考えをまとめて20分で形にする', 20, 'idea', '' ] ],
+      },
+      ward_charm: {
+        N: [ [ '「今やめる」を1回選ぶ', 1, 'self_control', '' ], [ 'やらないことリストを確認する', 2, 'self_control', '' ] ],
+        R: [ [ '5分だけ我慢を先延ばしにする', 4, 'self_control', '' ], [ '誘惑を1つ手の届かない場所へ', 3, 'self_control', '' ] ],
+        SR: [ [ '誘惑を遠ざけて10分過ごす', 10, 'self_control', '' ], [ '決めたルールを5分守り抜く', 6, 'self_control', '' ] ],
+        SSR: [ [ '決めた時間まで我慢を貫く', 20, 'self_control', '' ], [ '浮いた時間を大切な人のために使う', 20, 'connect', '💛相手がいなければ自分の将来のために使う' ], [ '誘惑を断って25分やるべきことに集中', 25, 'pomodoro', '💥' ] ],
+      },
+      adventure_map: {
+        N: [ [ 'いつもと違う道を選ぶ', 1, 'adventure', '' ], [ '今日の小さな冒険を1つ決める', 2, 'adventure', '' ] ],
+        R: [ [ '未経験の小さいことを1つ試す', 5, 'adventure', '' ], [ '気になっていた場所を調べる', 4, 'adventure', '' ] ],
+        SR: [ [ '初めての場所ややり方に挑戦する', 10, 'adventure', '' ], [ '新しいお店やルートを試す', 8, 'adventure', '' ] ],
+        SSR: [ [ '前からやりたかったことに一歩踏み出す', 20, 'adventure', '' ], [ '新しい挑戦を誰かと一緒にやってみる', 20, 'connect', '💛相手がいなければ挑戦の計画を15分立てる' ], [ '未体験のことに15〜20分チャレンジ', 18, 'adventure', '' ] ],
+      },
+      travel_compass: {
+        N: [ [ '外に出て少し歩く', 2, 'adventure', '' ], [ '窓を開けて外の空気を吸う', 1, 'adventure', '' ] ],
+        R: [ [ 'やることの優先順位を1つ決める', 3, 'adventure', '' ], [ '行き先の候補を1つ探す', 4, 'adventure', '' ] ],
+        SR: [ [ '行ったことのない場所へ5分行ってみる', 8, 'adventure', '' ], [ 'いつもと違うルートで出かける', 7, 'adventure', '' ] ],
+        SSR: [ [ '大切な人を誘って新しい体験を一緒にする', 20, 'connect', '💛相手がいなければ次の休日の計画を立てる' ], [ '行きたかった場所へ15〜20分足を延ばす', 20, 'adventure', '' ], [ '小さな旅の準備を20分整える', 20, 'adventure', '' ] ],
+      },
+      starter_seed: {
+        N: [ [ 'とりあえず1分だけ着手する', 1, 'start', 'special万能・全属性で使用可' ], [ '今いちばん気になることを1つ始める', 2, 'start', '' ] ],
+        R: [ [ '小さな一歩を3分だけ進める', 3, 'start', '' ] ],
+        SR: [ [ '迷っていたことに5分取りかかる', 7, 'start', '' ] ],
+        SSR: [ [ '後回しにしていたことに25分向き合う', 25, 'pomodoro', '💥' ], [ '始めたことを誰かに宣言する', 15, 'connect', '💛相手がいなければ未来の自分に宣言を書く' ] ],
+      },
+      confidence_bookmark: {
+        N: [ [ '今日できたことを1つ書く', 1, 'idea', 'affirm自己肯定' ], [ '自分を1つ褒める', 1, 'idea', '' ] ],
+        R: [ [ '今日の小さな成長を3つ書く', 4, 'idea', '' ], [ '頑張った自分に小さなごほうび', 4, 'rest', '' ] ],
+        SR: [ [ '最近できるようになったことを5分書き出す', 7, 'idea', '' ], [ '未来の自分に一言、励ましを書く', 6, 'connect', '💛相手不要の代替つながり' ] ],
+        SSR: [ [ '最近感謝したい人に、自分と相手の両方を認める言葉を送る', 15, 'connect', '💛相手がいなければ自分への感謝を書く' ], [ 'この1週間の成長を15分振り返ってまとめる', 15, 'idea', '' ] ],
+      },
+      rainbow_drop: {
+        N: [ [ '小さな一歩を踏み出す', 1, 'start', 'special進化・SSR孵化用' ] ],
+        R: [ [ '相棒との思い出を3分振り返る', 3, 'connect', '💛' ] ],
+        SR: [ [ '大きく育てたいオトモンのために5分行動する', 7, 'start', '' ] ],
+        SSR: [ [ '特別な挑戦を25分やり切って絆を深める', 25, 'pomodoro', '💥' ], [ '相棒に見せたい成果を20分かけて作る', 20, 'special', '' ] ],
+      },
+    };
+    const byId = {};
+    WAKE_ITEM_MASTER.forEach(w => { byId[w.id] = w; });
+    const mk = (a, r) => ({ kind: a[2], text: a[0], gauge: 1, mins: a[1], tag: a[2], note: a[3] || '', rarity: r });
+    Object.keys(QP).forEach(id => {
+      if (!byId[id]) return;
+      const t = QP[id]; const out = {};
+      ['N','R','SR','SSR'].forEach(r => { out[r] = (t[r] || []).map(a => mk(a, r)); });
+      byId[id].questPool = out;
+    });
+  })();
+
+
   // ── 卵（旅先別）。rarity → HATCH_GOAL で満タン回数が決まる ──
   //  accepts: その卵に使える目覚めアイテム（universal特別は自動で常に使用可）
   const EGG_MASTER = [
@@ -280,6 +415,128 @@
   });
 
   // 検索用インデックス
+  // ═══ 100体ロスター統合（Step3+F：id/name/image/emoji ＋ attribute/rarity）═══
+  //  _attr_rarity_draft.tsv を正とする。既存idは画像のみ roster に統一し、
+  //  属性/レア度はマスター定義の現行値を維持。未定義の子は最小構成＋属性/レア度で追加。
+  //  画像は単一PNGを全サイズ流用。孵化プール/クエストは未反映（後工程）。
+  //  [id, no, name, attribute, rarity]
+  const _ROSTER_100 = [
+    ['guide_fairy', 1, '導きの妖精', 'idea', 'SSR'],
+    ['hidamari_gorira', 2, 'ひだまりゴリラ', 'recover', 'R'],
+    ['echo_slime', 3, 'こだまスライム', 'study', 'R'],
+    ['tsuyukusa_pixie', 4, 'ツユクサピクシー', 'study', 'R'],
+    ['mame_drako', 5, 'まめドラコ', 'exercise', 'R'],
+    ['korokoro_iwamogu', 6, 'ころころ岩モグ', 'organize', 'R'],
+    ['hosikuzukurage', 7, 'ホシクズクラゲ', 'idea', 'R'],
+    ['nejimakigoremu', 8, 'ねじまきゴーレム', 'organize', 'R'],
+    ['kinokorisu', 9, 'きのこリス', 'study', 'N'],
+    ['soyokazeferet', 10, 'そよ風フェレット', 'adventure', 'R'],
+    ['amedama_slime', 11, 'あめだまスライム', 'recover', 'R'],
+    ['koripengin', 12, 'こおりペンギン', 'recover', 'N'],
+    ['ponpokotanukin', 13, 'ぽんぽこタヌキン', 'social', 'R'],
+    ['chibigurifon', 14, 'ちびグリフォン', 'adventure', 'SR'],
+    ['nemuri_hitsuji', 15, 'ねむりヒツジ', 'sleep', 'R'],
+    ['hapakamereon', 16, 'はっぱカメレオン', 'study', 'N'],
+    ['mizutamakabankuru', 17, 'みずたまカーバンクル', 'idea', 'SR'],
+    ['sabinejiinpu', 18, 'さびネジインプ', 'organize', 'R'],
+    ['moguransa', 19, 'もぐらランサー', 'exercise', 'R'],
+    ['sirotamayuniko', 20, 'しろたまユニコ', 'idea', 'SR'],
+    ['hotaruuruhu', 21, 'ホタルウルフ', 'focus', 'R'],
+    ['kazekiritubaneryu', 22, 'かぜきりツバメ竜', 'adventure', 'SR'],
+    ['kuristalrabit', 23, 'クリスタルラビット', 'idea', 'SR'],
+    ['donguritorent', 24, 'どんぐりトレント', 'study', 'R'],
+    ['huwakumoramu', 25, 'ふわ雲ラム', 'sleep', 'R'],
+    ['hinokosaramanda', 26, 'ひのこサラマンダー', 'exercise', 'R'],
+    ['koganekoganemusi', 27, 'こがねコガネムシ', 'organize', 'R'],
+    ['mohumohuyeti', 28, 'もふもふイエティ', 'recover', 'N'],
+    ['sunanekomata', 29, 'すなネコマタ', 'adventure', 'R'],
+    ['mayoke_fukurou', 30, 'まよけフクロウ', 'restraint', 'SR'],
+    ['runetokage', 31, 'ルーンとかげ', 'focus', 'R'],
+    ['petit_mimic', 32, 'ぷちミミック', 'organize', 'R'],
+    ['minaraifenikkusu', 33, 'みならいフェニックス', 'exercise', 'SR'],
+    ['nemuke_baku', 34, 'ねむけバク', 'sleep', 'R'],
+    ['yukidamagoburin', 35, 'ゆきだまゴブリン', 'exercise', 'N'],
+    ['sizukuseiren', 36, 'しずくセイレーン', 'recover', 'R'],
+    ['tubomimantisu', 37, 'つぼみマンティス', 'focus', 'R'],
+    ['hosizorakitune', 38, 'ほしぞらキツネ', 'idea', 'SR'],
+    ['karakurinezumi', 39, 'からくりネズミ', 'organize', 'R'],
+    ['kogumanaito', 40, 'こぐまナイト', 'restraint', 'R'],
+    ['aobadoreiku', 41, 'あおばドレイク', 'study', 'R'],
+    ['madoromi_kurage', 42, 'まどろみクラゲ', 'focus', 'SR'],
+    ['rubiisasori', 43, 'ルビーサソリ', 'idea', 'R'],
+    ['sirotunoboa', 44, 'しろつのボア', 'exercise', 'R'],
+    ['suzumetengu', 45, 'すずめ天狗', 'restraint', 'R'],
+    ['kobinhomunkurusu', 46, 'こびんホムンクルス', 'idea', 'SR'],
+    ['kuronekosyeido', 47, 'くろねこシェイド', 'restraint', 'R'],
+    ['fuusenporuka', 48, 'ふうせんポルカ', 'social', 'N'],
+    ['manmarukouramusi', 49, 'まんまる甲羅虫', 'focus', 'N'],
+    ['kohakurizaado', 50, 'こはくリザード', 'adventure', 'R'],
+    ['utatanedoragon', 51, 'うたたねドラゴン', 'sleep', 'R'],
+    ['sakurasupuraito', 52, 'さくらスプライト', 'recover', 'R'],
+    ['batibatisupaaku', 53, 'ばちばちスパーク', 'exercise', 'R'],
+    ['doronkoookuretto', 54, 'どろんこオークレット', 'exercise', 'N'],
+    ['ringowaamu', 55, 'りんごワーム', 'study', 'N'],
+    ['kiramekiinkoryuu', 56, 'きらめきインコ竜', 'idea', 'SR'],
+    ['kotukotusukeruton', 57, 'こつこつスケルトン', 'study', 'R'],
+    ['himitumomonga', 58, 'ひみつモモンガ', 'adventure', 'R'],
+    ['wataamebiisuto', 59, 'わたあめビースト', 'social', 'R'],
+    ['konpeitoufearii', 60, 'こんぺいとうフェアリー', 'social', 'R'],
+    ['sumirekoboruto', 61, 'すみれコボルト', 'restraint', 'R'],
+    ['kaigaramameido', 62, 'かいがらマーメイド', 'recover', 'R'],
+    ['yuramekiwisupu', 63, 'ゆらめきウィスプ', 'focus', 'R'],
+    ['turaraharinezumi', 64, 'つららハリネズミ', 'sleep', 'N'],
+    ['patapatagagoiru', 65, 'ぱたぱたガーゴイル', 'restraint', 'R'],
+    ['chibikeruberosu', 66, 'ちびケルベロス', 'restraint', 'SR'],
+    ['morinopanpukin', 67, '森のパンプキン', 'study', 'R'],
+    ['kometubugoremu', 68, 'こめつぶゴーレム', 'organize', 'R'],
+    ['awaawatatunoko', 69, 'あわあわタツノコ', 'recover', 'N'],
+    ['tenorimanmos', 70, 'てのりマンモス', 'organize', 'N'],
+    ['majinaikarasu', 71, 'まじないカラス', 'restraint', 'R'],
+    ['urokorisuryu', 72, 'うろこリス竜', 'study', 'R'],
+    ['kodaihaniwa', 73, '古代ハニワ', 'organize', 'R'],
+    ['kaerusennin', 74, 'カエル仙人', 'idea', 'SR'],
+    ['suyasuyanomu', 75, 'すやすやノーム', 'sleep', 'N'],
+    ['irukahakase', 76, 'イルカ博士', 'study', 'SR'],
+    ['kogarasiusagi', 77, 'こがらしうさぎ', 'sleep', 'N'],
+    ['honewanko', 78, 'ほねワンコ', 'social', 'N'],
+    ['mizugumo', 79, 'みずぐも', 'focus', 'N'],
+    ['medamarantan', 80, 'めだまランタン', 'focus', 'R'],
+    ['koorinotonakai', 81, 'こおりのトナカイ', 'adventure', 'SR'],
+    ['yoidoresiidora', 82, 'よいどれシードラ', 'recover', 'R'],
+    ['marutabiibaa', 83, 'まるたビーバー', 'organize', 'R'],
+    ['nazonazosufinkusu', 84, 'なぞなぞスフィンクス', 'idea', 'SR'],
+    ['pikapikabii', 85, 'ぴかぴかビー', 'social', 'N'],
+    ['hyoutanntanuki', 86, 'ひょうたんタヌキ', 'social', 'N'],
+    ['nejiretunoyagi', 87, 'ねじれ角ヤギ', 'exercise', 'R'],
+    ['komainubebii', 88, '狛犬ベビー', 'restraint', 'R'],
+    ['tibinaaga', 89, 'ちびナーガ', 'restraint', 'R'],
+    ['oniuupaaruupaa', 90, 'おにウーパールーパー', 'exercise', 'R'],
+    ['arupakadaitouryou', 91, 'アルパカ大統領', 'social', 'SR'],
+    ['mayoityou', 92, 'まよい蝶', 'sleep', 'R'],
+    ['edisonpanda', 93, 'エジソンパンダ', 'idea', 'SR'],
+    ['gekkabyakko', 94, '月下白虎', 'adventure', 'SSR'],
+    ['kimerachiitaa', 95, 'キメラチーター', 'exercise', 'SR'],
+    ['taimuvanpaia', 96, 'タイムヴァンパイア', 'restraint', 'SSR'],
+    ['piisugenbu', 97, 'ピース玄武', 'recover', 'SSR'],
+    ['kouhukufenikkusu', 98, '幸福フェニックス', 'recover', 'SSR'],
+    ['gokigentibinezumi', 99, 'ごきげんちびネズミ', 'social', 'N'],
+    ['niji_slime', 100, 'にじいろスライム', 'adventure', 'SSR'],
+  ];
+  (function attachRoster100() {
+    const byId = {};
+    OTOMON_MASTER.forEach(o => { byId[o.id] = o; });
+    _ROSTER_100.forEach(([id, no, name, attribute, rarity]) => {
+      const p = 'assets/otomon/roster/pet_' + String(no).padStart(3, '0') + '.png';
+      const img = { small: p, medium: p, large: p, original: p };
+      if (byId[id]) {
+        byId[id].image = img;            // 既存：画像のみ roster に統一（属性/レア度は維持）
+      } else {
+        OTOMON_MASTER.push({             // 新規：最小構成＋属性/レア度で追加
+          id, name, emoji: '🐾', rarity, attribute, image: img, rosterOnly: true,
+        });
+      }
+    });
+  })();
   const OTOMON_BY_ID = Object.fromEntries(OTOMON_MASTER.map(o => [o.id, o]));
   const WAKE_BY_ID   = Object.fromEntries(WAKE_ITEM_MASTER.map(w => [w.id, w]));
   const EGG_BY_ID    = Object.fromEntries(EGG_MASTER.map(e => [e.id, e]));
@@ -414,15 +671,50 @@
     if (!universal && def && Array.isArray(def.accepts) && !def.accepts.includes(itemId))
       return { error: 'この卵には、その目覚めアイテムは使えません' };
 
-    const q = pick(item.questPool || [{ kind:'just_start', text:'1分だけ着手する', gauge:+1 }]);
+    // ── 孵化候補を確定して卵に記録（クエスト帯＝候補オトモンのレア度）──
+    //  この卵で最初にアイテムを使った時に1体決めて固定。以後 hatch() もこれを使う。
+    if (!e.pendingId) { e.pendingId = candidateFor(item); }
+    const rarity = (OTOMON_BY_ID[e.pendingId] && OTOMON_BY_ID[e.pendingId].rarity) || 'N';
+
+    const q = pickQuestByRarity(item, rarity);
     consumeWakeItem(itemId);                 // 消費型：1個減らす
     e.usedItem = itemId; e.sleeping = false; saveEggs();
     hatchQuest = {
       eggUid, itemId, kind: q.kind, text: q.text, gauge: q.gauge || 1,
+      questRarity: q.rarity, tag: q.tag, note: q.note || '',
       issuedDate: todayKey(), done: false,
     };
     saveHatchQuest();
     return { quest: hatchQuest };
+  }
+
+  // ── 孵化候補プールの決定（favors → 属性一致 → 全体）: hatch と共通 ──
+  function candidatePoolIds(item) {
+    let ids = (item && item.favors || []).filter(id => OTOMON_BY_ID[id]);
+    if (!ids.length && item && item.attribute)
+      ids = OTOMON_MASTER.filter(o => o.attribute === item.attribute).map(o => o.id);
+    if (!ids.length) ids = OTOMON_MASTER.map(o => o.id);
+    return ids;
+  }
+  function candidateFor(item) { return pick(candidatePoolIds(item)); }
+
+  // ── レア度帯からクエストを抽選（無ければ1段下へフォールバック）──
+  //  questPool が {N,R,SR,SSR} 構造。旧・配列形にも後方互換で対応。
+  const RARITY_FALLBACK = { UR:'SSR', SSR:'SR', SR:'R', R:'N', N:'N' };
+  const GENERIC_QUEST = { kind:'start', text:'1分だけ着手する', gauge:1, mins:1, tag:'start', note:'', rarity:'N' };
+  function pickQuestByRarity(item, rarity) {
+    const qp = item && item.questPool;
+    if (Array.isArray(qp)) return qp.length ? pick(qp) : GENERIC_QUEST;   // 旧・フラット形の保険
+    if (!qp || typeof qp !== 'object') return GENERIC_QUEST;
+    let r = (rarity === 'UR') ? 'SSR' : rarity;                            // UR は SSR 帯を流用
+    const seen = {};
+    while (r && !seen[r]) {
+      seen[r] = true;
+      const arr = qp[r];
+      if (arr && arr.length) return pick(arr);
+      r = RARITY_FALLBACK[r];                                             // 候補が無ければ1段下へ
+    }
+    return GENERIC_QUEST;                                                 // N も無い → 汎用N
   }
 
   function getActiveQuest() { return hatchQuest; }
@@ -445,16 +737,13 @@
   function hatch(eggUid) {
     const e = getEgg(eggUid); if (!e) return null;
     const item = WAKE_BY_ID[e.usedItem];
-    let poolIds = (item && item.favors || []).filter(id => OTOMON_BY_ID[id]);
-    if (!poolIds.length && item && item.attribute)
-      poolIds = OTOMON_MASTER.filter(o => o.attribute === item.attribute).map(o => o.id);
-    if (!poolIds.length) poolIds = OTOMON_MASTER.map(o => o.id);
-    const id = pick(poolIds);
+    // useWakeItem 時に確定した候補を最優先（クエスト帯と孵る子を一致させる）。
+    // 万一 pendingId が無い/欠番なら従来ロジックで再抽選。
+    const id = (e.pendingId && OTOMON_BY_ID[e.pendingId]) ? e.pendingId : pick(candidatePoolIds(item));
 
-    const rec = otomonState.discovered[id] || { bornAt: 0, count: 0, bond: 0 };
-    rec.count += 1;
-    if (!rec.bornAt) rec.bornAt = Date.now();
-    otomonState.discovered[id] = rec;
+    const rec = otomonState.discovered[id] || makeRecord();  // 新規は統一スキーマで生成
+    rec.count = (rec.count || 0) + 1;                          // 入手回数+1（既存も新規も）
+    otomonState.discovered[id] = rec;                         // 既存なら firstMetAt 等は保持
     if (!otomonState.active) otomonState.active = id;   // 最初の1体は自動でお供に
     saveOtomon();
 
@@ -474,7 +763,11 @@
   // ═══ ⑦ 達成フック（※app.js への配線は P1 以降。中身だけ用意）═══
   //  「開始系・学習系」のクエストは、1セッション完了で達成扱い。
   //  「腕立て5回」など現実行動系は手動の達成ボタン（P1のUIで completeActiveQuest を呼ぶ）。
+  //  kind は questPool の tag（着手/集中/ポモドーロ等）。机に向かって進むタイプは
+  //  タイマー完了で自動達成、現実行動系（運動/交流/整理…）は手動の達成ボタン。
+  //  旧 kind（study_5min 等）は移行中の hatchQuest 保険として残す。
   const SESSION_COMPLETE_KINDS = new Set([
+    'start', 'focus', 'pomodoro',
     'study_5min', 'read_aloud', 'review', 'focus_5min', 'one_pomodoro', 'just_start',
   ]);
   function onTimerStart() {
@@ -499,6 +792,77 @@
     return false;
   }
   function setNudge(on) { otomonState.nudgeOn = !!on; saveOtomon(); }
+
+  // ※ 旧・装備ペット統合（STARTER_PET_IDS / discoverPet / migratePets）は
+  //   pet6体をロスターから削除したため撤去。既存データは normalizeDiscovered v3 で除去する。
+  const REMOVED_PET_IDS = ['pet_cat','pet_owl','pet_slime','pet_rabbit','pet_fox','pet_dragon'];
+
+  // ── 新規 discovered レコードの「蛇口」（共通生成）─────────
+  //  hatch / discoverPet / migratePets はすべてここを通して作る。
+  //  normalizeDiscovered と同じ統一スキーマで生むので、二重に作用しない
+  //  （normalize は firstMetAt!=null なら触らない＋schemaVersionで冪等）。
+  //  extra で starter:true など個別属性を足せる。
+  function makeRecord(extra) {
+    return {
+      firstMetAt: Date.now(),   // 出会った日
+      lastSeen:   null,         // 最後に会った日
+      totalMins:  0,            // その子と過ごした累計学習時間
+      metDays:    0,            // 一緒に過ごした総日数
+      bond:       0,            // なつき度
+      count:      0,            // 入手回数（呼び出し側で +1 する）
+      ...(extra || {}),
+    };
+  }
+
+  // ── discovered スキーマ正規化（拡張の初手・非破壊）────────
+  //  2系統（孵化:bornAt / ペット:discoveredAt）に分裂したレコードを
+  //  firstMetAt に統一し、絆システム用の新フィールドを「足す・埋める」。
+  //  既存値は尊重し、旧キー(bornAt/discoveredAt)は残置。
+  //  schemaVersion で冪等化（2回目以降は即終了。将来 v2 も同じ仕組みで段階移行）。
+  const OTOMON_SCHEMA_VERSION = 3;
+  function normalizeDiscovered() {
+    const ver = otomonState.schemaVersion || 0;
+    if (ver >= OTOMON_SCHEMA_VERSION) return false;
+    const disc = otomonState.discovered || {};
+
+    // ── v1: レコード形の統一（firstMetAt ＋ 絆フィールドの補完）──
+    if (ver < 1) {
+      Object.keys(disc).forEach(id => {
+        const r = disc[id] || {};
+        if (r.firstMetAt == null) r.firstMetAt = r.bornAt || r.discoveredAt || Date.now();
+        if (r.totalMins == null) r.totalMins = 0;     // 累計学習時間
+        if (r.metDays   == null) r.metDays   = 0;     // 一緒に過ごした総日数
+        if (r.bond      == null) r.bond      = 0;     // なつき度
+        if (r.lastSeen  === undefined) r.lastSeen = null;  // 最後に会った日
+        if (r.count     == null) r.count    = 1;      // 入手回数
+        disc[id] = r;                                  // 旧キーは残置（非破壊）
+      });
+    }
+
+    // ── v2: id リネーム hidamari_moko → hidamari_gorira（キー移動・非破壊）──
+    if (ver < 2) {
+      if (disc['hidamari_moko'] && !disc['hidamari_gorira']) {
+        disc['hidamari_gorira'] = disc['hidamari_moko'];
+        delete disc['hidamari_moko'];
+      }
+      if (otomonState.active === 'hidamari_moko') otomonState.active = 'hidamari_gorira';
+    }
+
+    // ── v3: 旧・装備ペット6体を discovered から除去。お供が該当なら切替 ──
+    if (ver < 3) {
+      REMOVED_PET_IDS.forEach(id => { if (disc[id]) delete disc[id]; });
+      if (REMOVED_PET_IDS.includes(otomonState.active)) {
+        // 他に所持オトモンがいればそれをお供に、いなければ空に
+        const remaining = Object.keys(disc);
+        otomonState.active = remaining.length ? remaining[0] : '';
+      }
+    }
+
+    otomonState.discovered = disc;
+    otomonState.schemaVersion = OTOMON_SCHEMA_VERSION;
+    saveOtomon();   // version 込みで永続化＝次回は早期 return
+    return true;
+  }
 
   // デバッグ用：状態の確認・全消去
   function getState() {
@@ -536,6 +900,8 @@
 
   // 起動時：前日の未達成クエストがあれば、卵をそっと眠らせる（空なら何もしない）
   try { sleepStaleEggs(); } catch (_) {}
+  // 起動時：discovered スキーマを正規化（v1形統一→v2改称→v3ペット除去・1回だけ・冪等）
+  try { normalizeDiscovered(); } catch (_) {}
 })();
 
 
@@ -584,6 +950,7 @@
       .otomon-cell { background:var(--glass); border:1px solid var(--glass-border); border-radius:14px; padding:10px 6px; text-align:center; }
       .otomon-cell.locked { opacity:.5; }
       .otomon-cell-emoji { font-size:1.7rem; line-height:1.2; }
+      .otomon-face-img { width:46px; height:46px; object-fit:contain; display:inline-block; vertical-align:middle; }
       .otomon-cell.locked .otomon-cell-emoji { filter:grayscale(1) brightness(.55); }
       .otomon-cell-name { font-size:.72rem; color:var(--text); margin-top:4px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
       .otomon-cell-rarity { font-size:.64rem; font-weight:800; margin-top:2px; }
@@ -735,6 +1102,19 @@
       '</div>';
   }
 
+  // ── オトモンの顔：画像があれば <img>、無ければ emoji（提案A）──
+  //  size: 'small'(64) | 'medium'(256) | 'large'(1024)。img失敗時はemojiへ自動退避。
+  function otomonFace(o, size) {
+    if (!o) return '<span>❓</span>';
+    const src = o.image && (o.image[size] || o.image.medium || o.image.small || o.image.large);
+    if (src) {
+      const emo = (o.emoji || '✨').replace(/"/g, '&quot;');
+      return '<img src="' + src + '" alt="' + (o.name || '') + '" class="otomon-face-img" ' +
+             'onerror="this.outerHTML=\'<span>' + emo + '</span>\'">';
+    }
+    return '<span>' + (o.emoji || '✨') + '</span>';
+  }
+
   // ── 描画：図鑑パネル（一覧モード ／ アイテム選択モード）──
   let _pickEggUid = null;
   let _pickMsg = '';
@@ -786,7 +1166,7 @@
       return '<div class="otomon-cell ' + (owned ? 'owned' : 'locked') + (isOtomo ? ' is-active' : '') + '"' +
             (owned ? ' data-otomon="' + o.id + '"' : '') + '>' +
           (isOtomo ? '<div class="otomon-cell-badge">お供</div>' : '') +
-          '<div class="otomon-cell-emoji">' + (owned ? o.emoji : '❓') + '</div>' +
+          '<div class="otomon-cell-emoji">' + (owned ? otomonFace(o, 'small') : '❓') + '</div>' +
           '<div class="otomon-cell-name">' + (owned ? o.name : '？？？') + '</div>' +
           '<div class="otomon-cell-rarity" style="color:' + (owned ? col : 'var(--text-dim)') + '">' + o.rarity + '</div>' +
         '</div>';

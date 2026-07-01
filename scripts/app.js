@@ -179,6 +179,8 @@ let _sgJustRolled    = false;      // 今セッションでサイコロを振っ
 //  ・equippedItems: localStorage（gq_equipped）カテゴリ→id（or null）
 // ═══════════════════════════════════════════════════════
 const EQUIPMENT_CATEGORIES = ['head', 'body', 'hand', 'back', 'pet'];
+// 装備UIに出すカテゴリ（B-1：ペットはオトモン図鑑へ統合したので装備欄からは除外）
+const EQUIPPABLE_CATEGORIES = ['head', 'body', 'hand', 'back'];
 
 const CATEGORY_LABEL = {
   head: '頭',
@@ -547,7 +549,8 @@ function isEquipped(itemId) {
 // ── 双六報酬: 装備アイテム配布 ─────────────────────────
 // ITEM_MASTER から未所持のものだけ返す
 function getUnownedItems() {
-  return ITEM_MASTER.filter(m => !inventory.includes(m.id));
+  // B-1：ペットは装備ドロップではなく「卵から孵化」で入手するため抽選プールから除外
+  return ITEM_MASTER.filter(m => m.category !== 'pet' && !inventory.includes(m.id));
 }
 
 // 利用可能アイテムに「実在するレアリティだけ」を対象に weight 抽選
@@ -610,6 +613,7 @@ function grantRandomEquipmentItem() {
   const item = getRandomUnownedItem();
   if (!item) return null;
   if (addItemToInventory(item.id)) {
+    // ※ペットは getUnownedItems で除外済み（卵から孵化で入手）。装備ドロップでは出ない。
     refreshEquipmentModalIfOpen();
     if (typeof evaluateUnlocks === 'function') evaluateUnlocks();
     return item;
@@ -8229,10 +8233,17 @@ function buildRichAvatarSVG_0(type) {
   //   ① ペット → 隣に立つ相棒として表示（着る物ではないので破綻しない）
   //   ② オーラ → 装備の最高レア度で、キャラと足元の輝きの色が変わる
   const equipped = (typeof getEquippedItems === 'function') ? getEquippedItems() : {};
-  const pet    = equipped.pet;
   const petLay = (typeof AVATAR_EQUIP_LAYOUT !== 'undefined') ? AVATAR_EQUIP_LAYOUT.pet : null;
-  const petOverlay = (pet && pet.imagePath && petLay)
-    ? `<img src="${pet.imagePath}" alt="" class="av-equip-overlay av-equip-layer-pet"
+  // B-1：隣に立つ相棒は「お供オトモン」優先。いなければ旧・装備ペットにフォールバック
+  let petSrc = null;
+  const activeOto = (window.Otomon && window.Otomon.getActiveOtomon) ? window.Otomon.getActiveOtomon() : null;
+  if (activeOto && activeOto.image) {
+    petSrc = activeOto.image.medium || activeOto.image.small || activeOto.image.large;
+  } else if (equipped.pet && equipped.pet.imagePath) {
+    petSrc = equipped.pet.imagePath;
+  }
+  const petOverlay = (petSrc && petLay)
+    ? `<img src="${petSrc}" alt="" class="av-equip-overlay av-equip-layer-pet"
          style="width:${petLay.scale}%;left:${petLay.cx}%;top:${petLay.cy}%"
          onerror="this.style.display='none'">`
     : '';
@@ -9427,7 +9438,7 @@ function renderEquipmentModal() {
   // ── 現在の装備（5スロット）─
   const slotList = document.getElementById('equipment-slot-list');
   const equipped = getEquippedItems();
-  slotList.innerHTML = EQUIPMENT_CATEGORIES.map(cat => {
+  slotList.innerHTML = EQUIPPABLE_CATEGORIES.map(cat => {
     const item = equipped[cat];
     if (!item) {
       return `<div class="eq-slot">
@@ -9461,7 +9472,7 @@ function renderEquipmentModal() {
     </div>`;
     return;
   }
-  ownedList.innerHTML = EQUIPMENT_CATEGORIES.map(cat => {
+  ownedList.innerHTML = EQUIPPABLE_CATEGORIES.map(cat => {
     const items = owned.filter(it => it.category === cat);
     if (items.length === 0) return '';
     return `<div class="eq-category-group">
@@ -9492,14 +9503,16 @@ function renderEquipmentCollection() {
   const grid = document.getElementById('equipment-collection-grid');
   if (!grid) return;
 
-  const ownedCount = ITEM_MASTER.filter(it => hasItem(it.id)).length;
-  const total      = ITEM_MASTER.length;
+  // B-1：ペットはオトモン図鑑へ統合したので装備コレクションには出さない
+  const equipItems = ITEM_MASTER.filter(it => it.category !== 'pet');
+  const ownedCount = equipItems.filter(it => hasItem(it.id)).length;
+  const total      = equipItems.length;
   const prog = document.getElementById('eq-collection-progress');
   if (prog) prog.innerHTML = `<strong>${ownedCount}</strong> / ${total} 収集`;
 
   // カテゴリ順 → レア度順（伝説が上）で並べると見栄えが良い
   const rarityRank = { legendary:0, epic:1, rare:2, common:3 };
-  const sorted = [...ITEM_MASTER].sort((a, b) => {
+  const sorted = [...equipItems].sort((a, b) => {
     const ca = EQUIPMENT_CATEGORIES.indexOf(a.category);
     const cb = EQUIPMENT_CATEGORIES.indexOf(b.category);
     if (ca !== cb) return ca - cb;
