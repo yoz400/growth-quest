@@ -649,12 +649,15 @@
 
   // ═══ ② 目覚めアイテムを使う → ③ クエスト発生 ═══════════
   function useWakeItem(eggUid, itemId) {
-    const e = getEgg(eggUid);
     const item = WAKE_BY_ID[itemId];
-    if (!e)    return { error: '卵が見つかりません' };
     if (!item) return { error: 'アイテムが見つかりません' };
     if (getWakeCount(itemId) <= 0) return { error: `${item.name}を持っていません` };
-    if (item.special === 'bond')   return { error: 'きずなのリボンは孵化ではなく親密度UP用です' };
+    // きずなのリボンは「卵」ではなく「お供オトモン」に使う特別アイテム。
+    // 卵チェックより前で処理する（eggUid は不要）。
+    if (item.special === 'bond') return applyBondRibbon(itemId);
+
+    const e = getEgg(eggUid);
+    if (!e) return { error: '卵が見つかりません' };
     // オトモンクエストは同時に1つだけ（先に達成してから次へ）
     if (hatchQuest && !hatchQuest.done)
       return { error: '進行中のオトモンクエストがあります。先にそれを達成してね' };
@@ -825,6 +828,19 @@
     if (give > 0) { addBond(id, give, { noSave:true }); sb.amount += give; }
     saveOtomon();
     return { id, gained: give, totalMins: rec.totalMins, bond: rec.bond, dailyUsed: sb.amount };
+  }
+
+  // ── ②きずなのリボン使用 → お供オトモンへ bond +10 ──
+  //  卵ではなくお供に使う。お供未設定なら消費せずメッセージ。所持0は呼び出し前(useWakeItem)で弾く。
+  //  totalMins/metDays/lastSeen は触らない。1日上限なし（乱用防止はアイテム所持数に任せる）。
+  const BOND_RIBBON_AMOUNT = 10;
+  function applyBondRibbon(itemId) {
+    const id = otomonState.active;
+    const rec = id && otomonState.discovered[id];
+    if (!rec) return { error: 'お供オトモンを選んでから使ってね' };   // 消費しない
+    consumeWakeItem(itemId);                                        // 所持数 -1
+    const bond = addBond(id, BOND_RIBBON_AMOUNT);                   // +10（保存も実施）
+    return { bond, tier: bondTier(bond), gained: BOND_RIBBON_AMOUNT, otomon: OTOMON_BY_ID[id], usedItem: itemId };
   }
 
   function onSessionComplete(mins) {
