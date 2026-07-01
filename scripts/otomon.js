@@ -843,6 +843,31 @@
     return { bond, tier: bondTier(bond), gained: BOND_RIBBON_AMOUNT, otomon: OTOMON_BY_ID[id], usedItem: itemId };
   }
 
+  // ── ③1日1回のふれあい → お供へ bond +1 ＆ metDays ＆ lastSeen ──
+  //  対象は active。lastSeen===今日 なら加算せず already。お供なしは何もしない。
+  //  totalMins は触らない（学習時間ではない）。
+  function isTouchedToday() {
+    const id = otomonState.active;
+    const rec = id && otomonState.discovered[id];
+    return !!(rec && rec.lastSeen === todayKey());
+  }
+  function touchActiveOtomon() {
+    const id = otomonState.active;
+    const rec = id && otomonState.discovered[id];
+    if (!rec) return { error: 'お供オトモンがいません' };     // 何もしない
+    const today = todayKey();
+    if (rec.lastSeen === today) {
+      return { alreadyToday: true, bond: rec.bond || 0, tier: bondTier(rec.bond),
+               metDays: rec.metDays || 0, totalMins: rec.totalMins || 0 };
+    }
+    addBond(id, 1, { noSave:true });                          // bond +1
+    rec.metDays = (rec.metDays || 0) + 1;                     // 一緒に過ごした日数 +1
+    rec.lastSeen = today;                                     // 最後に会った日 = 今日
+    saveOtomon();
+    return { alreadyToday: false, touched: true, bond: rec.bond, tier: bondTier(rec.bond),
+             metDays: rec.metDays, totalMins: rec.totalMins || 0 };
+  }
+
   function onSessionComplete(mins) {
     grantSessionBond(mins);                      // ① bond ＆ totalMins（お供へ）
     // 既存：クエスト自動達成フックはそのまま維持
@@ -964,7 +989,7 @@
     // ⑥ 図鑑・お供
     getDiscovered, getActiveOtomon, setActive, setNudge,
     // なつき度（bond）
-    addBond, bondTier,
+    addBond, bondTier, touchActiveOtomon, isTouchedToday,
     // UI層との連携（第2 IIFE が使う）
     setOnChange, setOnHatch,
     // デバッグ
@@ -1019,6 +1044,22 @@
       .otomon-gauge { height:7px; background:rgba(255,255,255,.08); border-radius:5px; overflow:hidden; margin-top:6px; }
       .otomon-gauge-fill { height:100%; background:linear-gradient(90deg,var(--cyan),var(--gold)); border-radius:5px; transition:width .3s; }
       .otomon-empty { color:var(--text-dim); font-size:.84rem; text-align:center; padding:16px 8px; line-height:1.6; }
+      /* ── お供詳細カード（bond表示・ふれあう）── */
+      .otomon-buddy { display:flex; gap:14px; align-items:center; background:var(--glass); border:1px solid var(--glass-border);
+        border-radius:16px; padding:14px; margin-bottom:6px; }
+      .otomon-buddy.empty { justify-content:center; color:var(--text-dim); font-size:.86rem; text-align:center; line-height:1.6; }
+      .otomon-buddy-face { flex:0 0 auto; width:72px; height:72px; display:flex; align-items:center; justify-content:center;
+        background:rgba(255,255,255,.05); border-radius:14px; font-size:2.4rem; }
+      .otomon-buddy-face .otomon-face-img { width:64px; height:64px; }
+      .otomon-buddy-info { flex:1 1 auto; min-width:0; }
+      .otomon-buddy-name { font-size:1rem; font-weight:800; color:var(--text); }
+      .otomon-buddy-tier { font-size:.86rem; font-weight:700; color:var(--gold); margin-top:1px; }
+      .otomon-buddy-bondval { font-size:.72rem; color:var(--text-dim); margin-top:4px; }
+      .otomon-buddy-meta { font-size:.72rem; color:var(--text-dim); margin-top:6px; line-height:1.5; }
+      .otomon-touch-btn { margin-top:9px; padding:8px 18px; border:none; border-radius:12px; cursor:pointer;
+        background:rgba(244,162,97,.18); color:var(--gold); font-weight:800; font-size:.86rem; }
+      .otomon-touch-btn:hover { background:rgba(244,162,97,.30); }
+      .otomon-touch-done { margin-top:9px; font-size:.8rem; color:var(--cyan); font-weight:700; }
       .otomon-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(84px,1fr)); gap:10px; }
       .otomon-cell { background:var(--glass); border:1px solid var(--glass-border); border-radius:14px; padding:10px 6px; text-align:center; }
       .otomon-cell.locked { opacity:.5; }
@@ -1191,6 +1232,36 @@
   // ── 描画：図鑑パネル（一覧モード ／ アイテム選択モード）──
   let _pickEggUid = null;
   let _pickMsg = '';
+  // ── お供詳細カード（bond段階・ゲージ・実績・ふれあう）──
+  function buddyCardHtml() {
+    const o = O.getActiveOtomon();
+    if (!o) {
+      return '<div class="otomon-buddy empty">お供オトモンがいません。<br>図鑑からタップしてお供に選んでね。</div>';
+    }
+    const rec  = O.getDiscovered().find(x => x.id === o.id) || {};
+    const bond = rec.bond || 0;
+    const t    = O.bondTier(bond);
+    let pct, bondLabel;
+    if (t.next) { pct = Math.round(((bond - t.min) / (t.next.min - t.min)) * 100); bondLabel = 'bond ' + bond + ' / ' + t.next.min; }
+    else        { pct = 100; bondLabel = 'bond ' + bond + '（MAX）'; }
+    const met  = rec.metDays  || 0;
+    const mins = rec.totalMins || 0;
+    const action = O.isTouchedToday()
+      ? '<div class="otomon-touch-done">🤝 今日はふれあい済み</div>'
+      : '<button class="otomon-touch-btn" id="otomon-touch-btn">🤝 ふれあう</button>';
+    return '<div class="otomon-buddy">' +
+        '<div class="otomon-buddy-face">' + otomonFace(o, 'medium') + '</div>' +
+        '<div class="otomon-buddy-info">' +
+          '<div class="otomon-buddy-name">' + o.name + '</div>' +
+          '<div class="otomon-buddy-tier">' + t.face + ' ' + t.name + '</div>' +
+          '<div class="otomon-gauge"><div class="otomon-gauge-fill" style="width:' + pct + '%"></div></div>' +
+          '<div class="otomon-buddy-bondval">' + bondLabel + '</div>' +
+          '<div class="otomon-buddy-meta">一緒に過ごした日数：' + met + '日　／　一緒に学習した時間：' + mins + '分</div>' +
+          action +
+        '</div>' +
+      '</div>';
+  }
+
   function renderPanel() {
     const body = document.getElementById('otomon-panel-body');
     if (!body) return;
@@ -1247,6 +1318,7 @@
 
     const zukanHint = got > 0 ? ' <span style="color:var(--text-dim);font-weight:400;">（タップでお供にできる）</span>' : '';
     body.innerHTML =
+      buddyCardHtml() +
       flowGuideHtml(eggs.length > 0, !!(activeQ && !activeQ.done)) +
       '<div class="otomon-section-title">🥚 手持ちの卵（' + eggs.length + '）</div>' + eggsHtml +
       '<div class="otomon-section-title" style="margin-top:18px;">📔 オトモン図鑑（' + got + ' / ' + all.length + '）' + zukanHint + '</div>' +
@@ -1256,6 +1328,8 @@
       b.addEventListener('click', () => { _pickEggUid = b.dataset.egg; _pickMsg = ''; renderPanel(); }));
     body.querySelectorAll('.otomon-cell[data-otomon]').forEach(c =>
       c.addEventListener('click', () => { if (O.setActive(c.dataset.otomon)) renderPanel(); }));
+    const touchBtn = document.getElementById('otomon-touch-btn');
+    if (touchBtn) touchBtn.addEventListener('click', () => { O.touchActiveOtomon(); renderPanel(); });
   }
 
   // ── アイテム選択ビュー（卵に使う目覚めアイテムを選ぶ）──
