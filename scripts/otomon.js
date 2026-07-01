@@ -1070,6 +1070,11 @@
         background:rgba(244,162,97,.18); color:var(--gold); font-weight:800; font-size:.86rem; }
       .otomon-touch-btn:hover { background:rgba(244,162,97,.30); }
       .otomon-touch-done { margin-top:9px; font-size:.8rem; color:var(--cyan); font-weight:700; }
+      /* ── ホームのお供カード（#otomon-buddy-card）── */
+      #otomon-buddy-card .ohb-row { display:flex; gap:12px; align-items:center; }
+      #otomon-buddy-card .ohb-face { width:60px; height:60px; font-size:2rem; flex:0 0 auto; }
+      #otomon-buddy-card .ohb-face .otomon-face-img { width:52px; height:52px; }
+      #otomon-buddy-card .ohb-line { font-size:.82rem; color:var(--text-dim); margin:4px 0 2px; line-height:1.4; }
       .otomon-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(84px,1fr)); gap:10px; }
       .otomon-cell { background:var(--glass); border:1px solid var(--glass-border); border-radius:14px; padding:10px 6px; text-align:center; }
       .otomon-cell.locked { opacity:.5; }
@@ -1188,7 +1193,7 @@
     ov.addEventListener('click', e => { if (e.target === ov) closePanel(); });
   }
 
-  function injectAll() { injectStyle(); injectButton(); injectHomeCard(); injectQuestCard(); injectPanel(); injectBirth(); injectNudge(); }
+  function injectAll() { injectStyle(); injectButton(); injectHomeCard(); injectQuestCard(); injectBuddyCard(); injectPanel(); injectBirth(); injectNudge(); }
 
   // ── 描画：ホームの卵カード（卵があるときだけ表示）──
   function renderHomeEggCard() {
@@ -1394,6 +1399,49 @@
   }
   function doComplete() { O.completeActiveQuest(); }   // 誕生は setOnHatch(showBirth) が処理
 
+  // ── ホームのお供カードを注入（最上段：クエストカードの後に注入＝アンカー直後に来る）──
+  function injectBuddyCard() {
+    if (document.getElementById('otomon-buddy-card')) return;
+    const card = document.createElement('div');
+    card.className = 'glass';
+    card.id = 'otomon-buddy-card';
+    card.style.display = 'none';
+    card.innerHTML = '<div class="quest-header">🤝 お供オトモン</div><div id="otomon-buddy-card-body"></div>';
+    const anchor = document.getElementById('daily-quest-card');
+    if (anchor) anchor.insertAdjacentElement('afterend', card);
+    else (document.querySelector('main') || document.body).appendChild(card);
+  }
+
+  // ── 描画：ホームのお供カード（お供がいる時だけ表示。図鑑と同じ共通データ）──
+  function renderHomeBuddyCard() {
+    const card = document.getElementById('otomon-buddy-card');
+    if (!card) return;
+    const o = O.getActiveOtomon();
+    if (!o) { card.style.display = 'none'; return; }        // お供なし → 非表示
+    card.style.display = '';
+    const rec  = O.getDiscovered().find(x => x.id === o.id) || {};
+    const t    = O.bondTier(rec.bond || 0);
+    const met  = rec.metDays || 0;
+    const nameLine = '<div class="otomon-buddy-name">' + o.name +
+      '　<span class="otomon-buddy-tier">' + t.face + ' ' + t.name + '</span></div>';
+    let inner;
+    if (O.isTouchedToday()) {
+      inner = nameLine +
+        '<div class="otomon-touch-done">🤝 今日はふれあい済み</div>' +
+        '<div class="otomon-buddy-meta">一緒に過ごした日数：' + met + '日</div>';
+    } else {
+      const line = (BOND_TONE[t.name] || [''])[0] || '';    // 段階別の固定一言（先頭要素）
+      inner = nameLine +
+        '<div class="ohb-line">' + line + '</div>' +
+        '<button class="otomon-touch-btn" id="ohb-touch-btn">🤝 ふれあう</button>';
+    }
+    document.getElementById('otomon-buddy-card-body').innerHTML =
+      '<div class="ohb-row"><div class="otomon-buddy-face ohb-face">' + otomonFace(o, 'medium') + '</div>' +
+      '<div class="otomon-buddy-info">' + inner + '</div></div>';
+    const btn = document.getElementById('ohb-touch-btn');
+    if (btn) btn.addEventListener('click', () => { O.touchActiveOtomon(); renderHomeBuddyCard(); });
+  }
+
   // ── ホームのクエストカードを注入（卵カードの上に並ぶ）──
   function injectQuestCard() {
     if (document.getElementById('otomon-quest-card')) return;
@@ -1445,7 +1493,7 @@
   function openPanel()  { injectAll(); _pickEggUid = null; _pickMsg = ''; renderPanel(); const ov = document.getElementById('otomon-overlay'); if (ov) ov.classList.add('open'); }
   function closePanel() { _pickEggUid = null; _pickMsg = ''; const ov = document.getElementById('otomon-overlay'); if (ov) ov.classList.remove('open'); }
 
-  function refreshHome() { renderHomeEggCard(); renderQuestCard(); }
+  function refreshHome() { renderHomeBuddyCard(); renderHomeEggCard(); renderQuestCard(); }
 
   // ── お供オトモンのナッジ（応援トースト）──
   function injectNudge() {
@@ -1546,6 +1594,7 @@
     refreshHome();
     O.openPanel = openPanel; O.closePanel = closePanel;
     O.renderHomeEggCard = renderHomeEggCard; O.renderQuestCard = renderQuestCard;
+    O.renderHomeBuddyCard = renderHomeBuddyCard; O.refreshHome = refreshHome;
     O.renderPanel = renderPanel; O.showBirth = showBirth; O.fireNudge = fireNudge;
     setTimeout(() => { fireNudge('home_open'); }, 1200);   // 起動時にそっと挨拶
   }
