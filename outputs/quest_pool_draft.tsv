@@ -1,0 +1,150 @@
+itemId	itemName	attribute	rarity	questText	estimatedMinutes	tag	note
+echo_flute	こだまの笛	study	N	教科書やノートを開くだけ	1	start	開けたら達成
+echo_flute	こだまの笛	study	N	今日やる範囲を1つ決める	1	start
+echo_flute	こだまの笛	study	R	1ページだけ読む	3	focus
+echo_flute	こだまの笛	study	R	覚えたい単語を5個だけ見る	4	focus
+echo_flute	こだまの笛	study	SR	1項目を最後まで通して学ぶ	8	focus
+echo_flute	こだまの笛	study	SR	昨日の内容を5分で復習する	6	focus
+echo_flute	こだまの笛	study	SSR	25分ポモドーロを1本完走する	25	pomodoro	💥基本運用
+echo_flute	こだまの笛	study	SSR	学んだことを誰かに一言教える	15	connect	💛相手がいなければ未来の自分への説明メモでOK
+echo_flute	こだまの笛	study	SSR	1テーマを15分かけて深掘りする	18	focus
+read_bookmark	よみかけのしおり	study	N	しおりの続きのページを開く	1	start
+read_bookmark	よみかけのしおり	study	N	今読みたい本を1冊手に取る	1	start
+read_bookmark	よみかけのしおり	study	R	1ページだけ読む	3	focus
+read_bookmark	よみかけのしおり	study	R	目次から気になる項目を1つ選ぶ	3	focus
+read_bookmark	よみかけのしおり	study	SR	覚えたことを3つ思い出して書く	7	focus
+read_bookmark	よみかけのしおり	study	SR	5分だけ読み進める	6	focus
+read_bookmark	よみかけのしおり	study	SSR	25分読書に集中する	25	pomodoro	💥
+read_bookmark	よみかけのしおり	study	SSR	面白かった内容を大切な人に話す	15	connect	💛相手がいなければ感想を下書きメモに残す
+read_bookmark	よみかけのしおり	study	SSR	1章を最後まで読み切る	20	focus
+focus_candle	集中のロウソク	focus	N	通知をオフにする	1	focus
+focus_candle	集中のロウソク	focus	N	机の上を1つだけ片付けて始める	2	start
+focus_candle	集中のロウソク	focus	R	スマホを別の部屋に置いて2分座る	3	focus
+focus_candle	集中のロウソク	focus	R	3分だけ1つの作業に向き合う	4	focus
+focus_candle	集中のロウソク	focus	SR	通知オフで10分1タスクに集中	10	focus
+focus_candle	集中のロウソク	focus	SR	タイマー5分で気が散らずに進める	6	focus
+focus_candle	集中のロウソク	focus	SSR	25分ポモドーロを1本完走する	25	pomodoro	💥基本運用
+focus_candle	集中のロウソク	focus	SSR	25分の集中を1本、区切りまでやり切る	25	pomodoro
+focus_candle	集中のロウソク	focus	SSR	集中して終えた成果を誰かに共有する	15	connect	💛相手がいなければ達成メモを未来の自分へ
+power_nut	ちからの木の実	exercise	N	その場で10秒伸びをする	1	body
+power_nut	ちからの木の実	exercise	N	肩を10回まわす	1	body
+power_nut	ちからの木の実	exercise	R	スクワットか腕立てを5回	3	body
+power_nut	ちからの木の実	exercise	R	ラジオ体操を1曲する	4	body
+power_nut	ちからの木の実	exercise	SR	5分散歩する	7	body
+power_nut	ちからの木の実	exercise	SR	軽い筋トレを1種じっくり	8	body
+power_nut	ちからの木の実	exercise	SSR	15〜20分ウォーキングする	20	body
+power_nut	ちからの木の実	exercise	SSR	好きな運動を15分続ける	18	body
+power_nut	ちからの木の実	exercise	SSR	大切な人を散歩や運動に誘う	20	connect	💛相手がいなければ今度誘いたい人をメモ
+sun_blanket	ひだまりブランケット	recover	N	深呼吸を3回する	1	rest
+sun_blanket	ひだまりブランケット	recover	N	目を閉じて10秒休む	1	rest
+sun_blanket	ひだまりブランケット	recover	R	温かい飲み物を1杯ゆっくり飲む	5	rest
+sun_blanket	ひだまりブランケット	recover	R	肩の力を抜いて3分ぼーっとする	3	rest
+sun_blanket	ひだまりブランケット	recover	SR	5分間なにもせず休む	5	rest
+sun_blanket	ひだまりブランケット	recover	SR	軽くストレッチして体をゆるめる	7	rest
+sun_blanket	ひだまりブランケット	recover	SSR	15分の意図的な休息をとる	15	rest
+sun_blanket	ひだまりブランケット	recover	SSR	頑張っている人に「無理しないでね」と伝える	15	connect	💛相手がいなければ自分に労いの言葉を書く
+sun_blanket	ひだまりブランケット	recover	SSR	スマホを置いて20分ゆっくり過ごす	20	rest
+drop_bottle	しずくの小びん	recover	N	水を一杯飲む	1	rest
+drop_bottle	しずくの小びん	recover	N	顔を洗う	2	rest
+drop_bottle	しずくの小びん	recover	R	保湿やスキンケアをする	4	rest
+drop_bottle	しずくの小びん	recover	R	白湯やお茶を淹れて飲む	5	rest
+drop_bottle	しずくの小びん	recover	SR	5分ストレッチで体をゆるめる	7	rest
+drop_bottle	しずくの小びん	recover	SR	軽く体を動かして水分補給する	6	rest
+drop_bottle	しずくの小びん	recover	SSR	ゆっくり入浴して心身を整える	20	rest
+drop_bottle	しずくの小びん	recover	SSR	20分の休息で明日に備える	20	rest
+drop_bottle	しずくの小びん	recover	SSR	お世話になった人に元気か一言気にかける	15	connect	💛相手がいなければ自分の体調を1つ気遣う
+drowse_feather	まどろみの羽	sleep	N	明日の寝る時間を決める	1	sleep
+drowse_feather	まどろみの羽	sleep	N	枕元を軽く整える	2	sleep
+drowse_feather	まどろみの羽	sleep	R	寝る1時間前に画面を暗くする	3	sleep
+drowse_feather	まどろみの羽	sleep	R	部屋の照明を少し落とす	3	sleep
+drowse_feather	まどろみの羽	sleep	SR	布団に入る準備を全部済ませる	8	sleep
+drowse_feather	まどろみの羽	sleep	SR	寝る前のストレッチを5分する	6	sleep
+drowse_feather	まどろみの羽	sleep	SSR	いつもより30分早く布団に入る	20	sleep
+drowse_feather	まどろみの羽	sleep	SSR	大切な人に「おやすみ」を伝える	15	connect	💛相手がいなければ今日の自分に「おつかれさま」
+drowse_feather	まどろみの羽	sleep	SSR	画面を消して15分リラックスして眠る	15	sleep
+smile_bell	えがおの鈴	social	N	誰か1人の顔を思い浮かべて、心の中でありがとうと言う	1	connect	💛
+smile_bell	えがおの鈴	social	N	最近助けてもらったことを1つ思い出す	2	connect	💛
+smile_bell	えがおの鈴	social	N	過去に助けてくれた人を思い出してメモする	2	connect	💛相手不要の代替案
+smile_bell	えがおの鈴	social	R	家族・友人・同僚に短い感謝メッセージを送る	4	connect	💛
+smile_bell	えがおの鈴	social	R	誰かの話を途中で遮らずに聞く	5	connect	💛
+smile_bell	えがおの鈴	social	R	誰かに送る前提で感謝文を下書きする	4	connect	💛相手不要の代替案
+smile_bell	えがおの鈴	social	SR	普段言えていないありがとうを1人に伝える	8	connect	💛
+smile_bell	えがおの鈴	social	SR	大切な人のために5〜10分でできることを1つする	10	connect	💛
+smile_bell	えがおの鈴	social	SR	未来の自分に一言、励ましを書く	6	connect	💛相手不要の代替案
+smile_bell	えがおの鈴	social	SSR	大切な人に普段言えていない感謝を言葉で伝える	15	connect	💛
+smile_bell	えがおの鈴	social	SSR	誰かのためになる行動を25分かけて1つやる	25	connect	💛
+smile_bell	えがおの鈴	social	SSR	25分ポモドーロを1本完走する	25	pomodoro	💥
+smile_bell	えがおの鈴	social	SSR	お世話になった人へ感謝の手紙を書く	20	connect	💛相手がいなくても下書きで達成OK
+tidy_broom	すっきり小ぼうき	organize	N	目の前のゴミを1つ捨てる	1	tidy
+tidy_broom	すっきり小ぼうき	organize	N	机の上を1つだけ元に戻す	1	tidy
+tidy_broom	すっきり小ぼうき	organize	R	机を1分リセットする	3	tidy
+tidy_broom	すっきり小ぼうき	organize	R	使ったものを3つ元の場所へ	4	tidy
+tidy_broom	すっきり小ぼうき	organize	SR	引き出しかカバンを1つ整理する	8	tidy
+tidy_broom	すっきり小ぼうき	organize	SR	散らかったエリアを5分片付ける	6	tidy
+tidy_broom	すっきり小ぼうき	organize	SSR	部屋の1エリアを15分片付ける	15	tidy
+tidy_broom	すっきり小ぼうき	organize	SSR	家族の共用スペースを少し整える	15	connect	💛相手がいなければ一番気になる場所を整える
+tidy_broom	すっきり小ぼうき	organize	SSR	たまった書類やデータを20分整理する	20	tidy
+repair_kit	しゅうりキット	organize	N	散らかりを1つ直す	1	tidy
+repair_kit	しゅうりキット	organize	N	持ち物を1つ元に戻す	1	tidy
+repair_kit	しゅうりキット	organize	R	持ち物を1つ仕分ける	4	tidy
+repair_kit	しゅうりキット	organize	R	ほつれやゆるみを1つ手直しする	4	tidy
+repair_kit	しゅうりキット	organize	SR	壊れた・放置した物を1つ手入れする	8	tidy
+repair_kit	しゅうりキット	organize	SR	使いにくい場所を5分改善する	7	tidy
+repair_kit	しゅうりキット	organize	SSR	気になっていた物を15分かけて直す	15	tidy
+repair_kit	しゅうりキット	organize	SSR	誰かの物の修理や手入れを手伝う	20	connect	💛相手がいなければ家族共用の物を直す
+repair_kit	しゅうりキット	organize	SSR	放置していた場所を20分かけて直す	20	tidy
+idea_shell	ひらめきの貝殻	idea	N	思いつきを1つメモする	1	idea
+idea_shell	ひらめきの貝殻	idea	N	今日を1分振り返る	2	idea
+idea_shell	ひらめきの貝殻	idea	R	気になることを3分調べる	4	idea
+idea_shell	ひらめきの貝殻	idea	R	やりたいことを3つ書き出す	4	idea
+idea_shell	ひらめきの貝殻	idea	SR	アイデアを5分書き出す	7	idea
+idea_shell	ひらめきの貝殻	idea	SR	1つの問いについて5分考える	6	idea
+idea_shell	ひらめきの貝殻	idea	SSR	1テーマで15分自由に発想する	15	idea
+idea_shell	ひらめきの貝殻	idea	SSR	浮かんだアイデアを誰かに話してみる	15	connect	💛相手がいなければ未来の自分へ提案として書く
+idea_shell	ひらめきの貝殻	idea	SSR	考えをまとめて20分で形にする	20	idea
+ward_charm	まよけのお守り	restraint	N	「今やめる」を1回選ぶ	1	self_control
+ward_charm	まよけのお守り	restraint	N	やらないことリストを確認する	2	self_control
+ward_charm	まよけのお守り	restraint	R	5分だけ我慢を先延ばしにする	4	self_control
+ward_charm	まよけのお守り	restraint	R	誘惑を1つ手の届かない場所へ	3	self_control
+ward_charm	まよけのお守り	restraint	SR	誘惑を遠ざけて10分過ごす	10	self_control
+ward_charm	まよけのお守り	restraint	SR	決めたルールを5分守り抜く	6	self_control
+ward_charm	まよけのお守り	restraint	SSR	決めた時間まで我慢を貫く	20	self_control
+ward_charm	まよけのお守り	restraint	SSR	浮いた時間を大切な人のために使う	20	connect	💛相手がいなければ自分の将来のために使う
+ward_charm	まよけのお守り	restraint	SSR	誘惑を断って25分やるべきことに集中	25	pomodoro	💥
+adventure_map	ぼうけんの地図	adventure	N	いつもと違う道を選ぶ	1	adventure
+adventure_map	ぼうけんの地図	adventure	N	今日の小さな冒険を1つ決める	2	adventure
+adventure_map	ぼうけんの地図	adventure	R	未経験の小さいことを1つ試す	5	adventure
+adventure_map	ぼうけんの地図	adventure	R	気になっていた場所を調べる	4	adventure
+adventure_map	ぼうけんの地図	adventure	SR	初めての場所ややり方に挑戦する	10	adventure
+adventure_map	ぼうけんの地図	adventure	SR	新しいお店やルートを試す	8	adventure
+adventure_map	ぼうけんの地図	adventure	SSR	前からやりたかったことに一歩踏み出す	20	adventure
+adventure_map	ぼうけんの地図	adventure	SSR	新しい挑戦を誰かと一緒にやってみる	20	connect	💛相手がいなければ挑戦の計画を15分立てる
+adventure_map	ぼうけんの地図	adventure	SSR	未体験のことに15〜20分チャレンジ	18	adventure
+travel_compass	たびのコンパス	adventure	N	外に出て少し歩く	2	adventure
+travel_compass	たびのコンパス	adventure	N	窓を開けて外の空気を吸う	1	adventure
+travel_compass	たびのコンパス	adventure	R	やることの優先順位を1つ決める	3	adventure
+travel_compass	たびのコンパス	adventure	R	行き先の候補を1つ探す	4	adventure
+travel_compass	たびのコンパス	adventure	SR	行ったことのない場所へ5分行ってみる	8	adventure
+travel_compass	たびのコンパス	adventure	SR	いつもと違うルートで出かける	7	adventure
+travel_compass	たびのコンパス	adventure	SSR	大切な人を誘って新しい体験を一緒にする	20	connect	💛相手がいなければ次の休日の計画を立てる
+travel_compass	たびのコンパス	adventure	SSR	行きたかった場所へ15〜20分足を延ばす	20	adventure
+travel_compass	たびのコンパス	adventure	SSR	小さな旅の準備を20分整える	20	adventure
+starter_seed	はじまりの種	universal	N	とりあえず1分だけ着手する	1	start	special万能・全属性で使用可
+starter_seed	はじまりの種	universal	N	今いちばん気になることを1つ始める	2	start
+starter_seed	はじまりの種	universal	R	小さな一歩を3分だけ進める	3	start
+starter_seed	はじまりの種	universal	SR	迷っていたことに5分取りかかる	7	start
+starter_seed	はじまりの種	universal	SSR	後回しにしていたことに25分向き合う	25	pomodoro	💥
+starter_seed	はじまりの種	universal	SSR	始めたことを誰かに宣言する	15	connect	💛相手がいなければ未来の自分に宣言を書く
+confidence_bookmark	自信のしおり	idea	N	今日できたことを1つ書く	1	idea	affirm自己肯定
+confidence_bookmark	自信のしおり	idea	N	自分を1つ褒める	1	idea
+confidence_bookmark	自信のしおり	idea	R	今日の小さな成長を3つ書く	4	idea
+confidence_bookmark	自信のしおり	idea	R	頑張った自分に小さなごほうび	4	rest
+confidence_bookmark	自信のしおり	idea	SR	最近できるようになったことを5分書き出す	7	idea
+confidence_bookmark	自信のしおり	idea	SR	未来の自分に一言、励ましを書く	6	connect	💛相手不要の代替つながり
+confidence_bookmark	自信のしおり	idea	SSR	最近感謝したい人に、自分と相手の両方を認める言葉を送る	15	connect	💛相手がいなければ自分への感謝を書く
+confidence_bookmark	自信のしおり	idea	SSR	この1週間の成長を15分振り返ってまとめる	15	idea
+rainbow_drop	にじいろの雫	evolve	N	小さな一歩を踏み出す	1	start	special進化・SSR孵化用
+rainbow_drop	にじいろの雫	evolve	R	相棒との思い出を3分振り返る	3	connect	💛
+rainbow_drop	にじいろの雫	evolve	SR	大きく育てたいオトモンのために5分行動する	7	start
+rainbow_drop	にじいろの雫	evolve	SSR	特別な挑戦を25分やり切って絆を深める	25	pomodoro	💥
+rainbow_drop	にじいろの雫	evolve	SSR	相棒に見せたい成果を20分かけて作る	20	special
