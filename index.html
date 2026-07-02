@@ -26,7 +26,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles/app.css?v=guild-43">
+<link rel="stylesheet" href="styles/app.css?v=guild-44">
 </head>
 <body>
 
@@ -55,7 +55,7 @@
       <button id="avatar-btn" title="アバターを見る"></button>
       <div id="header-motiv" class="header-motiv"></div>
     </div>
-    <div class="header-right">
+    <div class="header-right" data-guide="top-actions">
       <button class="icon-btn" id="fairy-guide-btn" title="導きの妖精（迷ったら押す）">🧚</button>
       <button class="icon-btn feat-locked" id="guild-btn" data-unlock="guild" title="冒険者ギルド">🏰</button>
       <button class="icon-btn feat-locked" id="board-btn" data-unlock="board" title="すごろく">🎲</button>
@@ -79,7 +79,7 @@
   </div>
 
   <!-- はじめの一歩（新規ユーザー向けガイド・完了で自動的に消える） -->
-  <div class="glass" id="onboard-card" style="display:none">
+  <div class="glass" id="onboard-card" data-guide="start-timer" style="display:none">
     <div class="onboard-head">
       <span class="onboard-fairy">🧚</span>
       <div>
@@ -91,7 +91,7 @@
   </div>
 
   <!-- DAILY QUEST（基本クエスト＋選択肢クエストを1枚に統合） -->
-  <div class="glass widget" id="daily-quest-card">
+  <div class="glass widget" id="daily-quest-card" data-guide="daily-quests">
     <div class="widget-grip" title="ドラッグして並べ替え">⠿</div>
     <div class="quest-header">📜 今日のクエスト</div>
     <div class="quest-list" id="quest-list"></div>
@@ -692,6 +692,10 @@
         <span class="setting-row-label">使い方ガイドをもう一度見る</span>
         <button id="show-tutorial-btn" class="setting-action-btn">▶ 表示</button>
       </div>
+      <div class="setting-row">
+        <span class="setting-row-label">導きのしるべをもう一度見る</span>
+        <button id="show-guide-tutorial-btn" class="setting-action-btn">🧚 表示</button>
+      </div>
     </div>
 
     <div class="setting-group">
@@ -770,6 +774,29 @@
     <div class="praise-actions">
       <button class="praise-btn-skip" id="praise-skip-btn">スキップ</button>
       <button class="praise-btn-save" id="praise-save-btn" disabled>記録する</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ─── 導きのしるべ（初回の操作ガイド） ─── -->
+<div id="guide-tutorial-overlay" aria-hidden="true">
+  <div id="guide-tutorial-spotlight"></div>
+  <div id="guide-tutorial-label">ここを押してね</div>
+  <div id="guide-tutorial-panel" role="dialog" aria-modal="true" aria-labelledby="guide-tutorial-title">
+    <div class="guide-tutorial-fairy">
+      <img src="assets/guide-fairy-smile.png" alt="" onerror="this.hidden=true">
+      <span>🧚</span>
+    </div>
+    <div class="guide-tutorial-bubble">
+      <div id="guide-tutorial-title">導きのしるべ</div>
+      <div id="guide-tutorial-line"></div>
+      <div class="guide-tutorial-progress" id="guide-tutorial-progress"></div>
+      <div class="guide-tutorial-actions">
+        <button id="guide-tutorial-later">あとで</button>
+        <button id="guide-tutorial-next">次へ</button>
+        <button id="guide-tutorial-close">閉じる</button>
+      </div>
     </div>
   </div>
 </div>
@@ -876,8 +903,8 @@
   </div>
 </div>
 
-<script src="scripts/app.js?v=guild-45"></script>
-<script src="scripts/otomon.js?v=otomon-34"></script>
+<script src="scripts/app.js?v=guild-46"></script>
+<script src="scripts/otomon.js?v=otomon-35"></script>
 
 <script>
 // ── Service Worker 登録 ────────────────────────────────
