@@ -913,11 +913,6 @@ header {
   display: inline-block; font-size: .82em;
   color: var(--cyan); letter-spacing: .04em; opacity: .9;
 }
-.koku-pet-comment {
-  display: inline-flex; align-items: center; gap: 4px;
-  margin-top: 10px; font-size: .82em;
-  color: var(--text-dim); font-style: italic; letter-spacing: .02em;
-}
 .koku-quote-text {
   font-size: .9rem; font-style: italic; line-height: 1.8;
   color: rgba(255,255,255,.88); letter-spacing: .03em;
@@ -1263,7 +1258,7 @@ header {
 .av-equip-layer-body { z-index: 3; }
 .av-equip-layer-head { z-index: 4; }
 .av-equip-layer-hand { z-index: 5; }
-.av-equip-layer-pet  { z-index: 6; }
+.av-otomon-layer { z-index: 6; }
 
 /* 告 evolution section */
 #koku-evo-section {
@@ -3165,7 +3160,7 @@ header {
 
 /* ═══════════════════════════════════════════════════════
    アバターのレア度オーラ（装備の最高レア度で輝きが変わる）
-   ※ ペットは隣に立つ相棒として表示（.av-equip-layer-pet を流用）
+   ※ お供オトモンは隣に立つ相棒として表示（.av-otomon-layer）
    ═══════════════════════════════════════════════════════ */
 .av-aura-rare .av-char-canvas {
   filter: drop-shadow(0 0 16px rgba(59,130,246,.42)) drop-shadow(0 10px 22px rgba(0,0,0,.75));
@@ -3801,13 +3796,12 @@ body.eq-mood-galaxy    .anim-wrap::after {
   50%      { opacity: 1;  transform: scale(1.25); }
 }
 
-/* ── ペットの見た目クオリティアップ ──
-   SVG化に合わせて、ふんわり浮遊＋やわらかい影で「生きてる感」を出す */
-.av-equip-layer-pet {
+/* ── お供オトモンの見た目クオリティアップ ── */
+.av-otomon-layer {
   filter: drop-shadow(0 8px 12px rgba(0,0,0,.45));
-  animation: petBob 3.6s ease-in-out infinite;
+  animation: otomonBob 3.6s ease-in-out infinite;
 }
-@keyframes petBob {
+@keyframes otomonBob {
   0%, 100% { transform: translate(-50%, -50%); }
   50%      { transform: translate(-50%, calc(-50% - 7px)); }
 }

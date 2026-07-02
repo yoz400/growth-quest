@@ -2,7 +2,7 @@
 //  Growth Quest — Service Worker
 //  バージョンを上げると古いキャッシュが自動削除されます
 // ═══════════════════════════════════════════════════════
-const CACHE_NAME = 'gq-cache-v10';
+const CACHE_NAME = 'gq-cache-v11';
 
 // インストール時に事前キャッシュするファイル一覧
 const PRECACHE_URLS = [

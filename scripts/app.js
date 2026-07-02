@@ -3199,7 +3199,6 @@ function stopTimer() {
     if (_isResumeFromBreak) { addConfidence(5, 'resume_after_break'); data.streakWasBroken = false; saveData(data); }
 
     const cfg = MODES[currentMode];
-    const _pc = getEquipmentComment();   // ペット装備のひとこと（null可）
     if (currentMode === 'flow') {
       // フローモードは自分で終えるのが「完了」→ 達成の告（すごろくも振る）
       const _sgResult = doSugorokuRoll(currentMode, mins);
@@ -3207,13 +3206,13 @@ function stopTimer() {
       addBonusXP(_sgResult.bonusXP);
       playChime();
       showTimerNotif('セッション完了！', `${mins}分間、集中できました！`);
-      showKoku(mins, cfg.break, 'complete', 0, _pc);
+      showKoku(mins, cfg.break, 'complete', 0);
     } else {
       // ポモドーロ/ディープを目標時間の前に手動停止 → 労いの告（控えめにすごろく前進）
       const _sgResult = doSugorokuRoll(currentMode, mins, true);
       pendingSugorokuRoll = _sgResult;
       addBonusXP(_sgResult.bonusXP);
-      showKoku(mins, cfg.break, 'partial', 0, _pc);
+      showKoku(mins, cfg.break, 'partial', 0);
     }
     // デイリークエスト: 手動停止でも実質「セッションを終えた」とみなす（1日1回限定）
     completeQuest('complete_session');
@@ -3356,7 +3355,7 @@ function completeSession() {
   playChime();
   showTimerNotif('セッション完了！', `${mins}分間、集中できました！`);
   resetTabTitle();
-  showKoku(mins, cfg.break, 'complete', 0, getEquipmentComment());
+  showKoku(mins, cfg.break, 'complete', 0);
   // デイリークエスト: セッション完了（1日1回限定）
   completeQuest('complete_session');
   // 告が閉じたら「褒めログ入力」モーダルを案内
@@ -3420,10 +3419,9 @@ document.addEventListener('visibilitychange', () => {
 // ═══════════════════════════════════════════════════════
 //  告 SYSTEM
 // ═══════════════════════════════════════════════════════
-function showKoku(mins, breakMins, kind, equipBonusXp, petComment) {
+function showKoku(mins, breakMins, kind, equipBonusXp) {
   // kind: 'complete'（完走）= 達成の告 / 'partial'（途中停止）= 労いの告
   // equipBonusXp: 旧装備ボーナス表示用（XP倍率廃止により現在は常に0）
-  // petComment: { item, text } または null（pet装備のひとこと）
   kind = kind || 'complete';
   equipBonusXp = equipBonusXp || 0;
   const isPartial = kind === 'partial';
@@ -3448,11 +3446,6 @@ function showKoku(mins, breakMins, kind, equipBonusXp, petComment) {
     ? `<span class="koku-equip-bonus">⚡ 装備ボーナス +${equipBonusXp} XP</span><br>`
     : '';
 
-  // ペットのひとこと（装備中のみ表示）
-  const petLine = petComment
-    ? `<div class="koku-pet-comment">${renderItemIcon(petComment.item, 18)}<span>${petComment.item.name}：「${petComment.text}」</span></div>`
-    : '';
-
   overlay.className = 'active style-' + settings.kokuStyle;
 
   result.innerHTML = `
@@ -3464,7 +3457,6 @@ function showKoku(mins, breakMins, kind, equipBonusXp, petComment) {
     ${streakMsg ? streakMsg + '<br>' : ''}
     <span class="result-divider">────────────────</span>
     ${closingMsg}
-    ${petLine}
   `;
 
   // 名言を選んで表示
@@ -7538,8 +7530,6 @@ const FG_CATEGORIES = [
     desc:'すごろくの旅先で「卵」を拾い、「目覚めアイテム」で現実の小さな行動クエストを起こすと、卵が孵って相棒（オトモン）が生まれます。生まれた子は図鑑に集まり、あなたをそっと応援してくれます。' },
   { emoji:'🌳', name:'スキルツリー（世界樹）', key:'skill', nav:'skill',
     desc:'学びのあと、🧚妖精の問いに「ひとこと」答えると、樹に実がなります。あなたの学びの言葉が、そのまま宝物になっていきます。' },
-  { emoji:'🎒', name:'装備', key:'equipment', nav:'equipment',
-    desc:'集めたアイテムを身につけられます。見た目や雰囲気（タイマーの色やヘッダーの言葉など）が変わって、自分だけの冒険者になれます。' },
   { emoji:'🏅', name:'バッジ', key:'badges', nav:'badges',
     desc:'がんばりの証（あかし）です。「○日続けた」「△分勉強した」などの条件を満たすと、自動で集まります。コレクション感覚でどうぞ。' },
   { emoji:'📊', name:'週次レビュー＆AI分析', key:'review', nav:'review',
@@ -7745,8 +7735,6 @@ function fgGo(nav) {
     case 'board':  return () => click('board-btn');
     case 'skill':  return () => click('skill-btn');
     case 'review': return () => click('review-btn');
-    case 'equipment':
-      return () => { close(); document.getElementById('avatar-btn')?.click(); setTimeout(() => document.getElementById('avatar-open-equipment')?.click(), 300); };
     case 'badges':
       return () => { close(); document.getElementById('avatar-btn')?.click(); setTimeout(() => document.getElementById('avatar-open-badges')?.click(), 300); };
     case 'otomon':
@@ -8209,16 +8197,10 @@ function buildAvatarSVG(stageIdx, w, h) {
 }
 
 // ── アバター詳細: 画像ファイルで表示（fallback: ドット絵）──────
-// 装備合成: カテゴリ別オーバーレイ配置（base 画像に対する % 指定）
+// お供オトモン表示: base 画像に対する % 指定
 //   scale = オーバーレイの幅（高さは aspect-ratio 1:1 で同値）
 //   cx/cy = オーバーレイ中心の位置（base 内座標, 0..100%）
-const AVATAR_EQUIP_LAYOUT = {
-  back: { scale: 110, cx: 50, cy: 50 },  // 背面: ベースより少し大きく中央
-  body: { scale:  70, cx: 50, cy: 55 },  // 胴: 体の中央やや下
-  head: { scale:  50, cx: 50, cy: 16 },  // 頭: 上部
-  hand: { scale:  45, cx: 68, cy: 58 },  // 手: 右寄り中段
-  pet:  { scale:  40, cx: 22, cy: 88 },  // ペット: 左下足元
-};
+const AVATAR_OTOMON_LAYOUT = { scale: 40, cx: 22, cy: 88 };
 
 function buildRichAvatarSVG_0(type) {
   const srcs = {
@@ -8229,22 +8211,17 @@ function buildRichAvatarSVG_0(type) {
   const src = srcs[type] || srcs.A;
   const fallback = buildAvatarSVG(0, 160, 200);
   // アバター本体は「崩れない美しい1枚絵」のまま。
-  // 装備の反映は “崩れない2要素” だけ行う：
-  //   ① ペット → 隣に立つ相棒として表示（着る物ではないので破綻しない）
-  //   ② オーラ → 装備の最高レア度で、キャラと足元の輝きの色が変わる
+  // お供オトモンだけを隣に表示し、旧ペット装備は表示しない。
   const equipped = (typeof getEquippedItems === 'function') ? getEquippedItems() : {};
-  const petLay = (typeof AVATAR_EQUIP_LAYOUT !== 'undefined') ? AVATAR_EQUIP_LAYOUT.pet : null;
-  // B-1：隣に立つ相棒は「お供オトモン」優先。いなければ旧・装備ペットにフォールバック
-  let petSrc = null;
+  const otomonLay = (typeof AVATAR_OTOMON_LAYOUT !== 'undefined') ? AVATAR_OTOMON_LAYOUT : null;
+  let otomonSrc = null;
   const activeOto = (window.Otomon && window.Otomon.getActiveOtomon) ? window.Otomon.getActiveOtomon() : null;
   if (activeOto && activeOto.image) {
-    petSrc = activeOto.image.medium || activeOto.image.small || activeOto.image.large;
-  } else if (equipped.pet && equipped.pet.imagePath) {
-    petSrc = equipped.pet.imagePath;
+    otomonSrc = activeOto.image.medium || activeOto.image.small || activeOto.image.large;
   }
-  const petOverlay = (petSrc && petLay)
-    ? `<img src="${petSrc}" alt="" class="av-equip-overlay av-equip-layer-pet"
-         style="width:${petLay.scale}%;left:${petLay.cx}%;top:${petLay.cy}%"
+  const otomonOverlay = (otomonSrc && otomonLay)
+    ? `<img src="${otomonSrc}" alt="" class="av-equip-overlay av-otomon-layer"
+         style="width:${otomonLay.scale}%;left:${otomonLay.cx}%;top:${otomonLay.cy}%"
          onerror="this.style.display='none'">`
     : '';
   const auraRarity = bestEquippedRarity(equipped);
@@ -8253,7 +8230,7 @@ function buildRichAvatarSVG_0(type) {
     <div class="av-char-canvas">
       <img src="${src}" alt="" class="av-char-img"
         onerror="this.parentElement.style.display='none';this.parentElement.parentElement.querySelector('.av-char-fallback').style.display='flex'">
-      ${petOverlay}
+      ${otomonOverlay}
     </div>
     <div class="av-char-fallback" style="display:none">${fallback}</div>
   </div>`;
@@ -8421,8 +8398,6 @@ function renderAvatarModal() {
   }
   document.getElementById('avatar-journey').innerHTML = journeyHTML;
 
-  // 現在の装備セクション
-  renderAvatarEquipmentSection();
 }
 
 // アバター画面の「現在の装備」セクションを描画
@@ -9572,7 +9547,6 @@ document.getElementById('eq-test-grant-btn')?.addEventListener('click', () => {
   else alert('🎉 全30種コンプリート！もう入手できる装備はありません。');
 });
 
-document.getElementById('avatar-open-equipment')?.addEventListener('click', openEquipmentModal);
 document.getElementById('equipment-close-btn').addEventListener('click', closeEquipmentModal);
 document.getElementById('equipment-overlay').addEventListener('click', e => {
   if (e.target === document.getElementById('equipment-overlay')) closeEquipmentModal();
