@@ -613,7 +613,7 @@
   // ── なつき段階の昇格フック（UI層が昇格トーストを出す。未設定なら何もしない）──
   let _onBondUp = null;
   function setOnBondUp(fn)             { _onBondUp = (typeof fn === 'function') ? fn : null; }
-  function notifyBondUp(otomon, tier)  { if (_onBondUp) { try { _onBondUp(otomon, tier); } catch (_) {} } }
+  function notifyBondUp(otomon, tier, prevTier)  { if (_onBondUp) { try { _onBondUp(otomon, tier, prevTier); } catch (_) {} } }
 
   // ── 連続ふれあい節目フック（UI層が祝福トーストを出す。未設定なら何もしない）──
   let _onStreak = null;
@@ -804,7 +804,8 @@
     let t = BOND_TIERS[0];
     for (const x of BOND_TIERS) { if (b >= x.min) t = x; }
     const next = BOND_TIERS.find(x => x.min > b) || null;  // 次段階（MAXなら null）
-    return { ...t, bond: b, next };
+    const level = BOND_TIERS.indexOf(t) + 1;               // 段階番号（1〜5）
+    return { ...t, bond: b, next, level };
   }
 
   // ── bond加算の共通関数（蛇口）。所持している子だけ加算し 0 未満にしない ──
@@ -814,11 +815,11 @@
     const rec = id && otomonState.discovered[id];
     if (!rec) return null;                       // 未所持なら何もしない（エラーにしない）
     const amt = Number(amount) || 0;
-    const beforeMin = bondTier(rec.bond).min;    // 加算前の段階しきい値
+    const prevTier = bondTier(rec.bond);         // 加算前の段階
     rec.bond = Math.max(0, (rec.bond || 0) + amt);
     const afterTier = bondTier(rec.bond);        // 加算後の段階
     // 段階が上がった時だけ、最終到達段階の昇格を1回通知（複数段飛びも1回）
-    if (amt > 0 && afterTier.min > beforeMin) notifyBondUp(OTOMON_BY_ID[id], afterTier);
+    if (amt > 0 && afterTier.min > prevTier.min) notifyBondUp(OTOMON_BY_ID[id], afterTier, prevTier);
     if (!opts.noSave) saveOtomon();
     return rec.bond;
   }
@@ -1146,6 +1147,34 @@
       .ob-flavor { color:var(--text-dim); font-size:.86rem; margin-top:8px; line-height:1.5; }
       .ob-role { color:var(--cyan); font-size:.78rem; margin-top:6px; font-weight:700; }
       .ob-actions { display:flex; gap:10px; justify-content:center; margin-top:18px; }
+      /* ── bond昇格モーダル演出 ── */
+      #otomon-bondup-overlay { position:fixed; inset:0; z-index:97; background:rgba(0,0,0,.72);
+        backdrop-filter:blur(10px); display:flex; align-items:center; justify-content:center;
+        opacity:0; pointer-events:none; transition:opacity .3s; }
+      #otomon-bondup-overlay.open { opacity:1; pointer-events:auto; }
+      #otomon-bondup-panel { position:relative; width:min(360px, calc(100vw - 40px)); text-align:center; padding:26px 24px 22px;
+        background:radial-gradient(circle at 50% 25%, #1a2340, #0e0e1c); border:1px solid rgba(244,162,97,.4);
+        border-radius:24px; box-shadow:0 24px 80px rgba(0,0,0,.9), 0 0 60px rgba(244,162,97,.16);
+        animation:obu-pop .5s cubic-bezier(.2,1.3,.5,1); overflow:hidden; }
+      @keyframes obu-pop { 0%{transform:scale(.7);opacity:0;} 100%{transform:scale(1);opacity:1;} }
+      .obu-title { font-size:1.18rem; font-weight:900; color:var(--gold); letter-spacing:.03em; }
+      .obu-face { font-size:4.4rem; line-height:1.1; margin:10px 0 4px; animation:obu-bounce 1.1s ease-in-out infinite; }
+      .obu-face .otomon-face-img { width:104px; height:104px; object-fit:contain; }
+      @keyframes obu-bounce { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-9px);} }
+      .obu-name { font-size:.92rem; font-weight:800; color:var(--text); }
+      .obu-step { font-size:1.05rem; font-weight:900; color:var(--text); margin:12px 0 2px; }
+      .obu-step .obu-old { color:var(--text-dim); }
+      .obu-step .obu-arrow { color:var(--gold); margin:0 8px; }
+      .obu-step .obu-new { color:var(--gold); }
+      .obu-tiername { font-size:.82rem; color:var(--cyan); font-weight:700; }
+      .obu-line { font-size:.9rem; color:var(--text); margin:14px 6px 4px; line-height:1.55;
+        background:rgba(255,255,255,.05); border-radius:12px; padding:11px 12px; }
+      .obu-guide { font-size:.76rem; color:var(--text-dim); margin-top:10px; }
+      .obu-close { margin-top:16px; padding:9px 22px; border:none; border-radius:12px; cursor:pointer;
+        background:rgba(244,162,97,.2); color:var(--gold); font-weight:800; font-size:.9rem; }
+      .obu-close:hover { background:rgba(244,162,97,.32); }
+      .obu-spark { position:absolute; font-size:1rem; pointer-events:none; opacity:0; animation:obu-spark 1.4s ease-out infinite; }
+      @keyframes obu-spark { 0%{opacity:0;transform:scale(.4) translateY(0);} 30%{opacity:1;} 100%{opacity:0;transform:scale(1.1) translateY(-22px);} }
       .otomon-flow { background:rgba(6,182,212,.06); border:1px solid rgba(6,182,212,.18); border-radius:14px; padding:12px 14px; margin-bottom:16px; }
       .otomon-flow .ofl-title { font-size:.82rem; font-weight:800; color:var(--text); margin-bottom:9px; }
       .otomon-flow .ofl-steps { display:flex; flex-wrap:wrap; align-items:center; gap:5px 6px; }
@@ -1213,7 +1242,7 @@
     ov.addEventListener('click', e => { if (e.target === ov) closePanel(); });
   }
 
-  function injectAll() { injectStyle(); injectButton(); injectHomeCard(); injectQuestCard(); injectBuddyCard(); injectPanel(); injectBirth(); injectNudge(); }
+  function injectAll() { injectStyle(); injectButton(); injectHomeCard(); injectQuestCard(); injectBuddyCard(); injectPanel(); injectBirth(); injectBondUp(); injectNudge(); }
 
   // ── 描画：ホームの卵カード（卵があるときだけ表示）──
   function renderHomeEggCard() {
@@ -1534,6 +1563,49 @@
     ov.classList.add('open');
   }
   function closeBirth() { const ov = document.getElementById('otomon-birth-overlay'); if (ov) ov.classList.remove('open'); }
+
+  // ── bond昇格モーダル演出（背景暗幕＋中央にお供＋段階変化＋個体別セリフ）──
+  function injectBondUp() {
+    if (document.getElementById('otomon-bondup-overlay')) return;
+    const ov = document.createElement('div');
+    ov.id = 'otomon-bondup-overlay';
+    // 光の粒（4隅ふう）
+    const sparks = ['✨','⭐','💫','✨'].map((s, i) =>
+      '<span class="obu-spark" style="left:' + (12 + i * 24) + '%;top:' + (18 + (i % 2) * 40) + '%;animation-delay:' + (i * .25) + 's">' + s + '</span>').join('');
+    ov.innerHTML =
+      '<div id="otomon-bondup-panel">' + sparks +
+        '<div class="obu-title">✨ 絆が深まった！</div>' +
+        '<div class="obu-face" id="otomon-bondup-face"></div>' +
+        '<div class="obu-name" id="otomon-bondup-name"></div>' +
+        '<div class="obu-step" id="otomon-bondup-step"></div>' +
+        '<div class="obu-tiername" id="otomon-bondup-tiername"></div>' +
+        '<div class="obu-line" id="otomon-bondup-line"></div>' +
+        '<div class="obu-guide">ホームでまた話しかけてみよう</div>' +
+        '<button class="obu-close" id="otomon-bondup-close">とじる</button>' +
+      '</div>';
+    document.body.appendChild(ov);
+    document.getElementById('otomon-bondup-close').addEventListener('click', closeBondUp);
+    ov.addEventListener('click', e => { if (e.target === ov) closeBondUp(); });   // 背景タップで閉じる
+  }
+  function showBondUp(otomon, tier, prevTier) {
+    injectBondUp();
+    const ov = document.getElementById('otomon-bondup-overlay');
+    if (!ov || !otomon || !tier) return;
+    const prevLv = (prevTier && prevTier.level) || Math.max(1, (tier.level || 1) - 1);
+    document.getElementById('otomon-bondup-face').innerHTML = otomonFace(otomon, 'large');
+    document.getElementById('otomon-bondup-name').textContent = otomon.name || '';
+    document.getElementById('otomon-bondup-step').innerHTML =
+      '<span class="obu-old">bond ' + prevLv + '</span>' +
+      '<span class="obu-arrow">→</span>' +
+      '<span class="obu-new">bond ' + (tier.level || '') + '</span>';
+    document.getElementById('otomon-bondup-tiername').textContent =
+      ((prevTier && prevTier.name) || '') + ' → ' + tier.name + ' ' + (tier.face || '');
+    // 個体別セリフ優先、無ければ共通トーンへfallback
+    const line = getBuddyLine(otomon.id, tier.name) || pickTone(tier.name);
+    document.getElementById('otomon-bondup-line').textContent = '「' + line + '」';
+    ov.classList.add('open');
+  }
+  function closeBondUp() { const ov = document.getElementById('otomon-bondup-overlay'); if (ov) ov.classList.remove('open'); }
 
   function openPanel()  { injectAll(); _pickEggUid = null; _pickMsg = ''; renderPanel(); const ov = document.getElementById('otomon-overlay'); if (ov) ov.classList.add('open'); }
   function closePanel() { _pickEggUid = null; _pickMsg = ''; const ov = document.getElementById('otomon-overlay'); if (ov) ov.classList.remove('open'); }
@@ -2327,15 +2399,15 @@
     'しんらい': 'があなたを信頼しているようです',
     '相棒':     'は、あなたの大切な相棒になった！',
   };
-  let _bondUpFired = false;   // この回、昇格トーストを出したか（応援nudge抑制用）
-  let _lastBondUpAt = 0;      // 昇格トーストを出した時刻（連続節目祝福の優先制御用）
-  O.setOnBondUp(function (oto, tier) {
+  let _bondUpFired = false;   // この回、昇格演出を出したか（応援nudge抑制用）
+  let _lastBondUpAt = 0;      // 昇格演出を出した時刻（連続節目祝福の優先制御用）
+  //  bond段階が上がったら、軽いトーストではなく専用モーダル演出を出す。
+  //  suppress用のフラグ/時刻は従来どおり立て、応援nudge・連続節目祝福より優先する。
+  O.setOnBondUp(function (oto, tier, prevTier) {
     if (!oto || !tier) return;
-    const suffix = TIER_UP_MSG[tier.name];
-    if (!suffix) return;                                  // 対象外の段階は何もしない
-    showNudge(tier.face || oto.emoji, oto.name + suffix);
     _bondUpFired = true;                                  // 昇格優先：直後の応援を抑制
     _lastBondUpAt = Date.now();
+    showBondUp(oto, tier, prevTier);                      // 中央モーダル演出
   });
 
   // ── 連続ふれあいの節目祝福トースト（既存 showNudge を流用）──
