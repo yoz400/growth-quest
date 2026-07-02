@@ -3083,6 +3083,8 @@ const stopBtn = document.getElementById('stop-btn');
 function startTimer() {
   if (timerState === 'idle') {
     // ── START ──
+    const guideWasOpen = document.getElementById('guide-tutorial-overlay')?.classList.contains('open');
+    if (guideWasOpen) closeGuideTutorial(true);
     if (breakInterval) {
       clearInterval(breakInterval);
       breakInterval = null;
@@ -3102,6 +3104,7 @@ function startTimer() {
     requestNotifPermission();
     // デイリークエスト: STARTを押した時点で1日1回達成
     completeQuest('start_5min');
+    if (guideWasOpen) setTimeout(showGuideStartToast, 180);
 
   } else if (timerState === 'running') {
     // ── PAUSE ──
@@ -7751,6 +7754,185 @@ document.getElementById('fairy-guide-overlay')?.addEventListener('click', e => {
   if (e.target === document.getElementById('fairy-guide-overlay')) closeFairyGuideModal();
 });
 
+// ═══════════════════════════════════════════════════════
+//  導きのしるべ — 初回の操作ガイド
+//  localStorage: gq_guide_tutorial_seen = '1' なら自動表示しない
+// ═══════════════════════════════════════════════════════
+const GUIDE_TUTORIAL_KEY = 'gq_guide_tutorial_seen';
+const GUIDE_STEPS = [
+  {
+    id: 'start_timer',
+    target: "[data-guide='start-timer']",
+    fallbackTarget: '#timer-card',
+    fairyLine: 'まずはここから。5分だけ集中すると、経験値と自信が少し育つよ。',
+    label: 'ここを押してね'
+  },
+  {
+    id: 'daily_quest',
+    target: "[data-guide='daily-quests']",
+    fairyLine: '今日のクエストは、毎日の小さな成長ミッションだよ。達成するとXPや自信がもらえるよ。',
+    label: '今日の目標だよ'
+  },
+  {
+    id: 'top_buttons',
+    target: "[data-guide='top-actions']",
+    fairyLine: '上のボタンから、仲間や記録、オトモンの卵を確認できるよ。最初は気にしなくて大丈夫。まずは5分だけ始めよう。',
+    label: 'あとで見ればOK'
+  }
+];
+
+let guideTutorialStep = 0;
+let guideTutorialTarget = null;
+let guideTutorialRetry = null;
+
+function guideClamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function findGuideTarget(step) {
+  const target = document.querySelector(step.target);
+  if (target && target.offsetParent !== null) return target;
+  return step.fallbackTarget ? document.querySelector(step.fallbackTarget) : target;
+}
+
+function clearGuideHighlight() {
+  if (guideTutorialTarget) guideTutorialTarget.classList.remove('guide-tutorial-target');
+  guideTutorialTarget = null;
+}
+
+function positionGuideTutorial() {
+  const overlay = document.getElementById('guide-tutorial-overlay');
+  if (!overlay || !overlay.classList.contains('open') || !guideTutorialTarget) return;
+
+  const step = GUIDE_STEPS[guideTutorialStep];
+  const rect = guideTutorialTarget.getBoundingClientRect();
+  const pad = 10;
+  const spot = document.getElementById('guide-tutorial-spotlight');
+  const label = document.getElementById('guide-tutorial-label');
+  const panel = document.getElementById('guide-tutorial-panel');
+
+  spot.style.left = `${rect.left + rect.width / 2}px`;
+  spot.style.top = `${rect.top + rect.height / 2}px`;
+  spot.style.width = `${rect.width + pad * 2}px`;
+  spot.style.height = `${rect.height + pad * 2}px`;
+
+  label.textContent = step.label;
+  label.style.left = `${guideClamp(rect.left + rect.width / 2, 72, window.innerWidth - 72)}px`;
+  label.style.top = `${guideClamp(rect.top - 16, 22, window.innerHeight - 24)}px`;
+
+  const panelWidth = Math.min(360, window.innerWidth - 28);
+  const panelHeight = panel.offsetHeight || 170;
+  const belowTop = rect.bottom + 18;
+  const aboveTop = rect.top - panelHeight - 18;
+  const top = belowTop + panelHeight < window.innerHeight - 12 ? belowTop : Math.max(12, aboveTop);
+  const left = guideClamp(rect.left + rect.width / 2 - panelWidth / 2, 12, window.innerWidth - panelWidth - 12);
+  panel.style.left = `${left}px`;
+  panel.style.top = `${top}px`;
+}
+
+function renderGuideTutorialStep() {
+  const overlay = document.getElementById('guide-tutorial-overlay');
+  const line = document.getElementById('guide-tutorial-line');
+  const progress = document.getElementById('guide-tutorial-progress');
+  const nextBtn = document.getElementById('guide-tutorial-next');
+  if (!overlay || !line || !progress) return;
+
+  const step = GUIDE_STEPS[guideTutorialStep];
+  const target = findGuideTarget(step);
+  if (!target) return;
+
+  clearGuideHighlight();
+  guideTutorialTarget = target;
+  guideTutorialTarget.classList.add('guide-tutorial-target');
+  line.textContent = step.fairyLine;
+  progress.innerHTML = GUIDE_STEPS.map((_, i) =>
+    `<span class="guide-tutorial-dot${i === guideTutorialStep ? ' active' : ''}"></span>`
+  ).join('');
+  overlay.classList.toggle('is-last', guideTutorialStep === GUIDE_STEPS.length - 1);
+  if (nextBtn) nextBtn.textContent = guideTutorialStep === GUIDE_STEPS.length - 1 ? '完了' : '次へ';
+
+  target.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+  setTimeout(positionGuideTutorial, 260);
+}
+
+function openGuideTutorial({ force = false } = {}) {
+  if (!force && localStorage.getItem(GUIDE_TUTORIAL_KEY) === '1') return;
+  const overlay = document.getElementById('guide-tutorial-overlay');
+  if (!overlay) return;
+  guideTutorialStep = 0;
+  overlay.classList.add('open');
+  overlay.setAttribute('aria-hidden', 'false');
+  renderGuideTutorialStep();
+}
+
+function closeGuideTutorial(markSeen = true) {
+  const overlay = document.getElementById('guide-tutorial-overlay');
+  if (!overlay) return;
+  overlay.classList.remove('open', 'is-last');
+  overlay.setAttribute('aria-hidden', 'true');
+  clearGuideHighlight();
+  if (markSeen) localStorage.setItem(GUIDE_TUTORIAL_KEY, '1');
+}
+
+function nextGuideTutorialStep() {
+  if (guideTutorialStep < GUIDE_STEPS.length - 1) {
+    guideTutorialStep++;
+    renderGuideTutorialStep();
+  } else {
+    closeGuideTutorial(true);
+  }
+}
+
+function showGuideStartToast() {
+  const t = document.getElementById('confidence-toast');
+  if (!t) return;
+  t.innerHTML = '🧚 いい一歩だったね。<br><span style="opacity:.85;font-weight:400">完璧じゃなくていいよ。今日の冒険は、もう始まってる。</span>';
+  t.classList.remove('levelup');
+  t.classList.add('multiline');
+  void t.offsetWidth;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => {
+    t.classList.remove('show');
+    setTimeout(() => t.classList.remove('multiline'), 400);
+  }, 3600);
+}
+
+function resetGuideTutorial() {
+  localStorage.removeItem(GUIDE_TUTORIAL_KEY);
+  openGuideTutorial({ force: true });
+}
+window.resetGuideTutorial = resetGuideTutorial;
+
+function maybeStartGuideTutorial() {
+  clearTimeout(guideTutorialRetry);
+  if (localStorage.getItem(GUIDE_TUTORIAL_KEY) === '1') return;
+  const summoned = localStorage.getItem('gq_summoned') === '1';
+  const summonOpen = document.getElementById('summon-overlay')?.classList.contains('open');
+  const guideOpen = document.getElementById('guide-tutorial-overlay')?.classList.contains('open');
+  if (!summoned || summonOpen || guideOpen) {
+    guideTutorialRetry = setTimeout(maybeStartGuideTutorial, 1200);
+    return;
+  }
+  setTimeout(() => openGuideTutorial(), 700);
+}
+
+document.getElementById('guide-tutorial-next')?.addEventListener('click', nextGuideTutorialStep);
+document.getElementById('guide-tutorial-close')?.addEventListener('click', () => closeGuideTutorial(true));
+document.getElementById('guide-tutorial-later')?.addEventListener('click', () => closeGuideTutorial(true));
+document.getElementById('show-guide-tutorial-btn')?.addEventListener('click', () => {
+  document.getElementById('settings-overlay')?.classList.remove('open');
+  setTimeout(resetGuideTutorial, 320);
+});
+window.addEventListener('resize', positionGuideTutorial);
+window.addEventListener('scroll', positionGuideTutorial, true);
+document.addEventListener('keydown', e => {
+  const ov = document.getElementById('guide-tutorial-overlay');
+  if (!ov || !ov.classList.contains('open')) return;
+  if (e.key === 'Escape') { e.preventDefault(); closeGuideTutorial(true); }
+  if (e.key === 'ArrowRight' || e.key === 'Enter') { e.preventDefault(); nextGuideTutorialStep(); }
+});
+
 function renderNewSkillsInKoku(newlyUnlocked) {
   if (!newlyUnlocked || !newlyUnlocked.length) return;
   const result = document.getElementById('koku-result');
@@ -8601,6 +8783,7 @@ function renderOnboarding() {
   }
 }
 renderOnboarding();
+maybeStartGuideTutorial();
 
 // 起動時：装備中の mood（タイマーまわりの雰囲気）を反映
 applyEquipMood();
@@ -10135,6 +10318,7 @@ function finishSummon() {
   localStorage.setItem('gq_summoned', '1');
   localStorage.setItem('gq_tutorial_seen', '1');
   closeSummon();
+  setTimeout(() => { if (typeof maybeStartGuideTutorial === 'function') maybeStartGuideTutorial(); }, 500);
 }
 
 function skipSummon() {
@@ -10146,6 +10330,7 @@ function skipSummon() {
   localStorage.setItem('gq_summoned', '1');
   localStorage.setItem('gq_tutorial_seen', '1');
   closeSummon();
+  setTimeout(() => { if (typeof maybeStartGuideTutorial === 'function') maybeStartGuideTutorial(); }, 500);
 }
 
 function summonNext() {
