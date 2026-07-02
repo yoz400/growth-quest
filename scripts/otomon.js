@@ -2362,6 +2362,35 @@
     return (m && m[tierName]) || null;   // 無ければ null（呼び出し側で共通トーンにフォールバック）
   }
 
+  // ── 学習開始/完了の個体別トーン（第1弾5体）。bond段階レベル(1〜5)で少し親密に ──
+  //  未実装の体・未定義段階は null を返し、呼び出し側で共通トーン等へfallback。
+  const BUDDY_TRIGGER_LINES = {
+    guide_fairy: {
+      timer_start:      { 1:'さあ、今日の一歩を照らそう。', 2:'ここから、ゆっくり始めよう。', 3:'きみのペースで、行ってみよう。', 4:'大丈夫、道はぼくが照らすよ。', 5:'きみとなら、どんな道も進める。始めよう。' },
+      session_complete: { 1:'今日の一歩、ちゃんと道になったね。', 2:'よく進んだね。いい歩みだよ。', 3:'きみの一歩、確かに前へ向かってる。', 4:'ここまで来たきみ、すごいよ。', 5:'きみと歩いた今日、きれいな道になった。' },
+    },
+    echo_slime: {
+      timer_start:      { 1:'はじめるよ。きみの声、聞こえてる。', 2:'はじめる、はじめる！いっしょにね。', 3:'よーい、どん！ぼくもはねるよ。', 4:'きみのやる気、こだまで返すよ！', 5:'いくよ！きみの“やる”、何回でも響かせる！' },
+      session_complete: { 1:'できた、できた。がんばったね。', 2:'いいね！きみのがんばり、こだましたよ。', 3:'やりきった音、ちゃんと聞こえたよ。', 4:'すごいすごい！はねちゃうくらい！', 5:'きみの“できた”、ずーっとこだまし続けるよ。' },
+    },
+    hidamari_gorira: {
+      timer_start:      { 1:'よし、あったかく始めよう。', 2:'無理せず、ぼちぼちいこうか。', 3:'いい調子だ。今日も一緒にな。', 4:'きみのペースでいい。背中は貸すよ。', 5:'きみとなら、どんな日もぽかぽかだ。始めよう。' },
+      session_complete: { 1:'よし、いい顔だ。よくやったな。', 2:'ちゃんと積み上がってるぞ。えらい。', 3:'おつかれさん。いい汗かいたな。', 4:'きみの頑張り、ちゃんと見てたよ。', 5:'きみと過ごす今日も、あったかかったな。' },
+    },
+    mame_drako: {
+      timer_start:      { 1:'小さな火をつけよう。まずは一歩だ。', 2:'よし、いくぞ！ひと踏ん張りだ。', 3:'のってきた！このまま燃えていこう！', 4:'おれも本気出す。きみと一緒にな！', 5:'相棒、いくぞ！今日も全力で燃えよう！' },
+      session_complete: { 1:'いい火だったぞ。よくやった。', 2:'やりきったな！かっこよかったぞ。', 3:'きみの本気、ちゃんと見てた。最高だ。', 4:'うおー、燃えたな！さすが相棒！', 5:'きみとおれの火、今日もすげえ熱かった！' },
+    },
+    niji_slime: {
+      timer_start:      { 1:'今日の時間に、きれいな色を足そう。', 2:'どんな色になるかな。始めてみよ。', 3:'きみと描く時間、楽しみだな。', 4:'きみの一歩に、そっと虹をかけるね。', 5:'さあ、七色の今日を、きみと始めよう。' },
+      session_complete: { 1:'やったね。今日のがんばり、色になったよ。', 2:'きれいな一日だったね。よくやった。', 3:'きみの時間、虹みたいに残ってるよ。', 4:'きらきら増えたね。すごいよ、きみ。', 5:'きみと重ねた今日、最高の一色になった。' },
+    },
+  };
+  function getTriggerLine(id, trigger, level) {
+    const m = BUDDY_TRIGGER_LINES[id];
+    return (m && m[trigger] && m[trigger][level]) || null;   // 無ければ null（呼び出し側でfallback）
+  }
+
   // 今のお供オトモンの nudge.trigger が一致したら応援を出す（home_open は挨拶も兼ねる）
   function fireNudge(trigger) {
     let st; try { st = O.getState().otomon; } catch (e) { return; }
@@ -2371,19 +2400,24 @@
     const now = Date.now();
     if (_lastNudge[trigger] && now - _lastNudge[trigger] < 25000) return;   // 連発防止
     let text = null;
+    const bond = (st.discovered && st.discovered[a.id] || {}).bond || 0;
+    const tier = O.bondTier(bond);
     if (trigger === 'home_open') {
       const h = new Date().getHours();
       if ((h >= 21 || h < 5) && a.nudge && a.nudge.trigger === 'night') {
         text = a.nudge.text;                                  // 夜間特別は維持
       } else {
-        const bond = (st.discovered && st.discovered[a.id] || {}).bond || 0;
-        const tierName = O.bondTier(bond).name;
-        text = getBuddyLine(a.id, tierName)                   // ① 個体別bond段階セリフ（優先）
+        text = getBuddyLine(a.id, tier.name)                  // ① 個体別bond段階セリフ（優先）
             || (a.nudge && a.nudge.trigger === 'home_open' ? a.nudge.text : null)  // ② 個体home_open固有
-            || pickTone(tierName);                            // ③ 共通bond段階トーン
+            || pickTone(tier.name);                           // ③ 共通bond段階トーン
       }
+    } else if (trigger === 'timer_start' || trigger === 'session_complete') {
+      // 学習開始/完了：① 個体別triggerセリフ（段階別）→ ② 個体固有nudge → ③ 共通トーン
+      text = getTriggerLine(a.id, trigger, tier.level)
+          || (a.nudge && a.nudge.trigger === trigger ? a.nudge.text : null)
+          || pickTone(tier.name);
     } else if (a.nudge && a.nudge.trigger === trigger) {
-      text = a.nudge.text;                                    // timer_start/session_complete等の個体nudgeは従来どおり
+      text = a.nudge.text;                                    // その他triggerの個体nudgeは従来どおり
     }
     if (!text) return;
     _lastNudge[trigger] = now;
