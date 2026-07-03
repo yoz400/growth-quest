@@ -11381,7 +11381,8 @@ function claimLoginBonus() {
   const finish = () => {
     if (target) { target.classList.add('fairy-absorb'); setTimeout(() => target.classList.remove('fairy-absorb'), 1000); }
     applyHeaderLuxe(true);
-    overlay.classList.remove('open', 'lb-claiming');
+    Overlay.close('login-bonus-overlay');
+    overlay.classList.remove('lb-claiming');
   };
 
   // 🧚へ吸い込まれる飛翔エフェクト
@@ -11421,10 +11422,10 @@ function maybeShowLoginBonus() {
   _pendingLoginXP = reward.xp;
   renderLoginBonus(streak, reward);
   const overlay = document.getElementById('login-bonus-overlay');
-  overlay.classList.add('open');
+  Overlay.open('login-bonus-overlay');
   // 背景タップで閉じる（受け取らずに閉じても、その日は再表示しない）
   overlay.onclick = (e) => {
-    if (e.target === overlay) { localStorage.setItem('gq_loginbonus_seen', today); overlay.classList.remove('open'); }
+    if (e.target === overlay) { localStorage.setItem('gq_loginbonus_seen', today); Overlay.close('login-bonus-overlay'); }
   };
 }
 maybeShowLoginBonus();
