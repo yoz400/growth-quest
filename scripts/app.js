@@ -2151,7 +2151,7 @@ function showSugorokuInKoku(result) {
     ctEl.textContent = `タップして閉じる (${sec2}秒)`;
     _sgAutoClose = setInterval(() => {
       sec2--;
-      if (!document.getElementById('koku-overlay').className) { clearInterval(_sgAutoClose); _sgAutoClose = null; return; }
+      if (!document.getElementById('koku-overlay').classList.contains('active')) { clearInterval(_sgAutoClose); _sgAutoClose = null; return; }
       if (sec2 <= 0) { clearInterval(_sgAutoClose); _sgAutoClose = null; closeKoku(); }
       else ctEl.textContent = `タップして閉じる (${sec2}秒)`;
     }, 1000);
@@ -3606,7 +3606,7 @@ function showKoku(mins, breakMins, kind, equipBonusXp) {
     ? `<span class="koku-equip-bonus">⚡ 装備ボーナス +${equipBonusXp} XP</span><br>`
     : '';
 
-  overlay.className = 'active style-' + settings.kokuStyle;
+  overlay.className = 'style-' + settings.kokuStyle;
 
   result.innerHTML = `
     <span class="result-divider">────────────────</span>
@@ -3669,11 +3669,11 @@ function showKoku(mins, breakMins, kind, equipBonusXp) {
 
   lastLevelUp = false;
   lastStreakMilestone = false;
+  Overlay.open('koku-overlay', { onClose: handleKokuClose });
 }
 
-function closeKoku() {
+function handleKokuClose() {
   const ov = document.getElementById('koku-overlay');
-  if (!ov.className) return; // already closed
   ov.className = '';
   clearInterval(_sgSpinInt); clearInterval(_sgAutoClose);
   clearTimeout(_sgSpinT1); clearTimeout(_sgSpinT2);
@@ -3688,15 +3688,16 @@ function closeKoku() {
   }
 }
 
+function closeKoku() {
+  const ov = document.getElementById('koku-overlay');
+  if (!ov.classList.contains('active')) return; // already closed
+  Overlay.close('koku-overlay');
+}
+
 document.getElementById('koku-close-btn').addEventListener('click', closeKoku);
 document.getElementById('koku-overlay').addEventListener('click', e => {
   if (e.target === document.getElementById('koku-overlay')) closeKoku();
 });
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && document.getElementById('koku-overlay').className.includes('active'))
-    closeKoku();
-});
-
 // ═══════════════════════════════════════════════════════
 //  ANIMATIONS
 // ═══════════════════════════════════════════════════════
