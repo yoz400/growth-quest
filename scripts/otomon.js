@@ -1205,7 +1205,8 @@
     btn.className = 'icon-btn';
     btn.id = 'otomon-btn';
     btn.title = 'オトモン図鑑';
-    btn.textContent = '🥚';
+    btn.setAttribute('aria-label', 'オトモン図鑑');
+    btn.innerHTML = '<span class="icon-btn-emoji">🥚</span><span class="icon-btn-label">オトモン</span>';
     btn.addEventListener('click', openPanel);
     const settings = document.getElementById('settings-btn');
     if (settings) right.insertBefore(btn, settings); else right.appendChild(btn);
