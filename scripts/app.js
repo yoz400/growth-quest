@@ -7905,8 +7905,8 @@ function fgGo(nav) {
   }
 }
 
-function openFairyGuideModal()  { renderFairyGuide(); document.getElementById('fairy-guide-overlay').classList.add('open'); }
-function closeFairyGuideModal() { document.getElementById('fairy-guide-overlay').classList.remove('open'); }
+function openFairyGuideModal()  { renderFairyGuide(); Overlay.open('fairy-guide-overlay'); }
+function closeFairyGuideModal() { Overlay.close('fairy-guide-overlay'); }
 document.getElementById('fairy-guide-btn')?.addEventListener('click', openFairyGuideModal);
 document.getElementById('fairy-guide-close-btn')?.addEventListener('click', closeFairyGuideModal);
 document.getElementById('fairy-guide-overlay')?.addEventListener('click', e => {
