@@ -8018,16 +8018,15 @@ function openGuideTutorial({ force = false } = {}) {
   const overlay = document.getElementById('guide-tutorial-overlay');
   if (!overlay) return;
   guideTutorialStep = 0;
-  overlay.classList.add('open');
-  overlay.setAttribute('aria-hidden', 'false');
+  Overlay.open('guide-tutorial-overlay');
   renderGuideTutorialStep();
 }
 
 function closeGuideTutorial(markSeen = true) {
   const overlay = document.getElementById('guide-tutorial-overlay');
   if (!overlay) return;
-  overlay.classList.remove('open', 'is-last');
-  overlay.setAttribute('aria-hidden', 'true');
+  overlay.classList.remove('is-last');
+  Overlay.close('guide-tutorial-overlay');
   clearGuideHighlight();
   if (markSeen) localStorage.setItem(GUIDE_TUTORIAL_KEY, '1');
 }
@@ -8087,7 +8086,6 @@ window.addEventListener('scroll', positionGuideTutorial, true);
 document.addEventListener('keydown', e => {
   const ov = document.getElementById('guide-tutorial-overlay');
   if (!ov || !ov.classList.contains('open')) return;
-  if (e.key === 'Escape') { e.preventDefault(); closeGuideTutorial(true); }
   if (e.key === 'ArrowRight' || e.key === 'Enter') { e.preventDefault(); nextGuideTutorialStep(); }
 });
 
