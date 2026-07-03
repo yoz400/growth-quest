@@ -9914,7 +9914,6 @@ document.getElementById('equipment-modal-panel').addEventListener('click', e => 
 // ── 装備獲得演出モーダル ─────────────────────────────
 function showEquipmentGetModal(item) {
   if (!item) return;
-  const overlay = document.getElementById('equipment-get-overlay');
   const panel   = document.getElementById('equipment-get-panel');
 
   // レア度クラスをパネルに付与（背景発光が切り替わる）
@@ -9937,7 +9936,7 @@ function showEquipmentGetModal(item) {
   // ✦ キラキラ演出（レア度が高いほど多く・金色に）
   spawnEquipmentGetSparkles(item.rarity);
 
-  overlay.classList.add('open');
+  Overlay.open('equipment-get-overlay');
 }
 
 // 装備発見時のキラキラ粒子を生成する
@@ -9966,19 +9965,12 @@ function spawnEquipmentGetSparkles(rarity) {
   }
 }
 function closeEquipmentGetModal() {
-  document.getElementById('equipment-get-overlay').classList.remove('open');
+  Overlay.close('equipment-get-overlay');
 }
 document.getElementById('eq-get-close-btn').addEventListener('click', closeEquipmentGetModal);
 document.getElementById('equipment-get-overlay').addEventListener('click', e => {
   if (e.target === document.getElementById('equipment-get-overlay')) closeEquipmentGetModal();
 });
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape'
-      && document.getElementById('equipment-get-overlay').classList.contains('open')) {
-    closeEquipmentGetModal();
-  }
-});
-
 // ═══════════════════════════════════════════════════════
 //  DASHBOARD — ウィジェット ドラッグ並べ替え（ステップ1: 動作のみ）
 //  Pointer Events でマウス/タッチ両対応。グリップ上でだけドラッグ開始。
