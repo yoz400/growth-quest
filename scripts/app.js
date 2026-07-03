@@ -2561,7 +2561,7 @@ function openFairyModal(genreId, dateKey) {
   const ta = document.getElementById('fairy-text');
   ta.value = '';
   document.getElementById('fairy-save-btn').disabled = true;
-  document.getElementById('fairy-overlay').classList.add('open');
+  Overlay.open('fairy-overlay');
   setTimeout(() => ta.focus(), 240);
 }
 
@@ -2571,7 +2571,7 @@ function updateFairySave() {
 }
 
 function closeFairyModal() {
-  document.getElementById('fairy-overlay').classList.remove('open');
+  Overlay.close('fairy-overlay');
 }
 
 function saveFairy() {
@@ -2625,8 +2625,7 @@ document.getElementById('fairy-overlay').addEventListener('click', e => {
 document.addEventListener('keydown', e => {
   const ov = document.getElementById('fairy-overlay');
   if (!ov || !ov.classList.contains('open')) return;
-  if (e.key === 'Escape') { e.preventDefault(); closeFairyModal(); }
-  else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); saveFairy(); }
+  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); saveFairy(); }
 });
 
 // 指定週の褒めログをフラット化して返す: [{ dateKey, text, createdAt }, ...]
