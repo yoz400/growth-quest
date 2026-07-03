@@ -8854,19 +8854,24 @@ function saveUnlocks() { localStorage.setItem('gq_unlocks', JSON.stringify([...f
 let featUnlocks = loadUnlocks();
 
 const UNLOCK_DEFS = [
-  { key:'guild',     emoji:'🏰', label:'冒険者ギルド',    cond:() => (data.sessions||0) >= 1 },
-  { key:'board',     emoji:'🎲', label:'すごろく',        cond:() => (data.sessions||0) >= 1 },
-  { key:'badges',    emoji:'🏅', label:'バッジ',          cond:() => Object.keys(earnedBadges||{}).length >= 1 },
-  { key:'equipment', emoji:'🎒', label:'装備',            cond:() => (typeof inventory!=='undefined' && inventory.length >= 1) },
-  { key:'skill',     emoji:'🌳', label:'スキルツリー',    cond:() => (typeof skillData!=='undefined' && Object.keys(skillData).length >= 1) },
-  { key:'timelog',   emoji:'⏱',  label:'1日のタイムログ', cond:() => Object.keys(data.history||{}).filter(k=>data.history[k]>0).length >= 2 },
-  { key:'review',    emoji:'📊', label:'週次レビュー',    cond:() => (data.sessions||0) >= 4 },
+  { key:'guild',     emoji:'🏰', label:'冒険者ギルド',    hint:'はじめての集中を1回終えると解放', cond:() => (data.sessions||0) >= 1 },
+  { key:'board',     emoji:'🎲', label:'すごろく',        hint:'はじめての集中を1回終えると解放', cond:() => (data.sessions||0) >= 1 },
+  { key:'badges',    emoji:'🏅', label:'バッジ',          hint:'はじめてのバッジを獲得すると解放', cond:() => Object.keys(earnedBadges||{}).length >= 1 },
+  { key:'equipment', emoji:'🎒', label:'装備',            hint:'アイテムを1つ手に入れると解放', cond:() => (typeof inventory!=='undefined' && inventory.length >= 1) },
+  { key:'skill',     emoji:'🌳', label:'スキルツリー',    hint:'成長の実を1つ実らせると解放', cond:() => (typeof skillData!=='undefined' && Object.keys(skillData).length >= 1) },
+  { key:'timelog',   emoji:'⏱',  label:'1日のタイムログ', hint:'2日分の学習記録がつくと解放', cond:() => Object.keys(data.history||{}).filter(k=>data.history[k]>0).length >= 2 },
+  { key:'review',    emoji:'📊', label:'週次レビュー',    hint:'集中セッションを4回終えると解放', cond:() => (data.sessions||0) >= 4 },
 ];
 
 function applyFeatureVisibility() {
   UNLOCK_DEFS.forEach(def => {
     const btn = document.querySelector(`[data-unlock="${def.key}"]`);
-    if (btn && featUnlocks.has(def.key)) btn.classList.remove('feat-locked');
+    if (!btn) return;
+    const unlocked = featUnlocks.has(def.key);
+    btn.classList.toggle('feat-locked', !unlocked);
+    const label = btn.querySelector('.icon-btn-label');
+    if (label) label.textContent = unlocked ? (btn.dataset.navLabel || def.label) : '？？？';
+    btn.setAttribute('aria-label', unlocked ? def.label : 'ロック中の機能（タップで解放条件を表示）');
   });
 }
 
@@ -8902,6 +8907,30 @@ function showUnlockToast(def) {
   clearTimeout(t._timer);
   t._timer = setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.classList.remove('multiline'), 400); }, 3000);
 }
+
+function showLockedHintToast(def) {
+  const t = document.getElementById('confidence-toast');
+  if (!t) return;
+  t.innerHTML = `🔒 まだ見ぬ機能<br><span style="opacity:.9;font-weight:700">${def.hint}</span>`;
+  t.classList.remove('levelup');
+  t.classList.add('multiline');
+  void t.offsetWidth;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => {
+    t.classList.remove('show');
+    setTimeout(() => t.classList.remove('multiline'), 400);
+  }, 3000);
+}
+
+document.addEventListener('click', e => {
+  const btn = e.target.closest('.feat-locked[data-unlock]');
+  if (!btn) return;
+  e.stopPropagation();
+  e.preventDefault();
+  const def = UNLOCK_DEFS.find(d => d.key === btn.dataset.unlock);
+  if (def) showLockedHintToast(def);
+}, true);
 
 // 初回適用（既存ユーザーは現データで即解放、新規は最小構成から）
 evaluateUnlocks(true);

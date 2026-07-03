@@ -3855,8 +3855,17 @@ header.glass { flex-wrap: wrap; row-gap: 8px; }
 .rv-trend-legend { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 6px; }
 .rv-trend-leg { font-size: .62rem; color: rgba(255,255,255,.8); display: inline-flex; align-items: center; gap: 4px; }
 
-/* 段階解放：未解放の機能ボタンは隠す／解放時に光る */
-.feat-locked { display: none !important; }
+/* 段階解放：未解放の機能ボタンはシルエットで見せる／解放時に光る */
+.header-right .feat-locked {
+  display: inline-flex !important;
+  opacity: .5;
+}
+.header-right .feat-locked .icon-btn-emoji {
+  filter: grayscale(1) brightness(.45);
+}
+.header-right .feat-locked .icon-btn-label {
+  color: rgba(255,255,255,.48);
+}
 @keyframes featUnlock {
   0%   { transform: scale(.6); opacity: 0; }
   55%  { transform: scale(1.25); opacity: 1; box-shadow: 0 0 18px rgba(103,232,249,.9); }
