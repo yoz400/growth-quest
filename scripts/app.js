@@ -8664,7 +8664,7 @@ function fmtMinsHint(mins) {
 }
 
 function openAvatarModal() {
-  document.getElementById('avatar-overlay').classList.add('open');
+  Overlay.open('avatar-overlay');
   renderAvatarModal();
   document.getElementById('avatar-panel').scrollTop = 0;
 }
@@ -8779,10 +8779,10 @@ function refreshAvatarEquipmentIfOpen() {
 
 document.getElementById('avatar-btn').addEventListener('click', openAvatarModal);
 document.getElementById('avatar-close-btn').addEventListener('click', () =>
-  document.getElementById('avatar-overlay').classList.remove('open'));
+  Overlay.close('avatar-overlay'));
 document.getElementById('avatar-overlay').addEventListener('click', e => {
   if (e.target === document.getElementById('avatar-overlay'))
-    document.getElementById('avatar-overlay').classList.remove('open');
+    Overlay.close('avatar-overlay');
 });
 // アバタータイプ切り替え（イベント委譲）
 document.getElementById('avatar-panel').addEventListener('click', e => {
