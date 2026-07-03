@@ -1,6 +1,165 @@
 // ═══════════════════════════════════════════════════════
 //  DATA
 // ═══════════════════════════════════════════════════════
+/* ===== OverlayManager: オーバーレイの交通整理（同時に操作できるのは1つ） ===== */
+const Overlay = (() => {
+  const stack = [];
+  const lastFocus = new Map();
+  const closeHooks = new Map();
+
+  const DEFS = {
+    'login-bonus-overlay':    { openClass: 'open', dismissible: false },
+    'koku-overlay':           { openClass: 'active', dismissible: true },
+    'genre-overlay':          { openClass: 'open', dismissible: true },
+    'badges-overlay':         { openClass: 'open', dismissible: true },
+    'equipment-overlay':      { openClass: 'open', dismissible: true },
+    'equipment-get-overlay':  { openClass: 'open', dismissible: true },
+    'board-overlay':          { openClass: 'open', dismissible: true },
+    'skill-overlay':          { openClass: 'open', dismissible: true },
+    'review-overlay':         { openClass: 'open', dismissible: true },
+    'avatar-overlay':         { openClass: 'open', dismissible: true },
+    'words-overlay':          { openClass: 'open', dismissible: true },
+    'settings-overlay':       { openClass: 'open', dismissible: true },
+    'praise-overlay':         { openClass: 'open', dismissible: true },
+    'guide-tutorial-overlay': { openClass: 'open', dismissible: false },
+    'guild-overlay':          { openClass: 'open', dismissible: true },
+    'vow-blessing-overlay':   { openClass: 'open', dismissible: true },
+    'fairy-overlay':          { openClass: 'open', dismissible: true },
+    'fairy-guide-overlay':    { openClass: 'open', dismissible: true },
+    'tutorial-overlay':       { openClass: 'open', dismissible: true },
+    'summon-overlay':         { openClass: 'open', dismissible: false },
+  };
+  const OVERLAY_IDS = Object.keys(DEFS);
+  const FOCUSABLE = [
+    'a[href]', 'button:not([disabled])', 'input:not([disabled])',
+    'select:not([disabled])', 'textarea:not([disabled])',
+    '[tabindex]:not([tabindex="-1"])'
+  ].join(',');
+
+  const def = id => ({ openClass: 'open', dismissible: true, ...(DEFS[id] || {}) });
+  const el = id => document.getElementById(id);
+
+  function setInert(target, value) {
+    if (target && target instanceof HTMLElement) target.inert = value;
+  }
+
+  function isInTopPath(node, topEl) {
+    return node === topEl || node.contains(topEl);
+  }
+
+  function syncPageInert(topEl) {
+    const hasOverlay = stack.length > 0;
+    const app = document.getElementById('app');
+    Array.from(document.body.children).forEach(child => {
+      if (child.tagName === 'SCRIPT') return;
+      setInert(child, hasOverlay && (!topEl || !isInTopPath(child, topEl)));
+    });
+    if (!app) return;
+    Array.from(app.children).forEach(child => {
+      setInert(child, hasOverlay && (!topEl || !isInTopPath(child, topEl)));
+    });
+  }
+
+  function syncInert() {
+    const top = stack[stack.length - 1];
+    const topEl = top ? el(top) : null;
+    stack.forEach(id => {
+      const overlay = el(id);
+      if (!overlay) return;
+      overlay.inert = id !== top;
+      overlay.setAttribute('aria-hidden', id === top ? 'false' : 'true');
+    });
+    syncPageInert(topEl);
+  }
+
+  function getFocusable(overlay) {
+    return Array.from(overlay.querySelectorAll(FOCUSABLE))
+      .filter(node => node.offsetParent !== null || node === document.activeElement);
+  }
+
+  function focusFirst(id) {
+    const overlay = el(id);
+    const first = overlay ? getFocusable(overlay)[0] : null;
+    if (first) first.focus();
+  }
+
+  function open(id, { onClose } = {}) {
+    const overlay = el(id);
+    if (!overlay) return;
+    if (stack.includes(id)) return;
+    lastFocus.set(id, document.activeElement);
+    if (onClose) closeHooks.set(id, onClose);
+    stack.push(id);
+    overlay.classList.add(def(id).openClass);
+    overlay.setAttribute('aria-hidden', 'false');
+    syncInert();
+    setTimeout(() => focusFirst(id), 0);
+  }
+
+  function close(id) {
+    const targetId = id || stack[stack.length - 1];
+    if (!targetId) return;
+    const i = stack.indexOf(targetId);
+    if (i === -1) return;
+    stack.splice(i, 1);
+    const overlay = el(targetId);
+    if (overlay) {
+      overlay.classList.remove(def(targetId).openClass);
+      overlay.setAttribute('aria-hidden', 'true');
+      overlay.inert = false;
+    }
+    syncInert();
+    const back = lastFocus.get(targetId);
+    if (back && typeof back.focus === 'function') back.focus();
+    lastFocus.delete(targetId);
+    const hook = closeHooks.get(targetId);
+    if (hook) {
+      closeHooks.delete(targetId);
+      hook();
+    }
+  }
+
+  function closeAll() {
+    while (stack.length) close();
+  }
+
+  function topId() {
+    return stack[stack.length - 1] || null;
+  }
+
+  OVERLAY_IDS.forEach(id => el(id)?.setAttribute('aria-hidden', 'true'));
+
+  document.addEventListener('keydown', e => {
+    const top = topId();
+    if (!top) return;
+    if (e.key === 'Escape') {
+      if (def(top).dismissible) {
+        e.preventDefault();
+        close(top);
+      }
+      return;
+    }
+    if (e.key !== 'Tab') return;
+    const overlay = el(top);
+    const focusable = overlay ? getFocusable(overlay) : [];
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    } else if (!overlay.contains(document.activeElement)) {
+      e.preventDefault();
+      first.focus();
+    }
+  });
+
+  return { open, close, closeAll, topId };
+})();
+
 const MODES = {
   pomodoro: { focus: 25, break: 5 },
   deep:     { focus: 50, break: 10 },
@@ -3958,15 +4117,15 @@ function applySettings() {
 }
 
 document.getElementById('settings-btn').addEventListener('click', () => {
-  document.getElementById('settings-overlay').classList.add('open');
+  Overlay.open('settings-overlay');
   const cu = document.getElementById('set-cloud-url'); if (cu) cu.value = loadCloudUrl();
 });
 document.getElementById('settings-close-btn').addEventListener('click', () => {
-  document.getElementById('settings-overlay').classList.remove('open');
+  Overlay.close('settings-overlay');
 });
 document.getElementById('settings-overlay').addEventListener('click', e => {
   if (e.target === document.getElementById('settings-overlay'))
-    document.getElementById('settings-overlay').classList.remove('open');
+    Overlay.close('settings-overlay');
 });
 document.getElementById('set-cloud-url')?.addEventListener('change', e => saveCloudUrl(e.target.value));
 document.getElementById('cloud-test-btn')?.addEventListener('click', testCloudNotify);
