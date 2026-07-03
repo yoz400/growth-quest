@@ -11134,15 +11134,15 @@ function renderGuild() {
 // ── 開閉・イベント ──
 function openGuild() {
   vowFormOpen = false;
-  document.getElementById('guild-overlay').classList.add('open');
+  Overlay.open('guild-overlay');
   renderGuild();
 }
 document.getElementById('guild-btn')?.addEventListener('click', openGuild);
 document.getElementById('guild-close-btn')?.addEventListener('click', () =>
-  document.getElementById('guild-overlay').classList.remove('open'));
+  Overlay.close('guild-overlay'));
 document.getElementById('guild-overlay')?.addEventListener('click', e => {
   if (e.target === document.getElementById('guild-overlay'))
-    document.getElementById('guild-overlay').classList.remove('open');
+    Overlay.close('guild-overlay');
 });
 // クエスト達成・フィルター・誓いの祠（イベント委譲）
 document.getElementById('guild-body')?.addEventListener('click', e => {
