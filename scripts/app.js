@@ -6617,7 +6617,7 @@ function openReviewModal(wk) {
 
   renderReviewFooter(false);
   renderReviewBody();
-  document.getElementById('review-overlay').classList.add('open');
+  Overlay.open('review-overlay');
   setReviewDot(false);
 }
 
@@ -6627,7 +6627,7 @@ function renderReviewFooter(isPast) {
   if (rvPeriod !== 'week') {
     footer.innerHTML = `<button class="review-btn-secondary" id="review-close2-btn">閉じる</button>`;
     document.getElementById('review-close2-btn').addEventListener('click',
-      () => document.getElementById('review-overlay').classList.remove('open'));
+      () => Overlay.close('review-overlay'));
     return;
   }
   if (isPast) {
@@ -7195,7 +7195,7 @@ function saveAndCloseReview() {
   saveReviews();
   reviewStatus.skips = 0;
   saveReviewStatus();
-  document.getElementById('review-overlay').classList.remove('open');
+  Overlay.close('review-overlay');
   setReviewDot(false);
   // 自信ゲージ: 新規保存のときだけ +5
   if (_isFirstSaveForWeek) addConfidence(5, 'weekly_review');
@@ -7205,7 +7205,7 @@ function skipReview() {
   reviewStatus.skips = (reviewStatus.skips || 0) + 1;
   reviewStatus.lastSkipped = rvWeekKey;
   saveReviewStatus();
-  document.getElementById('review-overlay').classList.remove('open');
+  Overlay.close('review-overlay');
   setReviewDot(true);
 }
 
@@ -7287,10 +7287,10 @@ document.getElementById('review-btn').addEventListener('click', () => {
   openReviewModal(target);
 });
 document.getElementById('review-close-btn').addEventListener('click', () =>
-  document.getElementById('review-overlay').classList.remove('open'));
+  Overlay.close('review-overlay'));
 document.getElementById('review-overlay').addEventListener('click', e => {
   if (e.target === document.getElementById('review-overlay'))
-    document.getElementById('review-overlay').classList.remove('open');
+    Overlay.close('review-overlay');
 });
 document.getElementById('review-past-btn').addEventListener('click', showPastReviews);
 
@@ -9079,7 +9079,7 @@ function openTimelogModal(forDate) {
   }
   renderReviewFooter(false);
   renderReviewBody();
-  document.getElementById('review-overlay').classList.add('open');
+  Overlay.open('review-overlay');
 }
 
 function renderTimelog() {
@@ -9302,7 +9302,7 @@ function deleteTimelogBlock(idx) {
 document.getElementById('review-body')?.addEventListener('click', e => {
   const bar = e.target.closest && e.target.closest('.rv-day-bar');
   if (!bar || !bar.dataset.dk) return;
-  document.getElementById('review-overlay')?.classList.remove('open');
+  Overlay.close('review-overlay');
   openTimelogModal(bar.dataset.dk);
 });
 document.getElementById('tl-add-btn')?.addEventListener('click', addTimelogBlock);
