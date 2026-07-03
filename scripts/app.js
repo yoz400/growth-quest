@@ -10815,7 +10815,7 @@ function showVowBlessing(v) {
   document.getElementById('vb-vow').textContent = `「${v.text}」`;
   document.getElementById('vb-praise').textContent = VOW_PRAISES[Math.floor(Math.random()*VOW_PRAISES.length)];
   document.getElementById('vb-reward').innerHTML = `<span>+50 XP</span><span>自信 +5</span><span>名声 +50</span>`;
-  ov.classList.add('open');
+  Overlay.open('vow-blessing-overlay');
   spawnVowSparkles();
 }
 function spawnVowSparkles() {
@@ -11168,10 +11168,10 @@ document.getElementById('guild-body')?.addEventListener('click', e => {
 
 // 妖精の祝福モーダルを閉じる
 document.getElementById('vb-close-btn')?.addEventListener('click', () =>
-  document.getElementById('vow-blessing-overlay').classList.remove('open'));
+  Overlay.close('vow-blessing-overlay'));
 document.getElementById('vow-blessing-overlay')?.addEventListener('click', e => {
   if (e.target === document.getElementById('vow-blessing-overlay'))
-    document.getElementById('vow-blessing-overlay').classList.remove('open');
+    Overlay.close('vow-blessing-overlay');
 });
 
 // ═══════════════════════════════════════════════════════
