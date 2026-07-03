@@ -2254,10 +2254,10 @@ header {
   .stat-val { font-size: 1.1rem; }
 }
 @media (max-width: 320px) {
-  .icon-btn { padding: 4px 5px; font-size: .76rem; }
-  .header-right { gap: 3px; }
-  .header-right .icon-btn { min-width: 31px; min-height: 36px; }
-  .icon-btn-label { font-size: .42rem; }
+  .icon-btn { padding: 3px 2px; font-size: .74rem; }
+  .header-right { gap: 2px; }
+  .header-right .icon-btn { min-width: 27px; min-height: 35px; }
+  .icon-btn-label { font-size: .35rem; }
   .logo { font-size: .88rem; }
 }
 
