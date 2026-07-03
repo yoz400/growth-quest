@@ -2050,7 +2050,7 @@ function renderBoard() {
 }
 
 function openBoardModal() {
-  document.getElementById('board-overlay').classList.add('open');
+  Overlay.open('board-overlay', { onClose: handleBoardClose });
   renderBoard();
   // 歩行アニメが無い場合（アバターA以外など）のフォールバック：到着演出を出す
   setTimeout(() => {
@@ -8799,13 +8799,15 @@ document.getElementById('avatar-panel').addEventListener('click', e => {
 //  SUGOROKU — EVENT LISTENERS
 // ═══════════════════════════════════════════════════════
 document.getElementById('board-btn').addEventListener('click', openBoardModal);
-function closeBoardModal() {
-  document.getElementById('board-overlay').classList.remove('open');
+function handleBoardClose() {
   // 双六を閉じたら、保留していた妖精（褒めログ）を出す
   if (_pendingPraisePrompt) {
     _pendingPraisePrompt = false;
     setTimeout(() => openFairyModal(_praiseSessionGenre, _praiseSessionDate), 420);
   }
+}
+function closeBoardModal() {
+  Overlay.close('board-overlay');
 }
 document.getElementById('board-close-btn').addEventListener('click', closeBoardModal);
 document.getElementById('board-overlay').addEventListener('click', e => {
