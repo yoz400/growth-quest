@@ -5032,7 +5032,7 @@ let selectedScenes = new Set(['session_start']);
 const ALL_SCENES = ['morning','session_start','session_complete','streak_milestone','level_up','comeback','night'];
 
 function openWordsModal() {
-  document.getElementById('words-overlay').classList.add('open');
+  Overlay.open('words-overlay');
   hideWordsForm();
   renderWordsList();
 }
@@ -5140,10 +5140,10 @@ function saveWordsForm() {
 // Words modal events
 document.getElementById('words-btn')?.addEventListener('click', openWordsModal);
 document.getElementById('words-close-btn').addEventListener('click', () =>
-  document.getElementById('words-overlay').classList.remove('open'));
+  Overlay.close('words-overlay'));
 document.getElementById('words-overlay').addEventListener('click', e => {
   if (e.target === document.getElementById('words-overlay'))
-    document.getElementById('words-overlay').classList.remove('open');
+    Overlay.close('words-overlay');
 });
 document.getElementById('words-add-btn').addEventListener('click', showWordsForm);
 document.getElementById('words-form-cancel').addEventListener('click', hideWordsForm);
