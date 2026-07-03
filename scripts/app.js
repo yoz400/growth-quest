@@ -9874,11 +9874,11 @@ function renderEquipmentCollection() {
 }
 
 function openEquipmentModal() {
-  document.getElementById('equipment-overlay').classList.add('open');
+  Overlay.open('equipment-overlay');
   renderEquipmentModal();
 }
 function closeEquipmentModal() {
-  document.getElementById('equipment-overlay').classList.remove('open');
+  Overlay.close('equipment-overlay');
 }
 
 // ▼ テスト用：ランダムに未所持装備を1つ入手し、発見演出を再生
