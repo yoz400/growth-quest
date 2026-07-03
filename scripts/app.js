@@ -10435,10 +10435,10 @@ function openSummon(review = false) {
   summonDraft = { avType: avatarType || 'A', name: playerName || '', genres: [], build: [], quit: [] };
   buildSummonStars();
   renderSummon();
-  document.getElementById('summon-overlay').classList.add('open');
+  Overlay.open('summon-overlay');
   setTimeout(() => document.getElementById('summon-name-input')?.focus(), 60);
 }
-function closeSummon() { document.getElementById('summon-overlay').classList.remove('open'); }
+function closeSummon() { Overlay.close('summon-overlay'); }
 
 function finishSummon() {
   captureSummonInputs();
