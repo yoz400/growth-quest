@@ -7652,7 +7652,7 @@ function showFairyGuide() {
 
   // アクション：⏱ タイマーへ誘導（閉じて、STARTをぽわんと光らせる）
   document.getElementById('fairy-act-start')?.addEventListener('click', () => {
-    document.getElementById('skill-overlay').classList.remove('open');
+    Overlay.close('skill-overlay');
     const startBtn = document.getElementById('start-btn');
     document.getElementById('timer-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     if (startBtn) {
@@ -8167,7 +8167,7 @@ document.getElementById('sk-tab-tree')?.addEventListener('click', () => switchSk
 document.getElementById('sk-tab-journal')?.addEventListener('click', () => switchSkillTab('journal'));
 
 function openSkillModal() {
-  document.getElementById('skill-overlay').classList.add('open');
+  Overlay.open('skill-overlay');
   document.getElementById('skill-detail').classList.remove('visible');
   switchSkillTab('tree');
   const animate = !skillTreeAnimated;
@@ -8820,11 +8820,11 @@ document.getElementById('board-map-toggle').addEventListener('click', toggleBoar
 // ═══════════════════════════════════════════════════════
 document.getElementById('skill-btn').addEventListener('click', openSkillModal);
 document.getElementById('skill-close-btn').addEventListener('click', () => {
-  document.getElementById('skill-overlay').classList.remove('open');
+  Overlay.close('skill-overlay');
 });
 document.getElementById('skill-overlay').addEventListener('click', e => {
   if (e.target === document.getElementById('skill-overlay'))
-    document.getElementById('skill-overlay').classList.remove('open');
+    Overlay.close('skill-overlay');
 });
 
 // ═══════════════════════════════════════════════════════
