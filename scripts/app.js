@@ -4467,7 +4467,7 @@ function quickDeleteGenre(id) {
 //  GENRE MODAL
 // ═══════════════════════════════════════════════════════
 function openGenreModal() {
-  document.getElementById('genre-overlay').classList.add('open');
+  Overlay.open('genre-overlay');
   hideGenreForm();
   renderGenreList();
 }
@@ -4566,11 +4566,11 @@ function saveGenreForm() {
 // Genre modal event listeners
 document.getElementById('genre-btn').addEventListener('click', openGenreModal);
 document.getElementById('genre-close-btn').addEventListener('click', () => {
-  document.getElementById('genre-overlay').classList.remove('open');
+  Overlay.close('genre-overlay');
 });
 document.getElementById('genre-overlay').addEventListener('click', e => {
   if (e.target === document.getElementById('genre-overlay'))
-    document.getElementById('genre-overlay').classList.remove('open');
+    Overlay.close('genre-overlay');
 });
 document.getElementById('genre-add-btn').addEventListener('click', () => showGenreForm(null));
 document.getElementById('genre-form-cancel').addEventListener('click', hideGenreForm);
