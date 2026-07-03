@@ -4918,3 +4918,29 @@ body.eq-mood-galaxy    .anim-wrap::after {
 @keyframes pwMove  { from{ left: 4%; } to{ left: 88%; } }
 @keyframes pwFloat { 0%,100%{ transform: translateY(-50%) rotate(-6deg);} 50%{ transform: translateY(-78%) rotate(6deg);} }
 @keyframes pwHop   { 0%,100%{ transform: translateY(-50%) scaleY(1);} 30%{ transform: translateY(-82%) scaleY(1.08);} 60%{ transform: translateY(-50%) scaleY(.94);} }
+
+/* ═══════════════════════════════════════
+   overlay共通（Phase A / spec_overlay_manager.md）
+   非表示のオーバーレイを visibility:hidden にして
+   Tabフォーカス・スクリーンリーダー読み上げの対象から外す。
+   opacityのフェードは各overlay既存の transition を活かし、
+   visibility は同じ時間で遅延切替（フェードアウトが切れない）。
+═══════════════════════════════════════ */
+#login-bonus-overlay, #koku-overlay, #genre-overlay, #badges-overlay,
+#equipment-overlay, #equipment-get-overlay, #board-overlay, #skill-overlay,
+#review-overlay, #avatar-overlay, #words-overlay, #settings-overlay,
+#praise-overlay, #guide-tutorial-overlay, #guild-overlay,
+#vow-blessing-overlay, #fairy-overlay, #fairy-guide-overlay,
+#tutorial-overlay, #summon-overlay {
+  visibility: hidden;
+  transition-property: opacity, visibility;
+}
+#login-bonus-overlay.open, #koku-overlay.active, #genre-overlay.open,
+#badges-overlay.open, #equipment-overlay.open, #equipment-get-overlay.open,
+#board-overlay.open, #skill-overlay.open, #review-overlay.open,
+#avatar-overlay.open, #words-overlay.open, #settings-overlay.open,
+#praise-overlay.open, #guide-tutorial-overlay.open, #guild-overlay.open,
+#vow-blessing-overlay.open, #fairy-overlay.open, #fairy-guide-overlay.open,
+#tutorial-overlay.open, #summon-overlay.open {
+  visibility: visible;
+}

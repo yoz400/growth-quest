@@ -63,7 +63,15 @@ Growth Quest には現在 **20個のオーバーレイ**（画面に重なるモ
 
 ## 3. 設計
 
-### 3.1 Phase A: CSS だけの即効修正（先にやる・低リスク）
+### 3.1 Phase A: CSS だけの即効修正（✅ 2026-07-03 クロが実装・検証済み）
+
+> **実装済み**：`styles/app.css` 末尾の「overlay共通（Phase A）」ブロック。`?v=guild-45` で配信。
+> ブラウザ検証済み：非表示overlay全てが `visibility:hidden`＋フォーカス不可、
+> 表示・フェードイン/アウトは従来どおり、召喚画面のボタンは正常にフォーカス可。
+> **補足**：`#timelog-overlay` はCSSにだけ残った死にコード（実体は review-overlay に
+> 統合済みでHTML/JSに存在しない）ため対象から除外した。Phase B のついでに
+> app.css の `#timelog-overlay` 関連ルールを削除してよい。
+> **Codex は Phase B から着手すること。**
 
 `visibility: hidden` を足すだけで「フォーカス漏れ」「読み上げ漏れ」の大半が直る。
 
