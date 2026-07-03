@@ -5372,7 +5372,7 @@ function showNextBadgeToast() {
 
 // ── Modal ───────────────────────────────────────────────
 function openBadgesModal() {
-  document.getElementById('badges-overlay').classList.add('open');
+  Overlay.open('badges-overlay');
   renderBadgeGrid();
 }
 
@@ -5406,10 +5406,10 @@ function renderBadgeGrid() {
 
 document.getElementById('avatar-open-badges')?.addEventListener('click', openBadgesModal);
 document.getElementById('badges-close-btn').addEventListener('click', () =>
-  document.getElementById('badges-overlay').classList.remove('open'));
+  Overlay.close('badges-overlay'));
 document.getElementById('badges-overlay').addEventListener('click', e => {
   if (e.target === document.getElementById('badges-overlay'))
-    document.getElementById('badges-overlay').classList.remove('open');
+    Overlay.close('badges-overlay');
 });
 document.querySelectorAll('[data-bf]').forEach(btn => {
   btn.addEventListener('click', () => {
