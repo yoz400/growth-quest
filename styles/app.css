@@ -4965,3 +4965,18 @@ body.eq-mood-galaxy    .anim-wrap::after {
 #tutorial-overlay.open, #summon-overlay.open {
   visibility: visible;
 }
+
+/* ═══════════════════════════════════════
+   ヘッダーナビのはみ出し防止（STEP2レビュー修正）
+   375〜420px級の端末で8ボタンが収まらず設定が画面外に
+   出ていたため、狭い画面ではボタンを均等幅で伸縮させる。
+═══════════════════════════════════════ */
+@media (max-width: 520px) {
+  .header-right .icon-btn {
+    flex: 1 1 0;
+    min-width: 0;
+    padding-left: 2px;
+    padding-right: 2px;
+  }
+  .icon-btn-label { max-width: 100%; overflow: hidden; }
+}
