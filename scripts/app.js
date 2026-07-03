@@ -10178,10 +10178,10 @@ function renderTutorial() {
 function openTutorial() {
   tutorialStep = 0;
   renderTutorial();
-  document.getElementById('tutorial-overlay').classList.add('open');
+  Overlay.open('tutorial-overlay');
 }
 function closeTutorial() {
-  document.getElementById('tutorial-overlay').classList.remove('open');
+  Overlay.close('tutorial-overlay');
   // 一度でも閉じたら「見た」扱い → 次回以降は自動表示しない
   localStorage.setItem('gq_tutorial_seen', '1');
 }
@@ -10212,8 +10212,7 @@ document.getElementById('tutorial-overlay').addEventListener('click', e => {
 document.addEventListener('keydown', e => {
   const ov = document.getElementById('tutorial-overlay');
   if (!ov || !ov.classList.contains('open')) return;
-  if (e.key === 'Escape')      { e.preventDefault(); closeTutorial(); }
-  else if (e.key === 'ArrowLeft')  { e.preventDefault(); tutorialPrev(); }
+  if (e.key === 'ArrowLeft')  { e.preventDefault(); tutorialPrev(); }
   else if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'Enter') {
     e.preventDefault(); tutorialNext();
   }
