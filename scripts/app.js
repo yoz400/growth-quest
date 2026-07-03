@@ -8079,7 +8079,7 @@ document.getElementById('guide-tutorial-next')?.addEventListener('click', nextGu
 document.getElementById('guide-tutorial-close')?.addEventListener('click', () => closeGuideTutorial(true));
 document.getElementById('guide-tutorial-later')?.addEventListener('click', () => closeGuideTutorial(true));
 document.getElementById('show-guide-tutorial-btn')?.addEventListener('click', () => {
-  document.getElementById('settings-overlay')?.classList.remove('open');
+  Overlay.close('settings-overlay');
   setTimeout(resetGuideTutorial, 320);
 });
 window.addEventListener('resize', positionGuideTutorial);
@@ -10226,7 +10226,7 @@ const _showTutBtn = document.getElementById('show-tutorial-btn');
 if (_showTutBtn) {
   _showTutBtn.addEventListener('click', () => {
     // 設定モーダルを閉じてから召喚オンボーディング（見直しモード）を開く
-    document.getElementById('settings-overlay').classList.remove('open');
+    Overlay.close('settings-overlay');
     setTimeout(() => openSummon(true), 320);   // 設定のフェードアウト後
   });
 }
