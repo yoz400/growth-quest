@@ -26,7 +26,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles/app.css?v=guild-46">
+<link rel="stylesheet" href="styles/app.css?v=guild-47">
 </head>
 <body>
 
@@ -56,13 +56,27 @@
       <div id="header-motiv" class="header-motiv"></div>
     </div>
     <div class="header-right" data-guide="top-actions">
-      <button class="icon-btn" id="fairy-guide-btn" title="導きの妖精（迷ったら押す）">🧚</button>
-      <button class="icon-btn feat-locked" id="guild-btn" data-unlock="guild" title="冒険者ギルド">🏰</button>
-      <button class="icon-btn feat-locked" id="board-btn" data-unlock="board" title="すごろく">🎲</button>
-      <button class="icon-btn feat-locked" id="skill-btn" data-unlock="skill" title="スキルツリー">🌳</button>
-      <button class="icon-btn feat-locked" id="review-btn" data-unlock="review" title="週次レビュー">📊</button>
-      <button class="icon-btn" id="genre-btn" title="ジャンル管理">📚</button>
-      <button class="icon-btn" id="settings-btn" title="設定">⚙</button>
+      <button class="icon-btn" id="fairy-guide-btn" title="導きの妖精（迷ったら押す）" aria-label="導きの妖精">
+        <span class="icon-btn-emoji">🧚</span><span class="icon-btn-label">妖精</span>
+      </button>
+      <button class="icon-btn feat-locked" id="guild-btn" data-unlock="guild" data-nav-label="ギルド" title="冒険者ギルド">
+        <span class="icon-btn-emoji">🏰</span><span class="icon-btn-label">ギルド</span>
+      </button>
+      <button class="icon-btn feat-locked" id="board-btn" data-unlock="board" data-nav-label="すごろく" title="すごろく">
+        <span class="icon-btn-emoji">🎲</span><span class="icon-btn-label">すごろく</span>
+      </button>
+      <button class="icon-btn feat-locked" id="skill-btn" data-unlock="skill" data-nav-label="スキル" title="スキルツリー">
+        <span class="icon-btn-emoji">🌳</span><span class="icon-btn-label">スキル</span>
+      </button>
+      <button class="icon-btn feat-locked" id="review-btn" data-unlock="review" data-nav-label="レビュー" title="週次レビュー">
+        <span class="icon-btn-emoji">📊</span><span class="icon-btn-label">レビュー</span>
+      </button>
+      <button class="icon-btn" id="genre-btn" title="ジャンル管理" aria-label="ジャンル管理">
+        <span class="icon-btn-emoji">📚</span><span class="icon-btn-label">ジャンル</span>
+      </button>
+      <button class="icon-btn" id="settings-btn" title="設定" aria-label="設定">
+        <span class="icon-btn-emoji">⚙</span><span class="icon-btn-label">設定</span>
+      </button>
     </div>
     <!-- ヘッダー内 XP/レベルゲージ -->
     <div id="header-xp" class="header-xp">

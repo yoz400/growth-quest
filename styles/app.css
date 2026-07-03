@@ -121,6 +121,7 @@ header {
 .header-right {
   display: flex; gap: 8px; align-items: center;
   flex: 1 1 auto; justify-content: space-between;
+  min-width: 0;
 }
 
 .icon-btn {
@@ -131,6 +132,19 @@ header {
   flex-shrink: 0;
 }
 .icon-btn:hover { color: var(--text); border-color: var(--cyan); }
+.header-right .icon-btn {
+  display: inline-flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 2px; line-height: 1;
+  min-width: 42px; min-height: 42px;
+}
+.icon-btn-emoji { display: block; line-height: 1; }
+.icon-btn-label {
+  display: block;
+  font-size: .5rem; font-weight: 700;
+  color: var(--text-dim); letter-spacing: 0;
+  white-space: nowrap;
+}
 
 /* ═══════════════════════════════════════
    XP BAR
@@ -2216,16 +2230,21 @@ header {
   header { padding: 11px 14px; }
   .header-right { gap: 7px; }
   .icon-btn { padding: 6px 8px; font-size: .9rem; }
+  .header-right .icon-btn { min-width: 39px; min-height: 40px; }
 }
 @media (max-width: 420px) {
   .header-right { gap: 6px; }
   .icon-btn { padding: 6px 7px; font-size: .86rem; }
+  .header-right .icon-btn { min-width: 37px; }
+  .icon-btn-label { font-size: .48rem; }
   .logo-mark { width: 20px; height: 20px; }
   .launch-logo-mark { width: 56px; height: 56px; }
 }
 @media (max-width: 360px) {
   .header-right { gap: 4px; }
   .icon-btn { padding: 5px 6px; font-size: .82rem; border-radius: 8px; }
+  .header-right .icon-btn { min-width: 34px; min-height: 38px; }
+  .icon-btn-label { font-size: .45rem; }
   .logo { font-size: .95rem; }
   #avatar-btn { width: 34px; height: 34px; }
   #app { padding: 10px; gap: 10px; }
@@ -2237,6 +2256,8 @@ header {
 @media (max-width: 320px) {
   .icon-btn { padding: 4px 5px; font-size: .76rem; }
   .header-right { gap: 3px; }
+  .header-right .icon-btn { min-width: 31px; min-height: 36px; }
+  .icon-btn-label { font-size: .42rem; }
   .logo { font-size: .88rem; }
 }
 
