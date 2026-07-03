@@ -2436,11 +2436,11 @@ function openPraiseModal(dateKey) {
   ta.value = '';
   updatePraiseCounter();
   document.getElementById('praise-save-btn').disabled = true;
-  document.getElementById('praise-overlay').classList.add('open');
+  Overlay.open('praise-overlay');
   setTimeout(() => ta.focus(), 240);
 }
 function closePraiseModal() {
-  document.getElementById('praise-overlay').classList.remove('open');
+  Overlay.close('praise-overlay');
 }
 
 function updatePraiseCounter() {
@@ -2505,8 +2505,7 @@ document.getElementById('praise-overlay').addEventListener('click', e => {
 document.addEventListener('keydown', e => {
   const ov = document.getElementById('praise-overlay');
   if (!ov || !ov.classList.contains('open')) return;
-  if (e.key === 'Escape') { e.preventDefault(); closePraiseModal(); }
-  else if ((e.key === 'Enter') && (e.metaKey || e.ctrlKey)) {
+  if ((e.key === 'Enter') && (e.metaKey || e.ctrlKey)) {
     e.preventDefault(); savePraise();    // Cmd/Ctrl + Enter で保存
   }
 });
