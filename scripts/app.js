@@ -366,41 +366,41 @@ const EQUIPMENT_DUPLICATE_COMPENSATION_XP = 50;
 const ITEM_MASTER = [
   // ── head（頭装備）─────────────────────────────
   { id:'cap_focus',     name:'集中のキャップ',  category:'head', rarity:'common',
-    emoji:'🧢', imagePath:'assets/equipment/head/cap_focus.png',
+    emoji:'🧢', imagePath:'assets/equipment/head/cap_focus.webp',
     effect:{ type:'mood', value:'ember', desc:'タイマーが焚き火の灯に包まれる' },
     flavorText:'被ると、ふと深呼吸したくなる。' },
   { id:'crown_scholar', name:'学者の冠',        category:'head', rarity:'legendary',
-    emoji:'👑', imagePath:'assets/equipment/head/crown_scholar.png',
+    emoji:'👑', imagePath:'assets/equipment/head/crown_scholar.webp',
     effect:{ type:'motiv_style', value:'sage', desc:'ヘッダーの言葉が「賢者の格言」になる' },
     flavorText:'知の頂きに立つ者だけに許された輝き。' },
 
   // ── body（胴装備）─────────────────────────────
   { id:'vest_adventurer', name:'冒険者のベスト', category:'body', rarity:'common',
-    emoji:'🦺', imagePath:'assets/equipment/body/vest_adventurer.png',
+    emoji:'🦺', imagePath:'assets/equipment/body/vest_adventurer.webp',
     effect:{ type:'quote_bias', value:'tale', desc:'「物語と英雄」の言葉に出会いやすくなる' },
     flavorText:'走り出す背中を、いつもそっと支える。' },
   { id:'robe_sage',       name:'賢者のローブ',   category:'body', rarity:'rare',
-    emoji:'🥋', imagePath:'assets/equipment/body/robe_sage.png',
+    emoji:'🥋', imagePath:'assets/equipment/body/robe_sage.webp',
     effect:{ type:'streak_protect', value:1, desc:'連続日数1回保護' },
     flavorText:'一度結べば、雨の日も心が乾く。' },
 
   // ── hand（手装備）─────────────────────────────
   { id:'sword_brave',  name:'勇者の剣',         category:'hand', rarity:'rare',
-    emoji:'⚔', imagePath:'assets/equipment/hand/sword_brave.png',
+    emoji:'⚔', imagePath:'assets/equipment/hand/sword_brave.webp',
     effect:{ type:'dice_bonus', value:1, desc:'すごろく出目+1' },
     flavorText:'切るのは敵じゃない、迷いだけ。' },
   { id:'staff_wisdom', name:'知恵の杖',         category:'hand', rarity:'epic',
-    emoji:'🪄', imagePath:'assets/equipment/hand/staff_wisdom.png',
+    emoji:'🪄', imagePath:'assets/equipment/hand/staff_wisdom.webp',
     effect:{ type:'dice_bonus', value:2, desc:'すごろく出目+2' },
     flavorText:'振るたびに、頭の中の霧が晴れていく。' },
 
   // ── back（背中装備）───────────────────────────
   { id:'bag_explorer', name:'探検家のリュック',  category:'back', rarity:'common',
-    emoji:'🎒', imagePath:'assets/equipment/back/bag_explorer.png',
+    emoji:'🎒', imagePath:'assets/equipment/back/bag_explorer.webp',
     effect:{ type:'quote_bias', value:'fable', desc:'「空想の住人」の言葉に出会いやすくなる' },
     flavorText:'今日もどこかへ、何かを掴みに。' },
   { id:'cape_phoenix', name:'不死鳥のマント',    category:'back', rarity:'legendary',
-    emoji:'🧥', imagePath:'assets/equipment/back/cape_phoenix.png',
+    emoji:'🧥', imagePath:'assets/equipment/back/cape_phoenix.webp',
     effect:{ type:'motiv_style', value:'hero', desc:'ヘッダーの言葉が「英雄の言葉」になる' },
     flavorText:'何度倒れても、また燃え上がる羽。' },
 
@@ -417,73 +417,73 @@ const ITEM_MASTER = [
   // ═══════════ 追加アイテム（各カテゴリ +4個）═══════════
   // ── head（追加）─────────────────────────────
   { id:'hood_moonlight',  name:'月明かりのフード',  category:'head', rarity:'common',
-    emoji:'🌙', imagePath:'assets/equipment/head/hood_moonlight.png',
+    emoji:'🌙', imagePath:'assets/equipment/head/hood_moonlight.webp',
     effect:{ type:'mood', value:'moonlight', desc:'タイマーが月夜の静けさに包まれる' },
     flavorText:'静かな夜でも、心の灯りは消えない。' },
   { id:'goggles_focus',   name:'集中ゴーグル',      category:'head', rarity:'rare',
-    emoji:'🥽', imagePath:'assets/equipment/head/goggles_focus.png',
+    emoji:'🥽', imagePath:'assets/equipment/head/goggles_focus.webp',
     effect:{ type:'mood', value:'deepsea', desc:'タイマーが深海の青に包まれる' },
     flavorText:'余計な景色を閉じて、大事なものだけを見る。' },
   { id:'tiara_starlight', name:'星読みのティアラ',  category:'head', rarity:'epic',
-    emoji:'💫', imagePath:'assets/equipment/head/tiara_starlight.png',
+    emoji:'💫', imagePath:'assets/equipment/head/tiara_starlight.webp',
     effect:{ type:'mood', value:'starlight', desc:'タイマーに星々の瞬きが宿る' },
     flavorText:'小さな努力の星座を、未来へつなげる。' },
   { id:'halo_dawn',       name:'夜明けの光輪',      category:'head', rarity:'legendary',
-    emoji:'🌅', imagePath:'assets/equipment/head/halo_dawn.png',
+    emoji:'🌅', imagePath:'assets/equipment/head/halo_dawn.webp',
     effect:{ type:'mood', value:'dawn', desc:'タイマーが夜明けの光に包まれる' },
     flavorText:'今日という冒険を、まぶしく始める者の証。' },
 
   // ── body(追加)─────────────────────────────
   { id:'jacket_morning',      name:'朝活ジャケット',  category:'body', rarity:'common',
-    emoji:'🧥', imagePath:'assets/equipment/body/jacket_morning.png',
+    emoji:'🧥', imagePath:'assets/equipment/body/jacket_morning.webp',
     effect:{ type:'motiv_style', value:'morning', desc:'ヘッダーの言葉が「朝の応援」になる' },
     flavorText:'袖を通すだけで、少しだけ早く動き出せる。' },
   { id:'apron_creator',       name:'創作のエプロン',  category:'body', rarity:'rare',
-    emoji:'👕', imagePath:'assets/equipment/body/apron_creator.png',
+    emoji:'👕', imagePath:'assets/equipment/body/apron_creator.webp',
     effect:{ type:'quote_bias', value:'artist', desc:'「表現者」の言葉に出会いやすくなる' },
     flavorText:'手を動かす人に、ひらめきは降りてくる。' },
   { id:'coat_guardian',       name:'守り人のコート',  category:'body', rarity:'epic',
-    emoji:'🛡️', imagePath:'assets/equipment/body/coat_guardian.png',
+    emoji:'🛡️', imagePath:'assets/equipment/body/coat_guardian.webp',
     effect:{ type:'streak_protect', value:1, desc:'連続日数1回保護' },
     flavorText:'続けてきた日々を、静かに守る頼もしい一着。' },
   { id:'armor_constellation', name:'星座の軽鎧',      category:'body', rarity:'legendary',
-    emoji:'🌌', imagePath:'assets/equipment/body/armor_constellation.png',
+    emoji:'🌌', imagePath:'assets/equipment/body/armor_constellation.webp',
     effect:{ type:'mood', value:'galaxy', desc:'タイマーが銀河の輝きに包まれる' },
     flavorText:'積み重ねた時間が、胸元で星のように輝く。' },
 
   // ── hand（追加）─────────────────────────────
   { id:'mug_calm',         name:'ひと息のマグ',   category:'hand', rarity:'common',
-    emoji:'☕', imagePath:'assets/equipment/hand/mug_calm.png',
+    emoji:'☕', imagePath:'assets/equipment/hand/mug_calm.webp',
     effect:{ type:'comment', value:'ひと息ついたら、また進もう。', desc:'たまに励ましてくれる' },
     flavorText:'休むことも、前に進むための準備。' },
   { id:'notebook_quest',   name:'冒険者のノート', category:'hand', rarity:'rare',
-    emoji:'📓', imagePath:'assets/equipment/hand/notebook_quest.png',
+    emoji:'📓', imagePath:'assets/equipment/hand/notebook_quest.webp',
     effect:{ type:'quote_bias', value:'classic', desc:'「古典・偉人」の言葉に出会いやすくなる' },
     flavorText:'書き残した一行が、明日の道しるべになる。' },
   { id:'compass_momentum', name:'前進のコンパス', category:'hand', rarity:'epic',
-    emoji:'🧭', imagePath:'assets/equipment/hand/compass_momentum.png',
+    emoji:'🧭', imagePath:'assets/equipment/hand/compass_momentum.webp',
     effect:{ type:'dice_bonus', value:2, desc:'すごろく出目+2' },
     flavorText:'迷っても大丈夫。進む方角は、もう決まっている。' },
   { id:'lantern_truth',    name:'真理のランタン', category:'hand', rarity:'legendary',
-    emoji:'🏮', imagePath:'assets/equipment/hand/lantern_truth.png',
+    emoji:'🏮', imagePath:'assets/equipment/hand/lantern_truth.webp',
     effect:{ type:'dice_bonus', value:2, desc:'すごろく出目+2' },
     flavorText:'暗い道でも、学ぶ者の足元だけは照らされる。' },
 
   // ── back（追加）─────────────────────────────
   { id:'scarf_breeze',       name:'追い風のスカーフ', category:'back', rarity:'common',
-    emoji:'🧣', imagePath:'assets/equipment/back/scarf_breeze.png',
+    emoji:'🧣', imagePath:'assets/equipment/back/scarf_breeze.webp',
     effect:{ type:'motiv_style', value:'breeze', desc:'ヘッダーの言葉が「そよ風の応援」になる' },
     flavorText:'ほんの少しの追い風が、今日の一歩を軽くする。' },
   { id:'wings_small',        name:'小さな羽',         category:'back', rarity:'rare',
-    emoji:'🪽', imagePath:'assets/equipment/back/wings_small.png',
+    emoji:'🪽', imagePath:'assets/equipment/back/wings_small.webp',
     effect:{ type:'dice_bonus', value:1, desc:'すごろく出目+1' },
     flavorText:'飛べなくてもいい。昨日より少し浮けばいい。' },
   { id:'cloak_silence',      name:'静寂のクローク',   category:'back', rarity:'epic',
-    emoji:'🌫️', imagePath:'assets/equipment/back/cloak_silence.png',
+    emoji:'🌫️', imagePath:'assets/equipment/back/cloak_silence.webp',
     effect:{ type:'mood', value:'silence', desc:'タイマーが澄んだ静寂に包まれる' },
     flavorText:'雑音を遠ざけ、集中だけをそっと包み込む。' },
   { id:'wings_phoenix_gold', name:'黄金不死鳥の翼',   category:'back', rarity:'legendary',
-    emoji:'🔥', imagePath:'assets/equipment/back/wings_phoenix_gold.png',
+    emoji:'🔥', imagePath:'assets/equipment/back/wings_phoenix_gold.webp',
     effect:{ type:'streak_protect', value:1, desc:'連続日数1回保護' },
     flavorText:'途切れそうな炎を、もう一度空へ舞い上げる。' },
 
@@ -8559,9 +8559,9 @@ const AVATAR_OTOMON_LAYOUT = { scale: 40, cx: 22, cy: 88 };
 
 function buildRichAvatarSVG_0(type) {
   const srcs = {
-    A:'assets/avatar/adventurer-a-fixed.png',
-    B:'assets/avatar/adventurer-b-fixed-v3.png',
-    C:'assets/avatar/adventurer-c-fixed.png'
+    A:'assets/avatar/adventurer-a-fixed.webp',
+    B:'assets/avatar/adventurer-b-fixed-v3.webp',
+    C:'assets/avatar/adventurer-c-fixed.webp'
   };
   const src = srcs[type] || srcs.A;
   const fallback = buildAvatarSVG(0, 160, 200);
@@ -8666,9 +8666,9 @@ function checkAvatarEvolution() {
 // アバター円アイコン: 各キャラ静止画から「顔（首から上）」を切り抜く設定。
 // size=background-size, pos=background-position（PNG頭部解析で算出）
 const AV_FACE_FRAME = {
-  A: { src: 'assets/avatar/adventurer-a-face.png' },
-  B: { src: 'assets/avatar/adventurer-b-face-v3.png' },
-  C: { src: 'assets/avatar/adventurer-c-face.png' },
+  A: { src: 'assets/avatar/adventurer-a-face.webp' },
+  B: { src: 'assets/avatar/adventurer-b-face-v3.webp' },
+  C: { src: 'assets/avatar/adventurer-c-face.webp' },
 };
 
 function renderAvatarBtn() {
@@ -10344,22 +10344,22 @@ const SUMMON_CHAR_FRAME = {
 };
 
 const SUMMON_STEPS = [
-  { key:'welcome', icon:'⚔',  img:'assets/guide-fairy-smile.png', title:'Growth Quest へようこそ',
+  { key:'welcome', icon:'⚔',  img:'assets/guide-fairy-smile.webp', title:'Growth Quest へようこそ',
     body:'ここは、学習や自己成長が <b>冒険</b> になる世界。<br>あなたの努力が経験値になり、レベルが上がり、世界が広がっていきます。<br>まずは、あなたのキャラクターを選びましょう。' },
-  { key:'char',    icon:'🧝', img:'assets/guide-fairy-smile.png', title:'冒険者を選ぶ',
+  { key:'char',    icon:'🧝', img:'assets/guide-fairy-smile.webp', title:'冒険者を選ぶ',
     body:'あなたといっしょに歩む冒険者を選んでください。<br><span style="opacity:.7;font-size:.82em">（あとから設定で変えられます）</span>' },
-  { key:'name',    icon:'✍️', img:'assets/guide-fairy-calm.png', title:'冒険者の名前',
+  { key:'name',    icon:'✍️', img:'assets/guide-fairy-calm.webp', title:'冒険者の名前',
     body:'なんと呼べばいい？<br>あなたの冒険者名を教えてください。' },
-  { key:'ritual',  icon:'✨', img:'assets/guide-fairy-joy.png', title:'召喚の儀', body:'' },   // body は名前から動的生成
-  { key:'genre',   icon:'📚', img:'assets/guide-fairy-smile.png', title:'使命 ①　育てる力を選ぶ',
+  { key:'ritual',  icon:'✨', img:'assets/guide-fairy-joy.webp', title:'召喚の儀', body:'' },   // body は名前から動的生成
+  { key:'genre',   icon:'📚', img:'assets/guide-fairy-smile.webp', title:'使命 ①　育てる力を選ぶ',
     body:'これから冒険で育てたいテーマを選びましょう。<br><span style="opacity:.7;font-size:.82em">（複数OK・あとから追加変更できます）</span>' },
-  { key:'build',   icon:'🌱', img:'assets/guide-fairy-joy.png', title:'使命 ②　身につけたい習慣',
+  { key:'build',   icon:'🌱', img:'assets/guide-fairy-joy.webp', title:'使命 ②　身につけたい習慣',
     body:'冒険を通して <b>習慣にしたいこと</b> はありますか？<br><span style="opacity:.7;font-size:.82em">小さなことでOK。無ければ空のままでも進めます。</span>' },
-  { key:'quit',    icon:'🔥', img:'assets/guide-fairy-think.png', title:'使命 ③　断ちたい習慣',
+  { key:'quit',    icon:'🔥', img:'assets/guide-fairy-think.webp', title:'使命 ③　断ちたい習慣',
     body:'逆に、<b>やめたい・減らしたい習慣</b> はありますか？<br><span style="opacity:.7;font-size:.82em">例：「寝る前のだらだらスマホ」。無ければ空でOK。</span>' },
-  { key:'creed',   icon:'🌟', img:'assets/guide-fairy-calm.png', title:'冒険者の心得',
+  { key:'creed',   icon:'🌟', img:'assets/guide-fairy-calm.webp', title:'冒険者の心得',
     body:'・5分でもOK。<b>始めた時点で前進</b> です。<br>・完了すると XP・すごろく・装備・バッジで成長が見えます。<br>・<b>自信は、小さな行動の積み重ね</b> から育ちます。' },
-  { key:'start',   icon:'⚔',  img:'assets/guide-fairy-joy.png', title:'', body:'準備は整いました。<br>あなたの冒険を、始めましょう！' },  // title は名前から動的生成
+  { key:'start',   icon:'⚔',  img:'assets/guide-fairy-joy.webp', title:'', body:'準備は整いました。<br>あなたの冒険を、始めましょう！' },  // title は名前から動的生成
 ];
 
 // 召喚背景の星を生成（初回のみ）

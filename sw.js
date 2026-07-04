@@ -2,7 +2,7 @@
 //  Growth Quest — Service Worker
 //  バージョンを上げると古いキャッシュが自動削除されます
 // ═══════════════════════════════════════════════════════
-const CACHE_NAME = 'gq-cache-v11';
+const CACHE_NAME = 'gq-cache-v12';
 
 // インストール時に事前キャッシュするファイル一覧
 const PRECACHE_URLS = [
@@ -20,30 +20,30 @@ const PRECACHE_URLS = [
   './assets/icons/icon-512.png',
   './assets/icons/maskable-512.png',
   // 装備画像（アバター装備画面で使用）
-  './assets/equipment/back/bag_explorer.png',
-  './assets/equipment/back/cape_phoenix.png',
-  './assets/equipment/back/cloak_silence.png',
-  './assets/equipment/back/scarf_breeze.png',
-  './assets/equipment/back/wings_phoenix_gold.png',
-  './assets/equipment/back/wings_small.png',
-  './assets/equipment/body/apron_creator.png',
-  './assets/equipment/body/armor_constellation.png',
-  './assets/equipment/body/coat_guardian.png',
-  './assets/equipment/body/jacket_morning.png',
-  './assets/equipment/body/robe_sage.png',
-  './assets/equipment/body/vest_adventurer.png',
-  './assets/equipment/hand/compass_momentum.png',
-  './assets/equipment/hand/lantern_truth.png',
-  './assets/equipment/hand/mug_calm.png',
-  './assets/equipment/hand/notebook_quest.png',
-  './assets/equipment/hand/staff_wisdom.png',
-  './assets/equipment/hand/sword_brave.png',
-  './assets/equipment/head/cap_focus.png',
-  './assets/equipment/head/crown_scholar.png',
-  './assets/equipment/head/goggles_focus.png',
-  './assets/equipment/head/halo_dawn.png',
-  './assets/equipment/head/hood_moonlight.png',
-  './assets/equipment/head/tiara_starlight.png',
+  './assets/equipment/back/bag_explorer.webp',
+  './assets/equipment/back/cape_phoenix.webp',
+  './assets/equipment/back/cloak_silence.webp',
+  './assets/equipment/back/scarf_breeze.webp',
+  './assets/equipment/back/wings_phoenix_gold.webp',
+  './assets/equipment/back/wings_small.webp',
+  './assets/equipment/body/apron_creator.webp',
+  './assets/equipment/body/armor_constellation.webp',
+  './assets/equipment/body/coat_guardian.webp',
+  './assets/equipment/body/jacket_morning.webp',
+  './assets/equipment/body/robe_sage.webp',
+  './assets/equipment/body/vest_adventurer.webp',
+  './assets/equipment/hand/compass_momentum.webp',
+  './assets/equipment/hand/lantern_truth.webp',
+  './assets/equipment/hand/mug_calm.webp',
+  './assets/equipment/hand/notebook_quest.webp',
+  './assets/equipment/hand/staff_wisdom.webp',
+  './assets/equipment/hand/sword_brave.webp',
+  './assets/equipment/head/cap_focus.webp',
+  './assets/equipment/head/crown_scholar.webp',
+  './assets/equipment/head/goggles_focus.webp',
+  './assets/equipment/head/halo_dawn.webp',
+  './assets/equipment/head/hood_moonlight.webp',
+  './assets/equipment/head/tiara_starlight.webp',
   './assets/equipment/pet/pet_cat.svg',
   './assets/equipment/pet/pet_dragon.svg',
   './assets/equipment/pet/pet_fox.svg',
@@ -51,9 +51,9 @@ const PRECACHE_URLS = [
   './assets/equipment/pet/pet_rabbit.svg',
   './assets/equipment/pet/pet_slime.svg',
   // アバター画像
-  './assets/avatar/adventurer-a-padded.png',
-  './assets/avatar/adventurer-b-padded.png',
-  './assets/avatar/adventurer-c-padded.png',
+  './assets/avatar/adventurer-a-padded.webp',
+  './assets/avatar/adventurer-b-padded.webp',
+  './assets/avatar/adventurer-c-padded.webp',
 ];
 
 // ── install: 事前キャッシュ ──────────────────────────
