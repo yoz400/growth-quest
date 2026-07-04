@@ -4996,3 +4996,11 @@ body.eq-mood-galaxy    .anim-wrap::after {
   }
   .icon-btn-label { max-width: 100%; overflow: hidden; }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
