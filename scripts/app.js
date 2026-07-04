@@ -4120,6 +4120,8 @@ function applySettings() {
 document.getElementById('settings-btn').addEventListener('click', () => {
   Overlay.open('settings-overlay');
   const cu = document.getElementById('set-cloud-url'); if (cu) cu.value = loadCloudUrl();
+  // 冒険者の選択欄は開くたびに現在値へ同期（召喚直後など起動後に変わることがある）
+  const av = document.getElementById('set-avatar-type'); if (av) av.value = avatarType;
 });
 document.getElementById('settings-close-btn').addEventListener('click', () => {
   Overlay.close('settings-overlay');
