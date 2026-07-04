@@ -2114,21 +2114,13 @@ header {
   font-size: .62rem; color: var(--cyan); letter-spacing: .12em;
   text-transform: uppercase; margin-bottom: 8px;
 }
-.av-type-btns { display: flex; gap: 6px; flex-wrap: wrap; }
-.av-type-btn {
-  flex: 1; min-width: 70px; padding: 8px 4px; background: rgba(255,255,255,.04);
-  border: 1px solid var(--glass-border); border-radius: 10px;
-  color: var(--text-dim); font-family: 'Noto Sans JP', sans-serif;
-  font-size: .76rem; cursor: pointer; transition: all .2s; text-align: center;
+.av-current-card {
+  padding: 12px 14px; border: 1px solid rgba(103,232,249,.24);
+  border-radius: 12px; background: rgba(6,182,212,.08); text-align: center;
 }
-@media (max-width: 340px) {
-  .av-type-btn { flex: 0 0 calc(50% - 3px); }
-}
-.av-type-btn:hover { border-color: var(--cyan); color: var(--text); }
-.av-type-btn.active {
-  border-color: var(--cyan); color: var(--cyan);
-  background: rgba(6,182,212,.12); font-weight: 700;
-}
+.av-current-name { font-size: 1rem; font-weight: 900; color: var(--text); }
+.av-current-title { margin-top: 3px; font-size: .82rem; color: var(--cyan); font-weight: 700; }
+.av-current-desc { margin-top: 4px; font-size: .7rem; color: var(--text-dim); }
 @keyframes avBreathe {
   0%,100% { transform: translateY(0); }
   32%     { transform: translateY(-2px); }

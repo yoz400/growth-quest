@@ -4113,6 +4113,8 @@ function applySettings() {
   document.getElementById('set-anim').value = settings.anim;
   document.getElementById('set-sound').checked = settings.sound !== false;
   document.getElementById('set-notif').checked  = settings.notif  !== false;
+  const avTypeSelect = document.getElementById('set-avatar-type');
+  if (avTypeSelect) avTypeSelect.value = avatarType;
 }
 
 document.getElementById('settings-btn').addEventListener('click', () => {
@@ -4156,6 +4158,14 @@ document.getElementById('set-notif').addEventListener('change', async e => {
   settings.notif = e.target.checked;
   saveSettings(settings);
   if (e.target.checked) await requestNotifPermission();
+});
+
+document.getElementById('set-avatar-type')?.addEventListener('change', e => {
+  avatarType = ADVENTURERS[e.target.value] ? e.target.value : 'A';
+  saveAvatarType();
+  renderAvatarBtn();
+  refreshAvatarEquipmentIfOpen();
+  applySettings();
 });
 
 // ── データのエクスポート / インポート（バックアップ） ──────
@@ -8688,14 +8698,15 @@ function renderAvatarModal() {
 
   document.getElementById('avatar-display-large').innerHTML = buildRichAvatarSVG(si);
 
-  // タイプ選択UI（進化段階に関わらず常時表示）
+  // 選択中の冒険者だけを表示。変更は設定画面に集約する。
   const typeSel = document.getElementById('avatar-type-selector');
+  const meta = adventurerMeta();
   typeSel.innerHTML = `
-    <div class="av-type-label">アバタータイプ</div>
-    <div class="av-type-btns">
-      <button class="av-type-btn${avatarType==='A'?' active':''}" data-avtype="A">${escHtml(adventurerName('A'))}<br><span style="font-size:.65rem;opacity:.7">${ADVENTURERS.A.title}</span></button>
-      <button class="av-type-btn${avatarType==='B'?' active':''}" data-avtype="B">${escHtml(adventurerName('B'))}<br><span style="font-size:.65rem;opacity:.7">${ADVENTURERS.B.title}</span></button>
-      <button class="av-type-btn${avatarType==='C'?' active':''}" data-avtype="C">${escHtml(adventurerName('C'))}<br><span style="font-size:.65rem;opacity:.7">${ADVENTURERS.C.title}</span></button>
+    <div class="av-current-card">
+      <div class="av-type-label">あなたの冒険者</div>
+      <div class="av-current-name">${escHtml(adventurerName())}</div>
+      <div class="av-current-title">${escHtml(meta.title)}</div>
+      <div class="av-current-desc">${escHtml(meta.desc)}</div>
     </div>`;
 
   // 次進化までの分数を計算
@@ -8796,17 +8807,6 @@ document.getElementById('avatar-overlay').addEventListener('click', e => {
   if (e.target === document.getElementById('avatar-overlay'))
     Overlay.close('avatar-overlay');
 });
-// アバタータイプ切り替え（イベント委譲）
-document.getElementById('avatar-panel').addEventListener('click', e => {
-  const btn = e.target.closest('[data-avtype]');
-  if (!btn) return;
-  avatarType = btn.dataset.avtype;
-  saveAvatarType();
-  renderAvatarBtn();   // ヘッダーのアイコン更新
-  renderAvatarModal(); // モーダル内のアバター＋ボタン状態更新
-  document.getElementById('avatar-panel').scrollTo({ top: 0, behavior: 'smooth' });
-});
-
 // ═══════════════════════════════════════════════════════
 //  SUGOROKU — EVENT LISTENERS
 // ═══════════════════════════════════════════════════════
@@ -10458,7 +10458,7 @@ function renderSummon() {
     body = `<b>${escHtml(summonName)}</b> よ。<br>`
       + 'Growth Quest の世界へ、ようこそ。<br>いま、あなたに3つの <b>使命</b> を授けます。';
   } else if (step.key === 'start') {
-    title = `いざ、${escHtml(summonName)} の冒険へ`;
+    title = `いざ、${escHtml(summonName)}の冒険へ`;
     body = `ようこそ、${summonMeta.role}${escHtml(summonName)}。<br>準備は整いました。<br>あなたの冒険を、始めましょう！`;
   }
   document.getElementById('summon-title').innerHTML = title;
