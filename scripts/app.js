@@ -10395,7 +10395,9 @@ function renderSummonSlot(step) {
     const types = ['A', 'B', 'C'];
     slot.innerHTML = `<div class="summon-char-grid">${types.map(t => {
       const meta = adventurerMeta(t);
-      return `<button class="summon-char-btn${summonDraft.avType === t ? ' active' : ''}" data-summon-char="${t}">
+      const selected = summonDraft.avType === t;
+      return `<button class="summon-char-btn${selected ? ' selected' : ''}" data-summon-char="${t}" aria-pressed="${selected ? 'true' : 'false'}">
+        <span class="summon-char-check" aria-hidden="true">✓</span>
         <div class="summon-char-pic" style="background-image:url('${(AV_FACE_FRAME[t] || AV_FACE_FRAME.A).src}');background-size:${(SUMMON_CHAR_FRAME[t]||{}).size||'cover'};background-position:${(SUMMON_CHAR_FRAME[t]||{}).pos||'center top'}"></div>
         <div class="summon-char-name">${escHtml(meta.title)}</div>
         <div class="summon-char-desc">${escHtml(meta.desc)}</div>

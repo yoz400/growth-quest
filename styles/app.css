@@ -2870,9 +2870,27 @@ header {
 
 /* ── キャラクター選択 ── */
 .summon-char-grid { display: flex; gap: 8px; justify-content: center; }
-.summon-char-btn { flex: 1; min-width: 0; padding: 10px 5px; background: rgba(255,255,255,.04); border: 1.5px solid var(--glass-border); border-radius: 14px; cursor: pointer; transition: all .2s; color: var(--text-dim); font-family: inherit; }
-.summon-char-btn:hover { border-color: var(--cyan); color: var(--text); }
-.summon-char-btn.active { border-color: var(--cyan); background: rgba(6,182,212,.12); color: var(--cyan); box-shadow: 0 0 16px rgba(6,182,212,.25); }
+.summon-char-btn {
+  position: relative; flex: 1; min-width: 0; padding: 10px 5px;
+  background: rgba(255,255,255,.04); border: 1.5px solid var(--glass-border);
+  border-radius: 14px; cursor: pointer; transition: opacity .2s, border-color .2s, box-shadow .2s, color .2s, background .2s;
+  color: var(--text-dim); font-family: inherit;
+}
+.summon-char-btn:not(.selected) { opacity: .75; }
+.summon-char-btn:hover { border-color: var(--cyan); color: var(--text); opacity: 1; }
+.summon-char-btn.selected {
+  border: 2px solid var(--cyan); background: rgba(6,182,212,.12);
+  color: var(--cyan); box-shadow: 0 0 18px rgba(103,232,249,.35);
+}
+.summon-char-btn.selected .summon-char-name { color: var(--cyan); }
+.summon-char-check {
+  position: absolute; top: 7px; right: 7px; display: none;
+  width: 20px; height: 20px; border-radius: 999px;
+  align-items: center; justify-content: center;
+  background: var(--cyan); color: #042f3a; font-size: .78rem; font-weight: 900;
+  box-shadow: 0 0 12px rgba(103,232,249,.45);
+}
+.summon-char-btn.selected .summon-char-check { display: inline-flex; }
 .summon-char-pic { width: 100%; aspect-ratio: 1; border-radius: 10px; background-size: cover; background-position: center top; background-repeat: no-repeat; background-color: rgba(255,255,255,.04); margin-bottom: 6px; }
 .summon-icon-img { width: 80px; height: 80px; margin: 0 auto 12px; background-size: contain; background-repeat: no-repeat; background-position: center; image-rendering: auto; }
 .summon-char-name { font-size: .8rem; font-weight: 700; }
