@@ -8600,8 +8600,23 @@ function saveAvatarData() { localStorage.setItem('gq_avatar', JSON.stringify(ava
 let avatarData = loadAvatarData();
 
 // ── アバタータイプ (A/B/C) ───────────────────────────────
+const ADVENTURERS = {
+  A: { fallback: 'レン', title: '凜々しい剣士', role: '剣士', desc: 'まっすぐ突き進む努力家' },
+  B: { fallback: 'ミア', title: '聡明な魔法使い', role: '魔法使い', desc: 'コツコツ積み上げる知性派' },
+  C: { fallback: 'ソラ', title: '旅する吟遊詩人', role: '吟遊詩人', desc: '自由に楽しく続ける自由人' },
+};
+
 let avatarType = localStorage.getItem('gq_av_type') || 'A';
 function saveAvatarType() { localStorage.setItem('gq_av_type', avatarType); }
+
+function adventurerName(type = avatarType) {
+  const nm = (playerName || '').trim();
+  return nm || ADVENTURERS[type]?.fallback || '冒険者';
+}
+
+function adventurerMeta(type = avatarType) {
+  return ADVENTURERS[type] || ADVENTURERS.A;
+}
 
 function checkAvatarEvolution() {
   const curIdx  = getAvatarStageIndex(data.level);
@@ -8678,9 +8693,9 @@ function renderAvatarModal() {
   typeSel.innerHTML = `
     <div class="av-type-label">アバタータイプ</div>
     <div class="av-type-btns">
-      <button class="av-type-btn${avatarType==='A'?' active':''}" data-avtype="A">冒険者A<br><span style="font-size:.65rem;opacity:.7">男性風・短髪</span></button>
-      <button class="av-type-btn${avatarType==='B'?' active':''}" data-avtype="B">冒険者B<br><span style="font-size:.65rem;opacity:.7">女性風・リボン</span></button>
-      <button class="av-type-btn${avatarType==='C'?' active':''}" data-avtype="C">冒険者C<br><span style="font-size:.65rem;opacity:.7">中性的・ボブカット</span></button>
+      <button class="av-type-btn${avatarType==='A'?' active':''}" data-avtype="A">${escHtml(adventurerName('A'))}<br><span style="font-size:.65rem;opacity:.7">${ADVENTURERS.A.title}</span></button>
+      <button class="av-type-btn${avatarType==='B'?' active':''}" data-avtype="B">${escHtml(adventurerName('B'))}<br><span style="font-size:.65rem;opacity:.7">${ADVENTURERS.B.title}</span></button>
+      <button class="av-type-btn${avatarType==='C'?' active':''}" data-avtype="C">${escHtml(adventurerName('C'))}<br><span style="font-size:.65rem;opacity:.7">${ADVENTURERS.C.title}</span></button>
     </div>`;
 
   // 次進化までの分数を計算
@@ -10325,7 +10340,7 @@ const SUMMON_STEPS = [
   { key:'welcome', icon:'⚔',  img:'assets/guide-fairy-smile.png', title:'Growth Quest へようこそ',
     body:'ここは、学習や自己成長が <b>冒険</b> になる世界。<br>あなたの努力が経験値になり、レベルが上がり、世界が広がっていきます。<br>まずは、あなたのキャラクターを選びましょう。' },
   { key:'char',    icon:'🧝', img:'assets/guide-fairy-smile.png', title:'冒険者を選ぶ',
-    body:'あなたといっしょに歩む冒険者を選んでください。<br><span style="opacity:.7;font-size:.82em">（あとから「アバター」画面でいつでも変えられます）</span>' },
+    body:'あなたといっしょに歩む冒険者を選んでください。<br><span style="opacity:.7;font-size:.82em">（あとから設定で変えられます）</span>' },
   { key:'name',    icon:'✍️', img:'assets/guide-fairy-calm.png', title:'冒険者の名前',
     body:'なんと呼べばいい？<br>あなたの冒険者名を教えてください。' },
   { key:'ritual',  icon:'✨', img:'assets/guide-fairy-joy.png', title:'召喚の儀', body:'' },   // body は名前から動的生成
@@ -10377,13 +10392,15 @@ function renderSummonSlot(step) {
   const slot = document.getElementById('summon-slot');
   if (!slot) return;
   if (step.key === 'char') {
-    const types = [['A','冒険者A','凜々しい剣士'], ['B','冒険者B','聡明な魔法使い'], ['C','冒険者C','旅する吟遊詩人']];
-    slot.innerHTML = `<div class="summon-char-grid">${types.map(([t, nm, ds]) =>
-      `<button class="summon-char-btn${summonDraft.avType === t ? ' active' : ''}" data-summon-char="${t}">
+    const types = ['A', 'B', 'C'];
+    slot.innerHTML = `<div class="summon-char-grid">${types.map(t => {
+      const meta = adventurerMeta(t);
+      return `<button class="summon-char-btn${summonDraft.avType === t ? ' active' : ''}" data-summon-char="${t}">
         <div class="summon-char-pic" style="background-image:url('${(AV_FACE_FRAME[t] || AV_FACE_FRAME.A).src}');background-size:${(SUMMON_CHAR_FRAME[t]||{}).size||'cover'};background-position:${(SUMMON_CHAR_FRAME[t]||{}).pos||'center top'}"></div>
-        <div class="summon-char-name">${nm}</div>
-        <div class="summon-char-desc">${ds}</div>
-      </button>`).join('')}</div>`;
+        <div class="summon-char-name">${escHtml(meta.title)}</div>
+        <div class="summon-char-desc">${escHtml(meta.desc)}</div>
+      </button>`;
+    }).join('')}</div>`;
   } else if (step.key === 'name') {
     slot.innerHTML = `<input type="text" class="summon-input" id="summon-name-input" maxlength="12" placeholder="例：ヨージ" value="${escHtml(summonDraft.name)}">
       <div class="summon-input-hint">空のままでもOK（あとで設定から変えられます）</div>`;
@@ -10420,6 +10437,8 @@ function renderSummon() {
   const step = SUMMON_STEPS[summonStep];
   if (!step || !summonDraft) return;
   const nm = (summonDraft.name || '').trim();
+  const summonName = nm || adventurerName(summonDraft.avType);
+  const summonMeta = adventurerMeta(summonDraft.avType);
 
   const iconEl = document.getElementById('summon-icon');
   if (step.img) {
@@ -10434,10 +10453,11 @@ function renderSummon() {
 
   let title = step.title, body = step.body;
   if (step.key === 'ritual') {
-    body = (nm ? `<b>${escHtml(nm)}</b> よ。<br>` : '冒険者よ。<br>')
+    body = `<b>${escHtml(summonName)}</b> よ。<br>`
       + 'Growth Quest の世界へ、ようこそ。<br>いま、あなたに3つの <b>使命</b> を授けます。';
   } else if (step.key === 'start') {
-    title = nm ? `いざ、${escHtml(nm)} の冒険へ` : 'いざ、冒険へ';
+    title = `いざ、${escHtml(summonName)} の冒険へ`;
+    body = `ようこそ、${summonMeta.role}${escHtml(summonName)}。<br>準備は整いました。<br>あなたの冒険を、始めましょう！`;
   }
   document.getElementById('summon-title').innerHTML = title;
   document.getElementById('summon-body').innerHTML = body;
@@ -10621,9 +10641,9 @@ function renderMissionCard() {
   const card = document.getElementById('mission-card');
   if (!card) return;
   const body = document.getElementById('mission-body');
-  const nm = (playerName || '').trim();
+  const nm = adventurerName();
   const hd = card.querySelector('.mc-header');
-  if (hd) hd.textContent = nm ? `⚔ ${nm}の使命` : '⚔ あなたの使命';
+  if (hd) hd.textContent = `⚔ ${nm}の使命`;
   const total = (mission.build?.length || 0) + (mission.quit?.length || 0);
   if (total === 0 && missionAddKind === null) {
     body.innerHTML = `<div class="mc-intro">育てたい習慣・断ちたい習慣を決めると、ここに並びます。</div>
@@ -11351,7 +11371,7 @@ function renderLoginBonus(streak, reward) {
   const card = document.getElementById('login-bonus-card');
   if (!card) return;
   const [gicon, gtext] = _heroGreeting();
-  const nm = (playerName || '').trim();
+  const nm = adventurerName();
   const si = getAvatarStageIndex(data.level);
   const stage = AVATAR_STAGES[si];
   const face = (AV_FACE_FRAME[avatarType] || AV_FACE_FRAME.A).src;
@@ -11368,7 +11388,7 @@ function renderLoginBonus(streak, reward) {
 
   card.innerHTML = `
     <div class="lb-sparkles" id="lb-sparkles"></div>
-    <div class="lb-badge">${gicon} ${gtext}${nm ? '、' + escHtml(nm) : ''}</div>
+    <div class="lb-badge">${gicon} ${gtext}、${escHtml(nm)}</div>
     <div class="lb-avatar" style="--ring:${stage.c1}">
       <img src="${face}" alt="" onerror="this.style.display='none'">
       <span class="lb-stage" style="background:linear-gradient(135deg,${stage.c1},${stage.c2})">${stage.title}・Lv${data.level}</span>
