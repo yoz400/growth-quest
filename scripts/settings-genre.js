@@ -40,7 +40,8 @@ document.getElementById('settings-overlay').addEventListener('click', e => {
     Overlay.close('settings-overlay');
 });
 document.getElementById('set-cloud-url')?.addEventListener('change', e => saveCloudUrl(e.target.value));
-document.getElementById('cloud-test-btn')?.addEventListener('click', testCloudNotify);
+// testCloudNotify は calendar-review.js で定義されるため、読み込み順に依存しないよう遅延参照にする
+document.getElementById('cloud-test-btn')?.addEventListener('click', () => testCloudNotify());
 
 document.getElementById('set-default-mode').addEventListener('change', e => {
   settings.defaultMode = e.target.value;
