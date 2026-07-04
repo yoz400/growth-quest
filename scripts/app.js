@@ -8029,6 +8029,11 @@ function openGuideTutorial({ force = false } = {}) {
   if (!force && localStorage.getItem(GUIDE_TUTORIAL_KEY) === '1') return;
   const overlay = document.getElementById('guide-tutorial-overlay');
   if (!overlay) return;
+  // ログインボーナス等が開いている間は重ねずに待ち、閉じてから登場する
+  if (!force && Overlay.topId() && Overlay.topId() !== 'guide-tutorial-overlay') {
+    setTimeout(() => openGuideTutorial(), 800);
+    return;
+  }
   guideTutorialStep = 0;
   Overlay.open('guide-tutorial-overlay');
   renderGuideTutorialStep();
