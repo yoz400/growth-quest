@@ -34,6 +34,9 @@ document.getElementById('skill-overlay').addEventListener('click', e => {
 //  INIT
 // ═══════════════════════════════════════════════════════
 applySettings();
+// 誤操作リロード（下スワイプ更新・戻るボタン等）で消えた実行中/一時停止中のタイマーを復元
+// applySettings() の後に呼ぶ（そうしないとモードタブの初期化で上書きされる）
+restoreTimerSession();
 // すごろく遡及初期化: 初回ロード時、既存セッション数分だけマスを進める
 if (!sugorokuData.initialized) {
   sugorokuData.pos = Math.min(data.sessions, 99);

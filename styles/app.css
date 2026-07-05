@@ -17,12 +17,16 @@
   --radius: 20px;
 }
 
+html {
+  overscroll-behavior-y: contain;
+}
 body {
   background: var(--bg);
   color: var(--text);
   font-family: 'Noto Sans JP', sans-serif;
   min-height: 100vh;
   overflow-x: hidden;
+  overscroll-behavior-y: contain;
 }
 
 :focus-visible {

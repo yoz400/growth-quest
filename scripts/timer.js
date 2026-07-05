@@ -134,6 +134,45 @@ function updateModeFill(elapsedSec) {
 
 const stopBtn = document.getElementById('stop-btn');
 
+// ── 誤操作リロード対策：実行中/一時停止中の状態をこまめに保存し、
+//    次回起動時に自動復元する（下スワイプ更新・戻るボタン誤操作・アプリのkill等）
+const TIMER_SESSION_KEY = 'gq_timer_session';
+function saveTimerSession() {
+  if (timerState === 'idle') { localStorage.removeItem(TIMER_SESSION_KEY); return; }
+  localStorage.setItem(TIMER_SESSION_KEY, JSON.stringify({
+    state: timerState, mode: currentMode,
+    startWall: timerStartWall, pausedSec: timerPausedSec,
+    sessionStartHour: sessionStartHour,
+  }));
+}
+function clearTimerSession() { localStorage.removeItem(TIMER_SESSION_KEY); }
+
+function restoreTimerSession() {
+  let saved;
+  try { saved = JSON.parse(localStorage.getItem(TIMER_SESSION_KEY) || 'null'); } catch (e) { saved = null; }
+  if (!saved || (saved.state !== 'running' && saved.state !== 'paused')) return;
+
+  currentMode = MODES[saved.mode] ? saved.mode : currentMode;
+  sessionStartHour = typeof saved.sessionStartHour === 'number' ? saved.sessionStartHour : new Date().getHours();
+  timerPausedSec = saved.pausedSec || 0;
+  timerStartWall = saved.state === 'running' ? saved.startWall : null;
+  timerState = saved.state;
+
+  document.querySelectorAll('.mode-tab').forEach(t => t.classList.toggle('active', t.dataset.mode === currentMode));
+  startBtn.textContent = saved.state === 'running' ? '一時停止' : '▶ 再開';
+  startBtn.classList.toggle('running', saved.state === 'running');
+  stopBtn.style.display = 'inline-flex';
+
+  startAnim();
+  if (saved.state === 'paused') pauseAnim();
+  tick();   // 表示・ゲージを即座に正しい値へ（超過分はここで自動的にセッション完了へ）
+
+  if (saved.state === 'running' && timerState === 'running') {
+    intervalId = setInterval(tick, 1000);
+    requestNotifPermission();
+  }
+}
+
 function startTimer() {
   if (timerState === 'idle') {
     // ── START ──
@@ -159,6 +198,7 @@ function startTimer() {
     // デイリークエスト: STARTを押した時点で1日1回達成
     completeQuest('start_5min');
     if (guideWasOpen) setTimeout(showGuideStartToast, 180);
+    saveTimerSession();
 
   } else if (timerState === 'running') {
     // ── PAUSE ──
@@ -170,6 +210,7 @@ function startTimer() {
     startBtn.textContent = '▶ 再開';
     startBtn.classList.remove('running');
     pauseAnim();
+    saveTimerSession();
 
   } else if (timerState === 'paused') {
     // ── RESUME ──
@@ -179,6 +220,7 @@ function startTimer() {
     startBtn.classList.add('running');
     resumeAnim();
     intervalId = setInterval(tick, 1000);
+    saveTimerSession();
   }
 }
 
@@ -211,6 +253,7 @@ function resolveOverlongSession(rawMins) {
 
 function stopTimer() {
   // ── RESET ── (リセットボタン用)
+  clearTimerSession();
   sessionMinutes = getTimerElapsedSec(); // 実経過秒を確定
   timerStartWall = null;
   timerPausedSec = 0;
@@ -315,6 +358,7 @@ function tick() {
   }
 
   if (remaining <= 0) {
+    clearTimerSession();
     timerStartWall = null;
     timerPausedSec = 0;
     clearInterval(intervalId);
