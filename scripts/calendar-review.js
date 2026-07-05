@@ -1826,6 +1826,12 @@ function getReviewTarget() {
 }
 
 function checkWeeklyReviewTrigger() {
+  // レビュー機能が未解放（4セッション未満）の間は、ドットも自動プロンプトも出さない
+  // ※ featUnlocks(boot.js) はこの関数の初回呼び出し時点で未初期化のため、localStorage を直接見る
+  try {
+    const unlocked = JSON.parse(localStorage.getItem('gq_unlocks') || '[]');
+    if (!unlocked.includes('review')) return;
+  } catch (e) { return; }
   // 通知ドット: 前の週がまだ未レビューなら表示
   const prevD = new Date(); prevD.setDate(prevD.getDate()-7);
   const prevWk = getWeekKey(prevD);

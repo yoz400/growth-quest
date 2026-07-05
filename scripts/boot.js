@@ -1521,10 +1521,11 @@ const SUMMON_GENRE_PRESETS = [
 ];
 
 // キャラ選択カードの顔フレーム（各PNGで顔位置が違うので個別に中央寄せ）
+// 3枚の元絵は顔の大きさ・位置が微妙に違う（Aだけ大きめ等）ため、キャラごとに補正して顔をそろえる
 const SUMMON_CHAR_FRAME = {
-  A: { size: '108%', pos: 'center 20%' },
-  B: { size: '108%', pos: 'center 16%' },
-  C: { size: '108%', pos: 'center 18%' },
+  A: { size: '96%',  pos: 'center 32%' },
+  B: { size: '112%', pos: '46% 12%' },
+  C: { size: '110%', pos: '47% 14%' },
 };
 
 const SUMMON_STEPS = [
