@@ -163,14 +163,17 @@ function renderOnboarding() {
   ];
   const allDone = steps.every(s => s.done);
   card.style.display = '';
+  // 未完了は空の“待機丸”（CSSのborderで描画）、完了は緑✓。押す用ではなく進捗の目印
   document.getElementById('onboard-steps').innerHTML = steps.map(s =>
-    `<div class="onboard-step ${s.done?'done':''}"><span class="onboard-check">${s.done?'✓':'○'}</span>${s.label}</div>`
+    `<div class="onboard-step ${s.done?'done':''}"><span class="onboard-check">${s.done?'✓':''}</span>${s.label}</div>`
   ).join('');
 
   // 初回はSTARTボタンを“ぽわん”と光らせる（最初のセッション前だけ）
   const startBtn = document.getElementById('start-btn');
   if (startBtn) startBtn.classList.toggle('first-glow', (data.sessions||0) < 1);
 
+  const hintEl = document.getElementById('onboard-hint');
+  if (hintEl) hintEl.style.display = allDone ? 'none' : '';
   if (allDone) {
     document.getElementById('onboard-sub').textContent = '準備完了！ あとは、あなたのペースで🌱';
     localStorage.setItem('gq_onboard_done', '1');
