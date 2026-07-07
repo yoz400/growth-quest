@@ -526,7 +526,7 @@
     const byId = {};
     OTOMON_MASTER.forEach(o => { byId[o.id] = o; });
     _ROSTER_100.forEach(([id, no, name, attribute, rarity]) => {
-      const p = 'assets/otomon/roster/pet_' + String(no).padStart(3, '0') + '.png';
+      const p = 'assets/otomon/roster/pet_' + String(no).padStart(3, '0') + '.webp';
       const img = { small: p, medium: p, large: p, original: p };
       if (byId[id]) {
         byId[id].image = img;            // 既存：画像のみ roster に統一（属性/レア度は維持）
