@@ -251,8 +251,8 @@ const SUGOROKU_ITEMS = [
   { id:'hourglass',   name:'砂時計',      emoji:'⏳', xp:10 },
   { id:'shield',      name:'守りの盾',    emoji:'🛡', xp:12 },
   { id:'lantern',     name:'学びの灯籠',  emoji:'🏮', xp:15 },
-  // 装備アイテム獲得枠（type='equipment' を doSugorokuRoll が検知して特別処理）
-  { id:'equipment_drop', name:'装備発見', emoji:'🎁', xp:30, type:'equipment' },
+  // 目覚めアイテム獲得枠（type='wake' を doSugorokuRoll が検知してオトモン用の目覚めアイテムを付与）
+  { id:'wake_gift', name:'目覚めのおくりもの', emoji:'🔆', xp:30, type:'wake' },
   { id:'legend_gem',  name:'伝説の珠',    emoji:'🌟', xp:50, rare:true },
   { id:'dragon_scroll',name:'龍の巻物',   emoji:'📜', xp:40, rare:true },
   { id:'phoenix',     name:'鳳凰の羽',    emoji:'🪶', xp:45, rare:true },
@@ -357,7 +357,7 @@ const EQUIPMENT_RARITY_WEIGHTS = {
   legendary:  5,
 };
 
-// 全装備所持済みのとき、equipment_drop に当たった場合の代替ボーナスXP
+// 目覚めアイテム枠(wake_gift)などで代替が必要なとき用のボーナスXP
 const EQUIPMENT_DUPLICATE_COMPENSATION_XP = 50;
 
 // effect は { type, value, desc } 形。効果は数値バフではなく「体験の変化」：
@@ -925,15 +925,14 @@ function doSugorokuRoll(modeKey, mins, partial) {
     itemGained = sgPickItem(true);
     bonusXP = itemGained.xp;
     evClass = 'ev-rare';
-    if (itemGained.type === 'equipment') {
-      const granted = grantRandomEquipmentItem();
+    if (itemGained.type === 'wake') {
+      const granted = window.Otomon ? window.Otomon.grantRandomWakeItem() : null;
       if (granted) {
         _sgPendingReward = granted;      // 到着マスで演出（即時には出さない）
-        message = `🎁 装備獲得：${granted.emoji} ${granted.name}！ (+${bonusXP} XP)`;
+        message = `🔆 目覚めアイテム「${granted.emoji} ${granted.name}」を入手！ (+${bonusXP} XP)`;
       } else {
-        // 全装備所持済み → 代替ボーナスXPで補償
         addBonusXP(EQUIPMENT_DUPLICATE_COMPENSATION_XP);
-        message = `🎁 全装備を発見済み！装備発見 +${bonusXP} XP ／ 代替ボーナス +${EQUIPMENT_DUPLICATE_COMPENSATION_XP} XP`;
+        message = `🔆 目覚めアイテム +${bonusXP} XP ／ 代替ボーナス +${EQUIPMENT_DUPLICATE_COMPENSATION_XP} XP`;
       }
     } else {
       message = `⭐ レア！${itemGained.emoji}「${itemGained.name}」を獲得！ (+${bonusXP} XP)`;
@@ -954,15 +953,14 @@ function doSugorokuRoll(modeKey, mins, partial) {
       itemGained = sgPickItem(false);
       bonusXP = itemGained.xp;
       evClass = 'ev-item';
-      if (itemGained.type === 'equipment') {
-        const granted = grantRandomEquipmentItem();
+      if (itemGained.type === 'wake') {
+        const granted = window.Otomon ? window.Otomon.grantRandomWakeItem() : null;
         if (granted) {
           _sgPendingReward = granted;      // 到着マスで演出（即時には出さない）
-          message = `🎁 装備獲得：${granted.emoji} ${granted.name}！ (+${bonusXP} XP)`;
+          message = `🔆 目覚めアイテム「${granted.emoji} ${granted.name}」を入手！ (+${bonusXP} XP)`;
         } else {
-          // 全装備所持済み → 代替ボーナスXPで補償
           addBonusXP(EQUIPMENT_DUPLICATE_COMPENSATION_XP);
-          message = `🎁 全装備を発見済み！装備発見 +${bonusXP} XP ／ 代替ボーナス +${EQUIPMENT_DUPLICATE_COMPENSATION_XP} XP`;
+          message = `🔆 目覚めアイテム +${bonusXP} XP ／ 代替ボーナス +${EQUIPMENT_DUPLICATE_COMPENSATION_XP} XP`;
         }
       } else {
         message = `${itemGained.emoji}「${itemGained.name}」を獲得！ (+${bonusXP} XP)`;
@@ -1002,7 +1000,8 @@ function doSugorokuRoll(modeKey, mins, partial) {
       const ct = BOARD_CELL_TYPES[sgGetCellNum(p)] || 'normal';
       if (ct === 'item' || ct === 'rare') {
         let it = sgPickItem(false);
-        if (it.type === 'equipment') it = SUGOROKU_ITEMS.find(x => x.id === 'study_book') || it;
+        // 目覚めアイテム枠は“到着マスの特別付与”専用。道中回収では通常アイテムに差し替える
+        if (it.type === 'wake') it = SUGOROKU_ITEMS.find(x => x.id === 'study_book') || it;
         sugorokuData.items.push({ ...it, pos: p, date: Date.now() });
         swept++; sweptXP += it.xp || 0;
       }
@@ -1522,7 +1521,7 @@ const ITEM_NEXT_HINTS = {
   dragon_scroll:['🐉 龍の覚醒',     '24時間すべてのXPが 2倍'],
   phoenix:      ['🪶 不死の加護',   '連続記録が復活＋🧊＋30 XP'],
   cosmic_orb:   ['🔮 宇宙ガチャ',   '強力バフ3つをランダムGET'],
-  golden_key:   ['🗝 封印解放',     'ランダムな装備を1つ入手'],
+  golden_key:   ['🗝 封印解放',     '目覚めアイテムを1つ入手'],
 };
 
 // ── アイテムを「使う」ときの効果定義 ────────────────────────
@@ -1583,12 +1582,12 @@ const ITEM_EFFECTS = {
     },
   },
   golden_key: {
-    confirm: 'ランダムな装備を1つ解錠して入手',
+    confirm: '目覚めアイテムを1つ入手（オトモンの卵を起こせる）',
     apply() {
-      const g = grantRandomEquipmentItem();
-      if (g) return `🗝 ${g.emoji}「${g.name}」を入手！`;
+      const g = window.Otomon ? window.Otomon.grantRandomWakeItem() : null;
+      if (g) return `🗝 目覚めアイテム「${g.emoji}${g.name}」を入手！`;
       addBonusXP(EQUIPMENT_DUPLICATE_COMPENSATION_XP);
-      return `🗝 全装備を所持済み！代わりに +${EQUIPMENT_DUPLICATE_COMPENSATION_XP}XP`;
+      return `🗝 代わりに +${EQUIPMENT_DUPLICATE_COMPENSATION_XP}XP`;
     },
   },
   // ── サイコロ・移動系（次のサイコロに作用）──
@@ -1664,7 +1663,7 @@ function closeDicePicker() {
 // 📖 アイテム図鑑モーダル
 function openItemDex() {
   closeItemDex();
-  const all = SUGOROKU_ITEMS.filter(it => it.id !== 'equipment_drop');
+  const all = SUGOROKU_ITEMS.filter(it => it.id !== 'wake_gift');
   const usedCount = all.filter(it => (itemDex[it.id] || {}).count > 0).length;
   const cards = all.map(it => {
     const e = itemDex[it.id];

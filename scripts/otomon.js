@@ -592,8 +592,8 @@
   // ── B: すごろくのアイテムマスで一定確率「目覚めアイテム」を拾う ──
   //  app.js の item マスから呼ぶ。当たれば在庫に1個足し、到着演出用の説明を返す。
   const SUGOROKU_WAKE_RATE = 0.5;   // アイテムマスの約半分で目覚めアイテム
-  function maybeGrantWakeItem(/* stage */) {
-    if (Math.random() > SUGOROKU_WAKE_RATE) return null;
+  // 確定で目覚めアイテムを1つ渡す（すごろくの装備報酬置換などから使う）
+  function grantRandomWakeItem() {
     const pool = WAKE_ITEM_MASTER.filter(w => !w.special && w.questPool);
     if (!pool.length) return null;
     const it = pick(pool);
@@ -603,6 +603,10 @@
       effect: { desc: 'オトモンの卵を起こすのに使える' },
       flavorText: '目覚めアイテム（孵化クエスト用）', _wakeItem: it.id,
     };
+  }
+  function maybeGrantWakeItem(/* stage */) {
+    if (Math.random() > SUGOROKU_WAKE_RATE) return null;
+    return grantRandomWakeItem();
   }
 
   // ── 誕生時フック（UI層が「誕生演出」を出すために使う。未設定なら何もしない）──
@@ -1012,7 +1016,7 @@
     // ②③ アイテム使用→クエスト
     useWakeItem, getActiveQuest,
     // 目覚めアイテムの在庫
-    getWakeInventory, getWakeCount, grantWakeItem, maybeGrantWakeItem,
+    getWakeInventory, getWakeCount, grantWakeItem, maybeGrantWakeItem, grantRandomWakeItem,
     // ④⑤ 達成→ゲージ→誕生
     completeActiveQuest, hatch, sleepStaleEggs,
     // ⑦ フック（app.js から接続）
