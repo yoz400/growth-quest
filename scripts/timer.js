@@ -308,8 +308,6 @@ function stopTimer() {
       addBonusXP(_sgResult.bonusXP);
       showKoku(mins, cfg.break, 'partial', 0);
     }
-    // デイリークエスト: 手動停止でも実質「セッションを終えた」とみなす（1日1回限定）
-    completeQuest('complete_session');
     // 告が閉じたら「褒めログ入力」モーダルを案内
     _pendingPraisePrompt = true;
     _praiseSessionDate   = _today;
@@ -448,8 +446,6 @@ function completeSession() {
   showTimerNotif('セッション完了！', `${mins}分間、集中できました！`);
   resetTabTitle();
   showKoku(mins, cfg.break, 'complete', 0);
-  // デイリークエスト: セッション完了（1日1回限定）
-  completeQuest('complete_session');
   // 告が閉じたら「褒めログ入力」モーダルを案内
   _pendingPraisePrompt = true;
   _praiseSessionDate   = _today;

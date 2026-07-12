@@ -54,6 +54,8 @@ function completeQuest(questId) {
   return true;
 }
 
+GQ.on('session:complete', () => completeQuest('complete_session'));
+
 let questDoneCollapsed = true;   // 達成した依頼はデフォルト折りたたみ
 
 function questItemHTML(q, isDone) {
@@ -460,4 +462,3 @@ function updateStreak(today) {
     data.streakWasBroken = true;
   }
 }
-
