@@ -320,6 +320,7 @@ function stopTimer() {
     _pendingPraisePrompt = true;
     _praiseSessionDate   = _today;
     _praiseSessionGenre  = currentGenreId;
+    GQ.emit('session:complete', { mins, mode: currentMode, genreId: currentGenreId });
   }
   sessionMinutes = 0;
   setTimerForMode(currentMode);
@@ -469,6 +470,7 @@ function completeSession() {
   } else {
     setTimerForMode(currentMode);
   }
+  GQ.emit('session:complete', { mins, mode: currentMode, genreId: currentGenreId });
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1030,4 +1032,3 @@ startBtn.addEventListener('click', startTimer);
     pipBtn.addEventListener('click', openPiP);
   }
 })();
-

@@ -170,6 +170,26 @@ const Overlay = (() => {
   return { open, close, closeAll, topId };
 })();
 
+/* ===== GQ EventBus: 機能同士を疎結合にする通知係 ===== */
+const GQ = (() => {
+  const handlers = new Map();
+
+  function on(ev, fn) {
+    if (!handlers.has(ev)) handlers.set(ev, new Set());
+    handlers.get(ev).add(fn);
+    return () => handlers.get(ev)?.delete(fn);
+  }
+
+  function emit(ev, payload) {
+    (handlers.get(ev) || []).forEach(fn => {
+      try { fn(payload); }
+      catch (e) { console.error(`[GQ] ${ev} の購読処理でエラー:`, e); }
+    });
+  }
+
+  return { on, emit };
+})();
+
 const MODES = {
   pomodoro: { focus: 25, break: 5 },
   deep:     { focus: 50, break: 10 },
@@ -2259,4 +2279,3 @@ function showSugorokuInKoku(result) {
     }, 1000);
   }
 }
-
