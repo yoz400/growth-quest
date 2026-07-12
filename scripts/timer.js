@@ -286,9 +286,6 @@ function stopTimer() {
     const { newlyUnlocked: _sk } = checkSkillUnlocks();
     pendingNewSkills = _sk;
 
-    // 装備中アイテムに「ともに歩んだ時間」を刻む
-    addCompanionMinutes(mins);
-
     // 自信ゲージ加算（XPとは別軸）
     addConfidence(3, 'session_complete');
     if (mins >= 5)          addConfidence(1, 'session_5min');
@@ -431,8 +428,6 @@ function completeSession() {
   const _sgResult = doSugorokuRoll(currentMode, mins);
   pendingSugorokuRoll = _sgResult;
   addXP(mins); // also saves & renders
-  // 装備中アイテムに「ともに歩んだ時間」を刻む
-  addCompanionMinutes(mins);
   addBonusXP(_sgResult.bonusXP);
   // 💎集中の珠などで予約された「次のセッション完了ボーナスXP」を発動
   if (itemBuffs.nextSessionXP) {

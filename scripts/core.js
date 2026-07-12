@@ -668,6 +668,8 @@ function addCompanionMinutes(mins) {
   if (changed) saveItemMemories();
 }
 
+GQ.on('session:complete', ({ mins }) => addCompanionMinutes(mins));
+
 // 「2026年6月11日の夜、12回目の冒険のあとに現れた。」のような一文を作る
 function itemMemoryText(itemId) {
   const m = itemMemories[itemId];
