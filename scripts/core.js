@@ -157,6 +157,16 @@ const Overlay = (() => {
     }
   });
 
+  /* スマホの「戻る」ボタン対策:
+     ダミー履歴を1つ積んでおき、「戻る」ではページを離れずに
+     開いているモーダルを閉じる動作に変換する（ダミーは毎回積み直す） */
+  history.pushState({ gq: true }, '');
+  window.addEventListener('popstate', () => {
+    history.pushState({ gq: true }, '');
+    const top = topId();
+    if (top && def(top).dismissible) close(top);
+  });
+
   return { open, close, closeAll, topId };
 })();
 
