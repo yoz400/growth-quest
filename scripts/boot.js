@@ -2280,12 +2280,19 @@ function guildPickRecommended() {
     q.special !== 'comeback' && guildIsUnlocked(q) && guildCanDoToday(q));
   if (!cands.length) return null;
   const byRank = (a, b) => GUILD_RANK_ORDER.indexOf(a.rank) - GUILD_RANK_ORDER.indexOf(b.rank);
-  // ② 継続中（3日以上）→ ちょっと背伸びした高ランク
+  // ② 20時以降で今日まだ0分 → 回復系のやさしい依頼
+  const todayMins = (data.history && data.history[todayKey()]) || 0;
+  if (new Date().getHours() >= 20 && todayMins === 0) {
+    const easy = cands.filter(q => ['回復','精神','暮らし'].includes(q.cat)).sort(byRank)[0];
+    if (easy) return { q: easy, tag:'今日はゆるめ',
+      line:'今日は、ゆっくりでいい。ひと息つくのも冒険のうちさ。' };
+  }
+  // ③ 継続中（3日以上）→ ちょっと背伸びした高ランク
   if ((data.streak || 0) >= 3) {
     const q = cands.sort(byRank).reverse()[0];
     return { q, tag:'挑戦の時', line:'いい流れだ。今日は少し、背伸びしてみるか？' };
   }
-  // ③ ふだん → 一番やさしいランクから
+  // ④ ふだん → 一番やさしいランクから
   const q = cands.sort(byRank)[0];
   return { q, tag:'今日のおすすめ', line:'今のあなたにちょうどいい依頼、ありますよ。' };
 }
