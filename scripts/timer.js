@@ -618,6 +618,7 @@ function handleKokuClose() {
   ov.className = '';
   clearInterval(_sgSpinInt); clearInterval(_sgAutoClose);
   clearTimeout(_sgSpinT1); clearTimeout(_sgSpinT2);
+  _sgWalkTimers.forEach(clearTimeout); _sgWalkTimers = [];
   _sgSpinInt = _sgSpinT1 = _sgSpinT2 = _sgAutoClose = null;
   // 演出を短く：双六は自動で開かない（🎲からいつでも見られる／コマ移動はその時に再生）。
   // GET報酬は告の中にインライン表示済み。残っていれば破棄。

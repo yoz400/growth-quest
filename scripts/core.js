@@ -336,6 +336,7 @@ function recordItemUse(id) {
 let sugorokuData = loadSugorokuData();
 let pendingSugorokuRoll = null;
 let _sgSpinInt = null, _sgSpinT1 = null, _sgSpinT2 = null, _sgAutoClose = null;
+let _sgWalkTimers = [];   // 告の中の冒険レーン（コマ歩行）用タイマー
 let sgAnimating   = false;         // 歩行アニメ実行中フラグ
 let sgPendingWalk = null;          // { fromPos, rollTime } ─ 次の開放時にアニメ再生
 let _sgPendingReward = null;       // 到着マスで出すGET演出（装備/アイテム）
@@ -2085,13 +2086,29 @@ function showSugorokuInKoku(result) {
   const evId   = 'kse-' + ts;
   const ctId   = 'ksc-' + ts;
 
+  const advId = 'ksa-' + ts;
+
+  // 到着マスの「土地（ゾーン）」と、そこにあるスポット絵文字を割り出す
+  const destCellNum = sgGetCellNum(newPos);
+  const zoneIdx = Math.max(0, Math.min(9, Math.floor((destCellNum - 1) / 10)));
+  const zone    = SG_ZONES[zoneIdx];
+  const spot    = SPOT_ICONS[zone.terrain] || SPOT_ICONS.grassland;
+  const typeKey = (evClass || 'ev-normal').replace('ev-', '');
+  const destIcon = spot[typeKey] || spot.normal;
+  // 進むマス数（＝出目）。レーンに並べるタイル数は見やすさ優先で最大8に丸める
+  const steps = Math.max(1, Math.min(roll, 8));
+
   sec.innerHTML = `
     <div class="koku-sg-label">🎲 すごろく</div>
     <div class="koku-sg-dice-box spinning" id="${diceId}">?</div>
     <div class="koku-sg-status" id="${statId}">サイコロを振っています...</div>
+    <div class="koku-adv" id="${advId}" style="--zaccent:${zone.accent};--zrgb:${zone.rgb}">
+      <div class="koku-adv-zone">${zone.emoji} ${zone.name} を冒険！</div>
+      <div class="koku-adv-track" id="${advId}-track"></div>
+    </div>
     <div class="koku-sg-event ${evClass}" id="${evId}" style="display:none">${message}</div>
     <div class="koku-sg-reward" id="${evId}-reward" style="display:none"></div>
-    <div class="koku-sg-pos" id="${evId}-pos" style="display:none">ステージ${stage} · マス ${sgGetCellNum(newPos)} / 100</div>
+    <div class="koku-sg-pos" id="${evId}-pos" style="display:none">ステージ${stage} · マス ${destCellNum} / 100</div>
     <div class="koku-sg-countdown" id="${ctId}" style="display:none">タップして閉じる</div>
   `;
   kokuResult.appendChild(sec);
@@ -2101,26 +2118,27 @@ function showSugorokuInKoku(result) {
   const evEl   = document.getElementById(evId);
   const posEl  = document.getElementById(evId + '-pos');
   const ctEl   = document.getElementById(ctId);
+  const advEl  = document.getElementById(advId);
+  const trackEl = document.getElementById(advId + '-track');
+
+  const kokuAlive = () => document.getElementById('koku-overlay')?.classList.contains('active');
 
   const FACES = ['⚀','⚁','⚂','⚃','⚄','⚅'];
-  const NUMS  = ['1','2','3','4','5','6'];
   let fi = 0;
   const spinStart = Date.now();
-  const SPIN_DUR  = 1500;
+  const SPIN_DUR  = 1200;
 
-  // スロットマシン風：だんだんゆっくりになって止まる
+  // スロットマシン風：だんだんゆっくりになって止まる → 止まったら冒険レーンへ
   function _spinStep() {
+    if (!kokuAlive()) return;
     const elapsed = Date.now() - spinStart;
     if (elapsed >= SPIN_DUR) {
-      // 止まる
       const faceStr = roll > 6 ? String(roll) : FACES[roll - 1];
       diceEl.textContent = faceStr;
       diceEl.classList.remove('spinning');
       diceEl.classList.add('stopped');
-      // 画面シェイク
       const kokuEl = document.getElementById('koku-overlay');
       if (kokuEl) { kokuEl.classList.add('sg-shake'); setTimeout(() => kokuEl.classList.remove('sg-shake'), 400); }
-      // LUCKY! ポップアップ
       if (roll >= 5) {
         const lucky = document.createElement('div');
         lucky.className = 'sg-lucky-pop';
@@ -2129,20 +2147,96 @@ function showSugorokuInKoku(result) {
         diceEl.parentNode.appendChild(lucky);
         setTimeout(() => lucky.remove(), 1200);
       }
-      statEl.textContent = `${roll} が出ました！ ${roll}マス進みました`;
+      statEl.textContent = `${roll} が出た！ ${zone.emoji} ${zone.name}を ${roll}マス進む`;
+      _sgSpinT2 = setTimeout(_startAdventure, 450);   // 冒険レーンへ
       return;
     }
     diceEl.textContent = FACES[fi++ % 6];
-    // 二次曲線で減速（55ms→255ms）
     const prog = elapsed / SPIN_DUR;
     const delay = Math.floor(55 + prog * prog * 210);
     _sgSpinT1 = setTimeout(_spinStep, delay);
   }
   _sgSpinT1 = setTimeout(_spinStep, 55);
 
-  _sgSpinT2 = setTimeout(() => {
+  // ── 冒険レーン：コマが1マスずつ跳ねて進み、到着マスで宝が弾ける ──
+  function _startAdventure() {
+    if (!kokuAlive() || !trackEl) return;
+
+    // タイルを並べる（スタート ＋ steps 個。最後が到着マス）
+    let html = '<div class="koku-adv-cell start">·</div>';
+    for (let i = 1; i <= steps; i++) {
+      if (i === steps) html += `<div class="koku-adv-cell dest">${destIcon}</div>`;
+      else             html += `<div class="koku-adv-cell mid">${spot.normal}</div>`;
+    }
+    trackEl.innerHTML = html + `<div class="koku-adv-walker" id="${advId}-w">${buildKomaSVG('100%','100%')}</div>`;
+    advEl.classList.add('show');
+
+    const tiles  = trackEl.querySelectorAll('.koku-adv-cell');
+    const walker = document.getElementById(advId + '-w');
+    if (!walker || !tiles.length) { _revealResult(); return; }
+
+    const centerOf = t => t.offsetLeft + t.offsetWidth / 2 - walker.offsetWidth / 2;
+    walker.style.transition = 'none';
+    walker.style.left = centerOf(tiles[0]) + 'px';
+    walker.classList.add('hop');
+
+    // 1タイルずつ左→右へホップ（最初はタメ、以降テンポよく）
+    let idx = 0;
+    function _hop() {
+      if (!kokuAlive()) return;
+      idx++;
+      const tile = tiles[idx];
+      const stepMs = idx === 1 ? 360 : 240;
+      walker.style.transition = `left ${stepMs}ms cubic-bezier(.4,1.3,.6,1)`;
+      walker.style.left = centerOf(tile) + 'px';
+      if (idx >= steps) {
+        // 到着：ホップを止めて着地バウンド＋宝バースト
+        const arriveMs = stepMs + 40;
+        _sgWalkTimers.push(setTimeout(() => {
+          if (!kokuAlive()) return;
+          walker.classList.remove('hop');
+          walker.classList.add('land');
+          _advBurst(tile, zone.accent, typeKey);
+          _sgWalkTimers.push(setTimeout(_revealResult, 520));
+        }, arriveMs));
+        return;
+      }
+      _sgWalkTimers.push(setTimeout(_hop, stepMs + 30));
+    }
+    _sgWalkTimers.push(setTimeout(_hop, 260));
+  }
+
+  // 到着マスで弾ける小さなバースト（レーン内で自己完結）
+  function _advBurst(tile, color, type) {
+    if (!trackEl) return;
+    const b = document.createElement('div');
+    b.className = 'koku-adv-burst';
+    b.style.left = (tile.offsetLeft + tile.offsetWidth / 2) + 'px';
+    b.style.top  = (tile.offsetTop  + tile.offsetHeight / 2) + 'px';
+    const rich = (type === 'rare' || type === 'goal' || type === 'checkpoint');
+    const n = rich ? 16 : 10;
+    const palette = rich
+      ? ['#fbbf24','#c4b5fd','#a5f3fc','#fde68a','#f9a8d4']
+      : [color, '#ffffff'];
+    for (let i = 0; i < n; i++) {
+      const s = document.createElement('span');
+      const ang  = (i / n) * Math.PI * 2 + Math.random() * 0.4;
+      const dist = 16 + Math.random() * 18;
+      s.style.setProperty('--dx', (Math.cos(ang) * dist).toFixed(1) + 'px');
+      s.style.setProperty('--dy', (Math.sin(ang) * dist).toFixed(1) + 'px');
+      s.style.background = palette[i % palette.length];
+      s.style.boxShadow = `0 0 8px ${s.style.background}`;
+      s.style.animationDelay = (Math.random() * 0.12).toFixed(2) + 's';
+      b.appendChild(s);
+    }
+    trackEl.appendChild(b);
+    setTimeout(() => b.remove(), 1000);
+  }
+
+  // 結果（イベント文・報酬・現在地・閉じるカウントダウン）を出す
+  function _revealResult() {
+    if (!kokuAlive()) return;
     evEl.style.display = '';
-    // 今手に入れたもの（装備/アイテム）を告の中にインライン表示
     if (_sgPendingReward) {
       const rw = _sgPendingReward; _sgPendingReward = null;
       const rewardEl = document.getElementById(evId + '-reward');
@@ -2155,15 +2249,14 @@ function showSugorokuInKoku(result) {
     posEl.style.display = '';
     ctEl.style.display = '';
     ctEl.addEventListener('click', closeKoku);
-    // 5秒カウントダウン後に自動クローズ
     let sec2 = 5;
     ctEl.textContent = `タップして閉じる (${sec2}秒)`;
     _sgAutoClose = setInterval(() => {
       sec2--;
-      if (!document.getElementById('koku-overlay').classList.contains('active')) { clearInterval(_sgAutoClose); _sgAutoClose = null; return; }
+      if (!kokuAlive()) { clearInterval(_sgAutoClose); _sgAutoClose = null; return; }
       if (sec2 <= 0) { clearInterval(_sgAutoClose); _sgAutoClose = null; closeKoku(); }
       else ctEl.textContent = `タップして閉じる (${sec2}秒)`;
     }, 1000);
-  }, 2300);
+  }
 }
 
