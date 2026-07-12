@@ -4623,6 +4623,7 @@ body.eq-mood-galaxy    .anim-wrap::after {
 .quest-card-foot  { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .quest-card-reward { font-size: .64rem; color: #fcd34d; font-weight: 700; }
 .quest-card-reward .qr-conf { color: #f472b6; margin-left: 6px; }
+.quest-card-reward .qr-honor { color: var(--gold); font-weight: 700; margin-left: 6px; }
 .quest-card-reward .qr-cat  { color: var(--text-dim); margin-left: 6px; font-weight: 500; }
 .quest-do-btn {
   font-size: .7rem; font-weight: 800; padding: 6px 15px; border-radius: 999px;

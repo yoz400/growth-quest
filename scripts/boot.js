@@ -1930,6 +1930,14 @@ document.addEventListener('visibilitychange', () => {
 //  - 既存の addBonusXP / addConfidence / data を再利用して報酬を付与
 // ═══════════════════════════════════════════════════════
 
+// バッジ（称号）の獲得数。gq_badges を直読み（ファイル間の変数参照を避ける）
+function earnedBadgeCount() {
+  try {
+    return Object.values(JSON.parse(localStorage.getItem('gq_badges') || '{}'))
+      .filter(Boolean).length;
+  } catch { return 0; }
+}
+
 // ── NPC依頼主（世界観の語り手）──
 const GUILD_NPCS = {
   mimi:  { name:'受付 ミミ',          icon:'🧝‍♀️' },
@@ -2173,6 +2181,26 @@ const GUILD_QUESTS = [
   { id:'g_kikan', rank:'F', cat:'回復', npc:'rista', title:'帰還の報告',
     desc:'ギルドに「戻ってきた」と報告する。それだけで、もう十分えらい。', xp:15, conf:3, repeat:'daily',
     unlock:() => true, unlockText:'', special:'comeback' },
+
+  // ───── 🎖 特別依頼（称号の数で解放される勲章依頼）─────
+  { id:'g_hirou', rank:'E', cat:'情緒', npc:'mimi', title:'武勲の披露',
+    desc:'バッジ画面を開き、いちばん誇らしい称号を1つ選んで眺める。', xp:20, conf:2, repeat:'weekly',
+    unlock:() => earnedBadgeCount() >= 3, unlockText:'称号3個で解放', special:'honor' },
+  { id:'g_shinjin', rank:'D', cat:'挑戦', npc:'garud', title:'新人指南の心得',
+    desc:'昔の自分に教えるつもりで、学びのコツを1つ書き残す。', xp:30, conf:1, repeat:'weekly',
+    writable:true, hint:'例：単語は寝る前に見直すと覚えやすい',
+    unlock:() => earnedBadgeCount() >= 10, unlockText:'称号10個で解放', special:'honor' },
+  { id:'g_kyuusoku', rank:'D', cat:'回復', npc:'hotta', title:'英気を養う茶会',
+    desc:'10分だけ画面から離れて、好きな飲み物をゆっくり味わう。', xp:25, conf:1, repeat:'weekly',
+    unlock:() => earnedBadgeCount() >= 15, unlockText:'称号15個で解放', special:'honor' },
+  { id:'g_meiyo', rank:'C', cat:'創造', npc:'noton', title:'栄誉の記録',
+    desc:'始めた頃と比べて「変わったこと」を1つ書き残す。', xp:40, conf:2, repeat:'weekly',
+    writable:true, hint:'例：机に向かうのが嫌じゃなくなった',
+    unlock:() => earnedBadgeCount() >= 20, unlockText:'称号20個で解放', special:'honor' },
+  { id:'g_eiyu', rank:'A', cat:'挑戦', npc:'rista', title:'英雄の帰還録',
+    desc:'これまでで「一度くじけて、また戻れた」経験を1つ書き残す。', xp:120, conf:3, repeat:'once',
+    writable:true, hint:'例：三日坊主のあと、1週間空けて再開できた',
+    unlock:() => earnedBadgeCount() >= 30, unlockText:'称号30個で解放', special:'honor' },
 ];
 
 // ── 状態判定 ──
@@ -2286,6 +2314,7 @@ function guildQuestCardHTML(q) {
   const npc = GUILD_NPCS[q.npc];
   const reward = `+${q.xp}XP` +
     (q.conf ? `<span class="qr-conf">自信+${q.conf}</span>` : '') +
+    (q.special === 'honor' ? `<span class="qr-honor">🎖特別</span>` : '') +
     `<span class="qr-cat">${q.cat}</span>`;
   let stateCls, footRight;
   if (!guildIsUnlocked(q)) {
