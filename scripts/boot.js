@@ -266,6 +266,10 @@ function autoLogStudyBlock(mins) {
   if ((document.getElementById('review-overlay')?.classList.contains('open') && rvPeriod === 'day')) renderTimelog();
 }
 
+GQ.on('session:complete', ({ mins }) => {
+  try { autoLogStudyBlock(mins); } catch (e) {}
+});
+
 const _tlToMin = hhmm => { const [h,m] = (hhmm||'0:0').split(':').map(Number); return h*60 + m; };
 const _tlDur   = (s,e) => { const a=_tlToMin(s), b=_tlToMin(e); return b>a ? b-a : (1440-a)+b; }; // 日跨ぎ対応
 const _tlFmtH  = min => `${(min/60).toFixed(1)}h`;

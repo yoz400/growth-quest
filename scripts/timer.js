@@ -289,9 +289,6 @@ function stopTimer() {
     // 装備中アイテムに「ともに歩んだ時間」を刻む
     addCompanionMinutes(mins);
 
-    // タイムログに「学習」ブロックを自動反映（完了時刻から逆算）
-    try { if (typeof autoLogStudyBlock === 'function') autoLogStudyBlock(mins); } catch (e) {}
-
     // 自信ゲージ加算（XPとは別軸）
     addConfidence(3, 'session_complete');
     if (mins >= 5)          addConfidence(1, 'session_5min');
@@ -444,8 +441,6 @@ function completeSession() {
     itemBuffs.nextSessionXP = 0;
     saveItemBuffs();
   }
-  // タイムログに「学習」ブロックを自動反映（ポモドーロ/ディープ完了時）
-  try { if (typeof autoLogStudyBlock === 'function') autoLogStudyBlock(mins); } catch (e) {}
   // 自信ゲージ加算（XPとは別軸、デバウンスで1回のトーストに集約）
   addConfidence(3, 'session_complete');
   if (mins >= 5)             addConfidence(1, 'session_5min');
