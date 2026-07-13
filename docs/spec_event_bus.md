@@ -89,6 +89,26 @@ const GQ = (() => {
 >   バッジ・統計描画・自信ゲージ・すごろく等の直接呼び出しが残る（仕様どおり
 >   段階移行中。いつでも再開できる状態）。data:changed / day:changed イベントは未導入
 
+> ✅ **レビュー完了（2026-07-13 クロ・?v=guild-77）**: 残り2イベントを追加した
+> Codex実装2コミット（7f1185e data:changed / f0d0645 day:changed）を精査＋実機で検証し合格。
+> - **data:changed**: `saveData(d, reason='saveData')` に第2引数を追加し、保存後に
+>   `GQ.emit('data:changed',{reason})`。既存の `saveData(data)` 呼び出しは全て後方互換
+>   （第2引数を渡す既存呼び出しは無しをgrepで確認）。実機で default/明示 reason 両方通過を確認
+> - **day:changed**: `todayKey()` にモジュール変数 `_gqObservedDay` を持たせ、日付が
+>   変わった最初の1回だけ `GQ.emit('day:changed',{today})`。実機検証: 同日連打は発火0回／
+>   日付を翌日に偽装して3回呼んでも発火はちょうど1回・payload.today正確
+> - スモーク（起動・5分セッション完了でXP+20・設定/ギルド/図鑑・カレンダー描画）OK、
+>   コンソールエラーゼロ。data:changedはセッション完了1回で11回発火するが購読者ゼロのため
+>   実害なし（emitは空ハンドラをforEachするだけ）
+> - **⚠️ 将来この2イベントに購読者を足す人への注意（重要）**:
+>   1. **data:changed の購読処理から `saveData()` を呼ぶと無限ループ**になる。
+>      購読側で保存が必要なら別キー保存にするか、フラグでガードする
+>   2. **day:changed は `todayKey()` の内部＝多数のホットパスから同期発火**する。
+>      日付変更後に最初に todayKey() を呼んだ場所（描画途中かもしれない）で走るため、
+>      購読処理は軽量に保つ（重い再描画は `setTimeout(fn,0)` 等で遅延させる）
+> - **3イベント（session:complete / data:changed / day:changed）出そろい。** 購読側の
+>   本格移行（弱点2の根治）は次フェーズ。急がず段階的に
+
 ## 5. Codexへの依頼文（コピペ用）
 
 ```text
