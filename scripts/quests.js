@@ -390,6 +390,8 @@ function renderStats() {
   renderStreak();
 }
 
+GQ.on('session:complete', () => renderStats());
+
 function renderStreak() {
   const el = document.getElementById('stat-streak');
   const n = data.streak || 0;

@@ -281,7 +281,6 @@ function stopTimer() {
     recordSessionCompletion(mins);
     addXP(mins);
     saveData(data);
-    renderStats();
     checkBadges();
     // 自信ゲージ加算（XPとは別軸）
     addConfidence(3, 'session_complete');
