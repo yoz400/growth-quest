@@ -2231,15 +2231,20 @@ function guildFameInfo() {
   return { name: cur.name, pct, next, fame: guild.fame };
 }
 
+// 戻り値: 自信レベルが上がったなら新レベル、上がらなければ 0
 function addGuildConfidenceReward(amount) {
-  if (!amount || amount <= 0) return;
+  if (!amount || amount <= 0) return 0;
   addConfidence(amount, 'guild_quest');
-  // ギルド達成時はNPC/昇格トーストを優先し、自信トーストの予約だけ消す。
+  // ギルド達成時はNPC/昇格トーストを優先し、自信トーストの予約は消す。
+  // ただしレベルアップの節目だけは呼び出し側に返して🎉を優先表示させる。
+  let leveledUpTo = 0;
   try {
+    leveledUpTo = _confPending.levelUp || 0;
     clearTimeout(_confFlushTimer);
     _confFlushTimer = null;
     _confPending = { amount: 0, lastMsg: '', levelUp: 0 };
   } catch (e) {}
+  return leveledUpTo;
 }
 
 // ── クエスト達成 ──
@@ -2265,10 +2270,15 @@ function completeGuildQuest(id, note) {
 
   // 報酬（既存システムを再利用）
   addBonusXP(q.xp);
-  addGuildConfidenceReward(q.conf);
+  const leveledUpTo = addGuildConfidenceReward(q.conf);
 
   const newRank = guildFameInfo().name;
-  showGuildToast(q, newRank !== prevRank ? newRank : null);
+  if (leveledUpTo) {
+    // 自信レベルアップした回は、その節目のお祝いを最優先で出す（NPC/昇格トーストは譲る）
+    showConfidenceLevelUp(leveledUpTo);
+  } else {
+    showGuildToast(q, newRank !== prevRank ? newRank : null);
+  }
   renderGuild();
   evaluateUnlocks(false);   // XP増でレベルが上がっていれば新機能解放をチェック
 }
