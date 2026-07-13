@@ -109,6 +109,24 @@ const GQ = (() => {
 > - **3イベント（session:complete / data:changed / day:changed）出そろい。** 購読側の
 >   本格移行（弱点2の根治）は次フェーズ。急がず段階的に
 
+> ✅ **レビュー完了（2026-07-14 クロ・?v=guild-79）**: session:complete 購読側移行の
+> Codex実装2コミット（6164c29 スキル解放チェック / 4657163 統計描画）を精査＋実機で検証し合格。
+> - **移行内容**: stopTimer/completeSession 内の直接呼び出し `renderStats()` と
+>   `checkSkillUnlocks()→pendingNewSkills` を削除し、それぞれ quests.js / features.js の
+>   `GQ.on('session:complete', …)` 購読へ移動
+> - **安全と判断した根拠**: ①`checkSkillUnlocks()` は互換用スタブで常に `{newlyUnlocked:[]}`
+>   を返す（時間自動解放は廃止済み）→ pendingNewSkills は常に空で移行は実質no-op。
+>   ②`renderStats()` は `addXP()` が内部で必ず呼ぶ（progression.js:71）ため、削除された
+>   単独呼び出しは元々冗長。emit時にも再描画され最終状態は正しい
+> - **実機検証**: 手動停止(stopTimer)で 累計学習0→5分・連続0→1・XPヘッダー正しく更新／
+>   フルポモドーロ(completeSession)でXP+30・累計+25分・hx-num "25→55 XP"／
+>   renderStatsはセッション中2回呼ばれる（addXP＋emit、冗長だが無害・最終状態一致）／
+>   pendingNewSkills=[]維持／設定・ギルド・図鑑・カレンダー描画OK・コンソールエラーゼロ
+> - **購読の発火順**（Set挿入順＝ファイル読込順）: addCompanionMinutes(core)→
+>   completeQuest+renderStats(quests)→skillcheck(features)→autoLogStudyBlock(boot)。
+>   いずれも相互依存なし。**残りの直接呼び出し**（checkBadges・addConfidence・すごろく・
+>   showKoku等）は未移行でstopTimer/completeSessionに残る（段階移行中・いつでも停止可）
+
 ## 5. Codexへの依頼文（コピペ用）
 
 ```text
