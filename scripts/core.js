@@ -225,7 +225,10 @@ function loadData() {
     return d;
   } catch { return { ...DEFAULT_DATA }; }
 }
-function saveData(d) { localStorage.setItem('gq_data', JSON.stringify(d)); }
+function saveData(d, reason = 'saveData') {
+  localStorage.setItem('gq_data', JSON.stringify(d));
+  GQ.emit('data:changed', { reason });
+}
 
 function loadSettings() {
   try { return { ...DEFAULT_SETTINGS, ...JSON.parse(localStorage.getItem('gq_settings') || '{}') }; }
