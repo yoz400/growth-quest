@@ -1947,6 +1947,15 @@ const GUILD_NPCS = {
   rista: { name:'再開の案内人 リスタ', icon:'🕊️' },
 };
 
+// 依頼達成時にNPCが返すひとこと（ランダム）
+const GUILD_NPC_LINES = {
+  mimi:  ['はい、確かに受領しました！', 'その調子です。ギルドの評判も上がりますよ。', 'お見事です。次の依頼もお待ちしていますね。'],
+  garud: ['ふん、悪くない動きだ。', 'その一歩が鍛錬だ。よくやった。', '筋がいいな。明日も来い。'],
+  hotta: ['お疲れさん。茶でも飲んでいきな。', 'ええ仕事や。ゆっくりしていき。', '無理はしなさんな。今日はもう十分。'],
+  noton: ['記録しました。歴史に残る一件です。', '素晴らしい。ページがまた一枚埋まりました。', 'ふむ、興味深い記録だ…。'],
+  rista: ['おかえりなさい。待っていましたよ。', '戻ってこられた。それがいちばん尊いこと。', 'あなたの帰る場所は、ここにありますから。'],
+};
+
 const GUILD_RANK_ORDER = ['F','E','D','C','B','A','S'];
 
 // ── ギルド名声（ギルド自体の格。達成したクエストのXP合計で上がる）──
@@ -2222,10 +2231,22 @@ function guildFameInfo() {
   return { name: cur.name, pct, next, fame: guild.fame };
 }
 
+function addGuildConfidenceReward(amount) {
+  if (!amount || amount <= 0) return;
+  addConfidence(amount, 'guild_quest');
+  // ギルド達成時はNPC/昇格トーストを優先し、自信トーストの予約だけ消す。
+  try {
+    clearTimeout(_confFlushTimer);
+    _confFlushTimer = null;
+    _confPending = { amount: 0, lastMsg: '', levelUp: 0 };
+  } catch (e) {}
+}
+
 // ── クエスト達成 ──
 function completeGuildQuest(id, note) {
   const q = GUILD_QUESTS.find(x => x.id === id);
   if (!q || !guildIsUnlocked(q) || !guildCanDoToday(q)) return;
+  const prevRank = guildFameInfo().name;
 
   // 記録（XP付与の前に書き込んで二重達成を防ぐ）
   guild.completions[id] = (guild.completions[id] || 0) + 1;
@@ -2244,19 +2265,28 @@ function completeGuildQuest(id, note) {
 
   // 報酬（既存システムを再利用）
   addBonusXP(q.xp);
-  if (q.conf > 0) addConfidence(q.conf, 'guild_quest');
+  addGuildConfidenceReward(q.conf);
 
-  showGuildToast(q);
+  const newRank = guildFameInfo().name;
+  showGuildToast(q, newRank !== prevRank ? newRank : null);
   renderGuild();
   evaluateUnlocks(false);   // XP増でレベルが上がっていれば新機能解放をチェック
 }
 
-function showGuildToast(q) {
+function showGuildToast(q, promotedRank) {
   const t = document.getElementById('confidence-toast');
   if (!t) return;
   const npc = GUILD_NPCS[q.npc];
-  t.innerHTML = `📜 依頼を達成！<br>` +
-    `<span style="opacity:.85;font-weight:400">${q.title}</span>`;
+  if (promotedRank) {
+    t.innerHTML = `🏰 ギルドが格上げ！<br><b>${promotedRank}</b><br>` +
+      `<span style="opacity:.75;font-weight:400">${GUILD_NPCS.mimi.icon}「みんなの頑張りのおかげです！」</span>`;
+  } else {
+    const lines = GUILD_NPC_LINES[q.npc] || [];
+    const line = lines.length ? lines[Math.floor(Math.random() * lines.length)] : '';
+    t.innerHTML = `📜 依頼を達成！<br>` +
+      `<span style="opacity:.85;font-weight:400">${q.title}</span>` +
+      (line ? `<br><span style="opacity:.75;font-weight:400">${npc.icon}「${line}」</span>` : '');
+  }
   t.classList.remove('levelup');
   t.classList.add('multiline');
   void t.offsetWidth;
@@ -2265,7 +2295,7 @@ function showGuildToast(q) {
   t._timer = setTimeout(() => {
     t.classList.remove('show');
     setTimeout(() => t.classList.remove('multiline'), 400);
-  }, 2600);
+  }, 3200);
 }
 
 // ── 今日のおすすめ依頼を1つ選ぶ ──
