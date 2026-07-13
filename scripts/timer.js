@@ -283,9 +283,6 @@ function stopTimer() {
     saveData(data);
     renderStats();
     checkBadges();
-    const { newlyUnlocked: _sk } = checkSkillUnlocks();
-    pendingNewSkills = _sk;
-
     // 自信ゲージ加算（XPとは別軸）
     addConfidence(3, 'session_complete');
     if (mins >= 5)          addConfidence(1, 'session_5min');
@@ -421,8 +418,6 @@ function completeSession() {
   const _isFirstToday      = !data.history[_today];
   const _isResumeFromBreak = !!data.streakWasBroken;
   recordSessionCompletion(mins);
-  const { newlyUnlocked: _sk } = checkSkillUnlocks();
-  pendingNewSkills = _sk;
   const _sgResult = doSugorokuRoll(currentMode, mins);
   pendingSugorokuRoll = _sgResult;
   addXP(mins); // also saves & renders

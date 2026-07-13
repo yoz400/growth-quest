@@ -8,6 +8,11 @@ function checkSkillUnlocks() {
   return { newlyUnlocked: [] };
 }
 
+GQ.on('session:complete', () => {
+  const { newlyUnlocked } = checkSkillUnlocks();
+  pendingNewSkills = newlyUnlocked;
+});
+
 function renderSkillCount() {
   const el = document.getElementById('skill-count-label');
   if (!el) return;
