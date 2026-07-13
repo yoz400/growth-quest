@@ -172,6 +172,43 @@ if (newRank !== prevRank) {
 実装形は任せるが、**昇格時は昇格トーストを優先**し、通常の達成トーストと
 二重表示しないこと（bondシステムの昇格優先と同じ思想）。
 
+### 3.4 自信トーストとの競合解決（2026-07-13 追記・Codexの停止報告への回答）
+
+**発見された問題**: completeGuildQuest 内の `addConfidence(q.conf,'guild_quest')` は
+120msデバウンス後に同じ `#confidence-toast` へ💪トーストを表示するため、
+NPCひとことが0.12秒で上書きされる（§6で予期した competition が実際に発生）。
+
+**決定した方針: トーストは1アクション1枚。ギルド達成時は💪自信トーストを出さない**
+（自信+Nの情報はクエストカードの報酬表示が既に担っている。ゲージ本体の加算と
+バー描画は従来どおり行う。レベルアップ🎉だけは重要なので silent でも表示する）。
+
+```javascript
+// progression.js — 第3引数 opts を追加（既存呼び出しは無変更で互換）
+function addConfidence(amount, reason, opts = {}) {
+  // …ゲージ加算・saveData・renderConfidence・レベルアップ検知は従来どおり…
+  if (!opts.silent) {
+    _confPending.amount += amount;
+    if (CONFIDENCE_MESSAGES[reason]) _confPending.lastMsg = CONFIDENCE_MESSAGES[reason];
+  }
+  if (data.confidenceLevel > oldLevel) _confPending.levelUp = data.confidenceLevel;
+  clearTimeout(_confFlushTimer);
+  _confFlushTimer = setTimeout(_flushConfidenceToast, 120);
+}
+
+// _flushConfidenceToast — silent時のレベルアップ単独表示に対応
+function _flushConfidenceToast() {
+  if (_confPending.amount <= 0 && !_confPending.levelUp) return;
+  const { amount: total, lastMsg, levelUp: lvl } = _confPending;
+  _confPending = { amount: 0, lastMsg: '', levelUp: 0 };
+  if (total > 0) showConfidenceToast(total, lastMsg || '自信が育ちました');
+  if (lvl) setTimeout(() => showConfidenceLevelUp(lvl), total > 0 ? 1500 : 0);
+}
+```
+
+- boot.js: completeGuildQuest の呼び出しだけ `addConfidence(q.conf, 'guild_quest', { silent:true })` に変更
+- **fulfillVow（誓いの祠）は変更しない**（祝福モーダルが画面を覆うため実害なし。スコープ最小化）
+- タイマーセッション完了などギルド以外の💪トーストは従来どおり
+
 ---
 
 ## 4. 受け入れ基準
@@ -189,7 +226,8 @@ Phase 3:
 - [x] 20時前 or 今日1分以上 なら従来どおり（挑戦の時／今日のおすすめ）
 
 Phase 4:
-- [x] 依頼達成のたびNPCのひとことがトーストに出る（同じNPCでもセリフが変わる）
+- [ ] 依頼達成のたびNPCのひとことがトーストに出る（同じNPCでもセリフが変わる）
+  ⚠️ 2026-07-13 Codexが競合を発見（💪自信トーストが120ms後に上書き）→ §3.4の方針で修正中
 - [x] 名声ランクが上がった瞬間だけ昇格トーストが出て、通常トーストと二重にならない
 - [x] トーストが3行でもレイアウト崩れしない（スマホ幅375pxで確認）
 
@@ -208,6 +246,12 @@ Phase 4:
 > - Phase 4: 通常達成でNPCひとこと（ミミのセリフ確認）、fame79→84で昇格トースト
 >   「駆け出しのギルド」が1回だけ表示・二重なし。3行トーストは375pxで幅188px・はみ出しなし
 > - 既存挙動: g_izumi達成・掲示板描画・誓いの祠・設定/図鑑/カレンダー、コンソールエラーゼロ
+>
+> ⚠️ **訂正（2026-07-13）**: 上記のPhase 4「NPCひとこと」合格判定は誤り。クロのテストは
+> 達成直後のinnerHTMLを同期的に読んでおり、120ms後の💪自信トーストによる上書きを
+> 見逃していた（Codexが実機観察で発見・§6どおり停止して報告）。§3.4の方針で修正し、
+> 再レビューする。他の項目の判定は有効（昇格トーストは自信トーストより情報が優先される
+> 場面が2重に出ないことを含め再レビューで最終確認する）。
 
 ## 5. テスト手順
 
