@@ -245,9 +245,18 @@ function loadGenres() {
 }
 function saveGenres() { localStorage.setItem('gq_genres', JSON.stringify(genres)); }
 
+let _gqObservedDay = null;
+
 function todayKey() {
   const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const today = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  if (_gqObservedDay === null) {
+    _gqObservedDay = today;
+  } else if (_gqObservedDay !== today) {
+    _gqObservedDay = today;
+    GQ.emit('day:changed', { today });
+  }
+  return today;
 }
 
 let data = loadData();
