@@ -136,6 +136,21 @@ for fn in $(grep -oE "^function [A-Za-z_][A-Za-z0-9_]*" scripts/対象.js | sed 
 done
 ```
 
+> ✅ **D-1（quests.js）レビュー完了（2026-07-15 クロ・?v=guild-83）**: 精査＋実機で検証し合格。
+> パターン確立成功、以降のファイルも同型で進めてよい。
+> - **差分**: quests.js全体を `(function(){ … })();` で包み、末尾で cross-file参照される
+>   4関数を公開（`window.completeQuest/renderStats/renderStreak/updateStreak`）。呼び出し側は無改修
+> - **公開の過不足チェック（静的・全シンボル総ざらい）**: quests.jsの全トップレベルシンボルを
+>   抽出し「他ファイル参照あり かつ 未公開」を検索→**該当ゼロ**（4関数で過不足なし）。
+>   逆に4関数はすべて実使用（completeQuest←progression/timer、renderStats←boot/progression/
+>   settings-genre、renderStreak←core/timer、updateStreak←timer）
+> - **実機**: **起動フリーズなし**（app描画・本文表示を確認）／4関数が裸識別子＋window両方で解決／
+>   プライベート化が本物（DAILY_QUESTS・dailyQuests・renderDailyQuests は window に漏れない）／
+>   load時の `GQ.on('session:complete',…)` 2本もIIFE内から裸のGQで解決し正常動作／
+>   実セッション完了(5分)でXP+25・デイリークエスト2件達成・連続1日＝timer.jsからの
+>   cross-file呼び出しが実行時に繋がることを確認／設定・図鑑・カレンダーOK・コンソールエラーゼロ
+> - **収穫**: dailyQuests等の内部状態が真にプライベート化＝「うっかり共有」が1ファイル分、構造的に消えた
+
 ---
 
 ## 5. 受け入れ基準（各コミット共通）
