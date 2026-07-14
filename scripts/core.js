@@ -30,6 +30,7 @@ const Overlay = (() => {
     'summon-overlay':         { openClass: 'open', dismissible: false },
     'otomon-overlay':         { openClass: 'open', dismissible: true },
     'otomon-birth-overlay':   { openClass: 'open', dismissible: true },
+    'otomon-bondup-overlay':  { openClass: 'open', dismissible: true },
   };
   const OVERLAY_IDS = Object.keys(DEFS);
   const FOCUSABLE = [

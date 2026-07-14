@@ -1608,9 +1608,9 @@
     // 個体別セリフ優先、無ければ共通トーンへfallback
     const line = getBuddyLine(otomon.id, tier.name) || pickTone(tier.name);
     document.getElementById('otomon-bondup-line').textContent = '「' + line + '」';
-    ov.classList.add('open');
+    Overlay.open('otomon-bondup-overlay');
   }
-  function closeBondUp() { const ov = document.getElementById('otomon-bondup-overlay'); if (ov) ov.classList.remove('open'); }
+  function closeBondUp() { Overlay.close('otomon-bondup-overlay'); }
 
   function openPanel()  { injectAll(); _pickEggUid = null; _pickMsg = ''; renderPanel(); Overlay.open('otomon-overlay'); }
   function closePanel() { _pickEggUid = null; _pickMsg = ''; Overlay.close('otomon-overlay'); }
