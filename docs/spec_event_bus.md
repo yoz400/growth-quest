@@ -127,6 +127,40 @@ const GQ = (() => {
 >   いずれも相互依存なし。**残りの直接呼び出し**（checkBadges・addConfidence・すごろく・
 >   showKoku等）は未移行でstopTimer/completeSessionに残る（段階移行中・いつでも停止可）
 
+## 4.5 B-2の完了ライン（2026-07-15 クロ設計判断・これ以上移行しない）
+
+**結論: session:complete への購読移行はここで完了とする。残りの直接呼び出しは
+意図的に移行しない。`session:beforeKoku` 等の新イベントも追加しない。**
+
+Codexが移行続行の可否を切り分けて安全停止した（作業ツリーclean）。その判断は正しく、
+コード精査で理由がさらに強いことを確認した。
+
+### 移行してはいけない残りの呼び出しと理由
+
+| 呼び出し | 移行不可の理由 |
+|---------|--------------|
+| `doSugorokuRoll()` | **戻り値が同期消費される核心ロジック**。`addBonusXP(_sgResult.bonusXP)` で即使用し、`pendingSugorokuRoll` が **告(Koku)の中に描画される**（timer.js:588 `showSugorokuInKoku`）。購読者はemit元へ値を返せないので構造的に不可能。そもそも「反応」ではなく「セッション処理そのもの」 |
+| `showKoku()` | 告そのもの＝反応の受け皿ではなく主役。購読対象ではない |
+| `addBonusXP(_sgResult.bonusXP)` | doSugorokuRollの戻り値に依存 |
+| `checkBadges()` / `addConfidence()` | **告の前**に発火してトーストを出す。今の emit は**告の後**なので、購読化するとバッジ/自信トーストと告内すごろく表示の順序が変わる |
+| `evaluateUnlocks()` / `renderOnboarding()` / `Otomon.onSessionComplete()` | 告の前提となる状態更新・演出。順序が表示に直結 |
+
+### なぜ「新イベントを足して続行」しないのか
+
+- イベントバスの目的（§1）は「**新機能が timer.js を触らず**セッション完了に反応できる」こと。
+  これは既に達成済み（session:complete購読が5つ動作）。**残りは timer.js 自身の
+  完結した完了儀式**（すごろく→ボーナス→告→自前トースト）であり、疎結合にすべき
+  「別機能」ではない。イベント化しても指示の付け替えが増えるだけで decoupling の恩恵がない
+- `doSugorokuRoll`/`showKoku`/`addBonusXP` は原理的にイベント化できない以上、
+  「timer.js が emit 一行になる」理想は元から到達不能。そこを無理に追うと事故る
+- §3の方針「イベントを増やしすぎない／投機的に足さない」に忠実に従う。
+  `session:beforeKoku` は**将来もし外部機能が告の前フックを本当に必要としたら**
+  その時に足せばよい（YAGNI）。今は不要
+
+### 次にセッション完了へ反応したくなったら
+新機能は `GQ.on('session:complete', fn)` で参加する（告の後に走る）。告より前に
+割り込む必要がある処理は、原則それ自体が timer.js のコアロジックなので直接書く。
+
 ## 5. Codexへの依頼文（コピペ用）
 
 ```text
