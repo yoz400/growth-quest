@@ -5070,7 +5070,8 @@ body.eq-mood-galaxy    .anim-wrap::after {
 #review-overlay, #avatar-overlay, #words-overlay, #settings-overlay,
 #praise-overlay, #guide-tutorial-overlay, #guild-overlay,
 #vow-blessing-overlay, #fairy-overlay, #fairy-guide-overlay,
-#tutorial-overlay, #summon-overlay, #otomon-overlay {
+#tutorial-overlay, #summon-overlay, #otomon-overlay,
+#otomon-birth-overlay {
   visibility: hidden;
   transition-property: opacity, visibility;
 }
@@ -5080,7 +5081,8 @@ body.eq-mood-galaxy    .anim-wrap::after {
 #avatar-overlay.open, #words-overlay.open, #settings-overlay.open,
 #praise-overlay.open, #guide-tutorial-overlay.open, #guild-overlay.open,
 #vow-blessing-overlay.open, #fairy-overlay.open, #fairy-guide-overlay.open,
-#tutorial-overlay.open, #summon-overlay.open, #otomon-overlay.open {
+#tutorial-overlay.open, #summon-overlay.open, #otomon-overlay.open,
+#otomon-birth-overlay.open {
   visibility: visible;
 }
 

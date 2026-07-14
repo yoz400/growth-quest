@@ -1565,9 +1565,9 @@
     document.getElementById('otomon-birth-name').textContent  = otomon.name || '';
     document.getElementById('otomon-birth-flavor').textContent = otomon.flavorText || '';
     document.getElementById('otomon-birth-role').textContent   = otomon.role ? ('やくわり：' + otomon.role) : '';
-    ov.classList.add('open');
+    Overlay.open('otomon-birth-overlay');
   }
-  function closeBirth() { const ov = document.getElementById('otomon-birth-overlay'); if (ov) ov.classList.remove('open'); }
+  function closeBirth() { Overlay.close('otomon-birth-overlay'); }
 
   // ── bond昇格モーダル演出（背景暗幕＋中央にお供＋段階変化＋個体別セリフ）──
   function injectBondUp() {
