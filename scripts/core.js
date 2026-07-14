@@ -28,6 +28,7 @@ const Overlay = (() => {
     'fairy-guide-overlay':    { openClass: 'open', dismissible: true },
     'tutorial-overlay':       { openClass: 'open', dismissible: true },
     'summon-overlay':         { openClass: 'open', dismissible: false },
+    'otomon-overlay':         { openClass: 'open', dismissible: true },
   };
   const OVERLAY_IDS = Object.keys(DEFS);
   const FOCUSABLE = [

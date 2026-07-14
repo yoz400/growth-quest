@@ -1612,8 +1612,8 @@
   }
   function closeBondUp() { const ov = document.getElementById('otomon-bondup-overlay'); if (ov) ov.classList.remove('open'); }
 
-  function openPanel()  { injectAll(); _pickEggUid = null; _pickMsg = ''; renderPanel(); const ov = document.getElementById('otomon-overlay'); if (ov) ov.classList.add('open'); }
-  function closePanel() { _pickEggUid = null; _pickMsg = ''; const ov = document.getElementById('otomon-overlay'); if (ov) ov.classList.remove('open'); }
+  function openPanel()  { injectAll(); _pickEggUid = null; _pickMsg = ''; renderPanel(); Overlay.open('otomon-overlay'); }
+  function closePanel() { _pickEggUid = null; _pickMsg = ''; Overlay.close('otomon-overlay'); }
 
   function refreshHome() { renderHomeBuddyCard(); renderHomeEggCard(); renderQuestCard(); }
 
