@@ -4,6 +4,7 @@
 //  - localStorage: gq_daily_quests = { "YYYY-MM-DD": { [questId]: true } }
 //  - 報酬は同じ日付では1回だけ（XP・confidence ともに二重加算なし）
 // ═══════════════════════════════════════════════════════
+(function () {
 const DAILY_QUESTS = [
   { id:'start_5min',        label:'5分だけ始める',
     desc:'STARTを押した時点で、一歩前進',
@@ -464,3 +465,9 @@ function updateStreak(today) {
     data.streakWasBroken = true;
   }
 }
+
+window.completeQuest = completeQuest;
+window.renderStats = renderStats;
+window.renderStreak = renderStreak;
+window.updateStreak = updateStreak;
+})();
