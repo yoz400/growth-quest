@@ -4,6 +4,10 @@
 
 // スキルは時間ではなく「世界樹の妖精への答え」で実る方式に変更。
 // 旧・時間自動解放は廃止（互換のため空の結果を返す）。
+// IIFE外に残す: settings-genre.js / boot.js が avatarType 自体を再代入するため。
+let avatarType = localStorage.getItem('gq_av_type') || 'A';
+
+(function () {
 function checkSkillUnlocks() {
   return { newlyUnlocked: [] };
 }
@@ -1320,7 +1324,6 @@ const ADVENTURERS = {
   C: { fallback: 'ソラ', title: '旅する吟遊詩人', role: '吟遊詩人', desc: '自由に楽しく続ける自由人' },
 };
 
-let avatarType = localStorage.getItem('gq_av_type') || 'A';
 function saveAvatarType() { localStorage.setItem('gq_av_type', avatarType); }
 
 function adventurerName(type = avatarType) {
@@ -1511,3 +1514,26 @@ document.getElementById('avatar-overlay').addEventListener('click', e => {
   if (e.target === document.getElementById('avatar-overlay'))
     Overlay.close('avatar-overlay');
 });
+
+window.checkSkillUnlocks = checkSkillUnlocks;
+window.renderSkillCount = renderSkillCount;
+window.renderSkillTree = renderSkillTree;
+window.closeGuideTutorial = closeGuideTutorial;
+window.showGuideStartToast = showGuideStartToast;
+window.maybeStartGuideTutorial = maybeStartGuideTutorial;
+window.renderNewSkillsInKoku = renderNewSkillsInKoku;
+window.collectFruitEntries = collectFruitEntries;
+window.openSkillModal = openSkillModal;
+window.getAvatarStageIndex = getAvatarStageIndex;
+window.buildKomaSVG = buildKomaSVG;
+window.buildAvatarSVG = buildAvatarSVG;
+window.saveAvatarType = saveAvatarType;
+window.adventurerName = adventurerName;
+window.adventurerMeta = adventurerMeta;
+window.checkAvatarEvolution = checkAvatarEvolution;
+window.renderAvatarBtn = renderAvatarBtn;
+window.refreshAvatarEquipmentIfOpen = refreshAvatarEquipmentIfOpen;
+window.AVATAR_STAGES = AVATAR_STAGES;
+window.ADVENTURERS = ADVENTURERS;
+window.AV_FACE_FRAME = AV_FACE_FRAME;
+})();
