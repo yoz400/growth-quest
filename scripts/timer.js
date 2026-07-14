@@ -1,10 +1,13 @@
 // ═══════════════════════════════════════════════════════
 //  TIMER STATE
 // ═══════════════════════════════════════════════════════
-let timerState = 'idle'; // idle | running | paused
+// IIFE外に残す: 仕様§4の急所3。再代入される共有状態なので古い値を公開しない。
 let currentMode = settings.defaultMode;
 let remaining = 0;
 let elapsed = 0;
+
+(function () {
+let timerState = 'idle'; // idle | running | paused
 let intervalId = null;
 let sessionMinutes = 0;
 // wall-clock精度タイマー（バックグラウンド対応）
@@ -1011,4 +1014,11 @@ startBtn.addEventListener('click', startTimer);
     pipBtn.style.display = 'block';
     pipBtn.addEventListener('click', openPiP);
   }
+})();
+
+window.playChime = playChime;
+window.setTimerForMode = setTimerForMode;
+window.restoreTimerSession = restoreTimerSession;
+window.closeKoku = closeKoku;
+window.timeWrapper = timeWrapper;   // settings-genre.js がロード時に参照するDOM要素の共有
 })();

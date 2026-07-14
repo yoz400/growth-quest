@@ -129,10 +129,14 @@ let dailyQuests = load();          // このファイル専用の状態
   `const GQ`/`Overlay`/`MODES`/`DEFAULT_DATA` を包むなら必ず `window.GQ = GQ` 等で再公開し、
   他ファイルの裸参照が window 経由で解決できるようにする
 
-各ファイルの「公開が必要な関数一覧」は、着手時に次で生成して報告してから始める：
+各ファイルの「公開が必要なシンボル一覧」は、着手時に次で生成して報告してから始める。
+⚠️ **function だけでなく const/let/var も対象**（D-3で `const timeWrapper` の公開漏れが
+起動フリーズを起こした教訓。DOM参照のconstも他ファイルがロード時に読む）。インデント宣言も拾う：
 ```bash
-for fn in $(grep -oE "^function [A-Za-z_][A-Za-z0-9_]*" scripts/対象.js | sed 's/^function //'); do
-  o=$(grep -lwE "$fn" scripts/*.js | grep -v "/対象.js"); [ -n "$o" ] && echo "$fn"
+# 定義形(function/const/let/var)・インデント問わず全シンボルを抽出し、他ファイル参照ありを列挙
+syms=$(grep -oE "(^|[[:space:]])(function|const|let|var) [A-Za-z_][A-Za-z0-9_]*" scripts/対象.js | awk '{print $NF}' | sort -u)
+for s in $syms; do
+  o=$(grep -lwE "\b$s\b" scripts/*.js | grep -v "/対象.js"); [ -n "$o" ] && echo "$s ← $o"
 done
 ```
 
@@ -165,6 +169,26 @@ done
 >   セッション完了でcheckSkillUnlocks購読(IIFE内)が発火しXP+25／コンソールエラーゼロ
 >   （※検証中 playerName が空でfallback名表示になったが、これはテスト手順の副作用でD-2起因ではない。
 >   playerNameはboot.jsの未ラップglobalで、空ならfallback名は仕様どおりの挙動）
+
+> ✅ **D-3（timer.js）レビュー完了（2026-07-15 クロ・?v=guild-85）**: 起動フリーズ級のバグを
+> **1件検出し修正して**合格。**このPhaseの警戒が的中した回。**
+> - **差分**: timer.js本体をIIFEで包む。timer.jsは既にPiP用の内側IIFEを持つため二重入れ子に
+>   なるが、括弧バランスは健全（外側=9行目〜末尾／内側PiP=1011〜1017で自己完結）を確認。
+>   急所 currentMode（settings-genre.js:15で再代入）はIIFE外に残す＝正しい。remaining/elapsed
+>   もIIFE外に残されたが、他ファイルの同名参照は無関係なローカルconstで実は非共有＝残しても無害
+> - **🔴検出した重大バグ（Codexのexport漏れ）**: `const timeWrapper`(DOM参照)が公開されず、
+>   **settings-genre.js:9 がロード時に `timeWrapper` を参照→ReferenceError→settings-genre.js以降の
+>   ロードが連鎖崩壊**。結果 boot.js の全global(featUnlocks/guild/vows/vowFormOpen…)がTDZになり、
+>   **ギルド・すごろく盤・スキルツリー・段階解放・INITが全滅**（画面は他ファイルが描くので一見起動して見える）。
+>   まさに§1で警告した「ロード時のファイル跨ぎ参照＝過去2回のフリーズ型」の再来
+> - **診断過程**: git stashでguild-84と比較しD-3起因を確定→boot.js全globalがTDZと判明→
+>   index.headに一時 window.onerror を仕込んでロード時エラーの発生元(settings-genre.js:9 timeWrapper)を特定
+> - **修正（クロ・小さな修正）**: timer.js末尾に `window.timeWrapper = timeWrapper;` を追加（§3.2の
+>   「constも公開」どおり）。**検証**: boot.js全global復活・ギルド/すごろく盤/設定ボタン復活(修正前は全滅)・
+>   timeWrapper解決・タイマーstart/stop・図鑑・カレンダーOK・（fix後の新規ロードで）timeWrapperエラー消滅
+> - **⚠️教訓（仕様書§4のチェックレシピを強化済み）**: export漏れ検出は **function だけでなく
+>   const/let/var・インデント宣言も対象**にしないと危険（初回の静的チェックが `^function` 限定で
+>   timeWrapper=constを見逃した）。D-4以降は強化版レシピ（§4）で全シンボルを洗うこと
 
 ---
 
