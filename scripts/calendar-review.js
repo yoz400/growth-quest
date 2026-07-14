@@ -1,6 +1,13 @@
 // ═══════════════════════════════════════════════════════
 //  CALENDAR
 // ═══════════════════════════════════════════════════════
+// IIFE外に残す: 仕様§4の急所4。boot.js/settings-genre.js が読み、再代入もある共有状態。
+let weeklyReviews;
+let rvWeekKey = '';        // 現在開いている週
+let rvPeriod = 'week';     // 'day' | 'week' | 'month' | 'custom'
+let rvAnchor = new Date(); // 日次/月次の基準日
+
+(function () {
 let calYear  = new Date().getFullYear();
 let calMonth = new Date().getMonth(); // 0-based
 
@@ -519,14 +526,11 @@ function saveReviews()       { localStorage.setItem('gq_reviews', JSON.stringify
 function loadReviewStatus()  { try { return JSON.parse(localStorage.getItem('gq_rv_status') || '{"skips":0}'); } catch { return {skips:0}; } }
 function saveReviewStatus()  { localStorage.setItem('gq_rv_status', JSON.stringify(reviewStatus)); }
 
-let weeklyReviews    = loadReviews();
+weeklyReviews        = loadReviews();
 let reviewStatus     = loadReviewStatus();
-let rvWeekKey        = '';       // 現在開いている週
 let rvGoalMins       = 0;
 let rvGoalBadge      = '';
 let rvViewMode       = 'current'; // 'current' | 'past'
-let rvPeriod         = 'week';    // 'day' | 'week' | 'month' | 'custom'
-let rvAnchor         = new Date();// 日次/月次の基準日
 let rvCustom         = { start:null, end:null }; // 期間指定（YYYY-MM-DD）
 
 // ── 分析 ─────────────────────────────────────────────────
@@ -1880,3 +1884,21 @@ document.getElementById('review-overlay').addEventListener('click', e => {
 });
 document.getElementById('review-past-btn').addEventListener('click', showPastReviews);
 
+window.dkey = dkey;
+window.loadCloudUrl = loadCloudUrl;
+window.saveCloudUrl = saveCloudUrl;
+window.testCloudNotify = testCloudNotify;
+window.addPlannerTask = addPlannerTask;
+window.renderCalendar = renderCalendar;
+window.getWeekKey = getWeekKey;
+window.getWeekDates = getWeekDates;
+window.dowIndex = dowIndex;
+window.analyzeDays = analyzeDays;
+window.escHtml = escHtml;
+window._ltDateKey = _ltDateKey;
+window.renderReviewFooter = renderReviewFooter;
+window.buildFruitsSectionHTML = buildFruitsSectionHTML;
+window.renderReviewBody = renderReviewBody;
+window.checkWeeklyReviewTrigger = checkWeeklyReviewTrigger;
+window.DOW_LABELS = DOW_LABELS;
+})();
