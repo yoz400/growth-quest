@@ -241,7 +241,23 @@ done
 >   44公開関数解決／private化(badgesFilter/currentDailyQuoteはwindow非公開)／
 >   設定・ジャンル・バッジ・名言・ギルド・すごろく・タイマー全OK／コンソールエラーゼロ
 
-**Phase D 進捗: D-1〜D-6 完了（8ファイル中6つがIIFE化）。残り D-7 progression(急所10) / D-8 core.js(急所13・任意)。**
+> ✅ **D-7（progression.js）レビュー完了（2026-07-15 クロ・?v=guild-89）**: 精査＋実機で検証し合格。
+> - **差分**: progression.js本体をIIFEで包み、cross-file参照される16シンボルを公開（addXP/renderXP/
+>   xpForLevel/setHeaderMotivation/addConfidence/showConfidenceLevelUp/renderConfidence/
+>   addDailyConfidenceOnce/openPraiseModal/openFairyModal/getPraiseLogsForWeek/addSkillFruit/
+>   SKILL_THRESHOLDS/CONFIDENCE_MESSAGES 等）
+> - **急所10個の扱い（分離パターン・全て正しい）**: skillNotes/skillData/pendingNewSkills/
+>   skillTreeAnimated/_confPending/_confFlushTimer/praiseLogs/_pendingPraisePrompt/
+>   _praiseSessionDate/_praiseSessionGenre を IIFE外で `let X;`宣言→IIFE内で `X = …`代入。全10個シャドウ無し
+> - **強化版公開漏れチェック（全シンボル）**: 検出ゼロ✅
+> - **実機**: boot.js完走＝**フリーズなし**／急所10個に正しい値(skillData=obj/pendingNewSkills=array/
+>   _confPending=obj/_confFlushTimer=null/praiseLogs=obj)／addXP(50→60)・addConfidence(0→3)・
+>   褒めログ/妖精モーダルOK／**IIFE跨ぎの急所共有を実証**: ギルド依頼達成(UI)でboot.jsの
+>   addGuildConfidenceRewardがprogression.jsの_confPendingを操作→名声0→20・自信3→4が正常連動／
+>   スキル(openSkillModal直接OK・79ノード描画、addSkillFruitで解放0→1件。ボタン"開かない"は
+>   skillData空のロック状態でD-7起因でない)／コンソールエラーゼロ
+
+**Phase D 進捗: D-1〜D-7 完了（8ファイル中7つがIIFE化）。残り D-8 core.js(急所13・data等中枢・任意)のみ。**
 
 ---
 
