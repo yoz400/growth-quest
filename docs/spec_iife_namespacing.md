@@ -190,6 +190,22 @@ done
 >   const/let/var・インデント宣言も対象**にしないと危険（初回の静的チェックが `^function` 限定で
 >   timeWrapper=constを見逃した）。D-4以降は強化版レシピ（§4）で全シンボルを洗うこと
 
+> ✅ **D-4（calendar-review.js）レビュー完了（2026-07-15 クロ・?v=guild-86）**: 精査＋実機で検証し合格。
+> D-3の教訓を反映した強化レシピで臨み、**公開漏れゼロを確認**（D-3の再発なし）。
+> - **差分**: calendar-review.js本体をIIFEで包み、cross-file参照される17シンボルを公開
+>   （renderCalendar/checkWeeklyReviewTrigger/getWeekKey/analyzeDays/escHtml/DOW_LABELS/
+>   testCloudNotify 等。過去フリーズ元の testCloudNotify も忘れず公開）
+> - **急所4個の扱い（全て正しくIIFE外に残す）**: weeklyReviews(settings-genre.jsが読む・
+>   内部で再代入)／rvWeekKey・rvPeriod・rvAnchor(**boot.js:315-320が再代入**し読む)。
+>   weeklyReviewsは「外で `let weeklyReviews;` 宣言→IIFE内で代入」の分離パターン＝正しい
+> - **強化版・公開漏れチェック（function/const/let/var・インデント問わず全シンボル）**: 検出ゼロ✅
+> - **実機（D-3の教訓＝サイレント死を最重点）**: boot.js全global生存(featUnlocks/guild/vowFormOpen/
+>   UNLOCK_DEFS)＝**boot.jsサイレント死なし**／calendar-review自身のglobalも生存／17公開関数すべて解決／
+>   カレンダー描画・週次レビュー起動・急所連動(rvPeriod外部再代入→renderReviewBody通過)／
+>   ギルド・すごろく盤・設定・図鑑ボタンOK(boot配線健全)／コンソールエラーゼロ
+> - **偽陽性の切り分け**: review-bodyが空に見えたが、①innerTextは非表示要素で空を返す性質②git checkoutで
+>   guild-85(未ラップ)と比較したところ同条件で同じく空＝**合成データ由来の元挙動でD-4起因ではない**と確定
+
 ---
 
 ## 5. 受け入れ基準（各コミット共通）
