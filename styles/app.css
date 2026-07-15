@@ -1390,6 +1390,12 @@ header {
   border-radius: 12px; padding: 10px 6px; text-align: center;
 }
 .review-stat-val { font-size: 1.05rem; font-weight: 700; color: var(--cyan); font-variant-numeric: tabular-nums; }
+.rv-stat-delta {
+  min-height: .9rem; margin-top: 2px;
+  font-size: .65rem; font-weight: 700; font-variant-numeric: tabular-nums;
+}
+.rv-stat-delta.up { color: #22d3ee; }
+.rv-stat-delta.down { color: rgba(255,255,255,.45); }
 .review-stat-lbl { font-size: .58rem; color: var(--text-dim); margin-top: 2px; }
 .rv-goal-meter {
   margin-top: 10px; padding: 10px 11px;

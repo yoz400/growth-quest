@@ -704,6 +704,16 @@ function buildGoalMeterHTML(weekKey, totalMins) {
   </div>`;
 }
 
+function buildStatDeltaHTML(current, previous, suffix, formatValue) {
+  const diff = current - previous;
+  if (!diff) return '';
+
+  const isUp = diff > 0;
+  const sign = isUp ? '+' : '-';
+  const value = formatValue ? formatValue(Math.abs(diff)) : `${Math.abs(diff)}${suffix}`;
+  return `<div class="rv-stat-delta ${isUp ? 'up' : 'down'}">${isUp ? '▲' : '▼'} ${sign}${value}</div>`;
+}
+
 // ── UI ───────────────────────────────────────────────────
 function escHtml(s) {
   return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -1619,6 +1629,7 @@ function renderReviewBody() {
   document.getElementById('review-panel')?.classList.remove('rv-day-active');
 
   const an   = analyzeWeek(rvWeekKey);
+  const prevAn = analyzeWeek(getPrevWeekKey(rvWeekKey));
   const prev = getPrevWeekGenres(rvWeekKey);
   const newBadges = getNewBadgesThisWeek(rvWeekKey);
   const sugs = buildSuggestions(an, rvWeekKey);
@@ -1631,6 +1642,10 @@ function renderReviewBody() {
   // ─ Section 1: サマリー ───────────────────────────────
   html += `<div class="review-section">
     <div class="review-section-title">今週のサマリー</div>`;
+  const hasPrevStats = (prevAn.totalMins || prevAn.sessions || prevAn.studyDays) > 0;
+  const totalDelta = hasPrevStats ? buildStatDeltaHTML(totalMins, prevAn.totalMins, '分', fmtMins) : '';
+  const sessionDelta = hasPrevStats ? buildStatDeltaHTML(sessions, prevAn.sessions, '回') : '';
+  const dayDelta = hasPrevStats ? buildStatDeltaHTML(studyDays, prevAn.studyDays, '日') : '';
 
   if (totalMins === 0) {
     html += `<div style="color:var(--text-dim);font-size:.83rem;padding:8px 0;text-align:center;line-height:1.8">
@@ -1638,9 +1653,9 @@ function renderReviewBody() {
     </div>`;
   } else {
     html += `<div class="review-stats-grid">
-      <div class="review-stat"><div class="review-stat-val">${fmtMins(totalMins)}</div><div class="review-stat-lbl">総学習時間</div></div>
-      <div class="review-stat"><div class="review-stat-val">${sessions}</div><div class="review-stat-lbl">セッション数</div></div>
-      <div class="review-stat"><div class="review-stat-val">${studyDays}/7</div><div class="review-stat-lbl">学習日数</div></div>
+      <div class="review-stat"><div class="review-stat-val">${fmtMins(totalMins)}</div>${totalDelta}<div class="review-stat-lbl">総学習時間</div></div>
+      <div class="review-stat"><div class="review-stat-val">${sessions}</div>${sessionDelta}<div class="review-stat-lbl">セッション数</div></div>
+      <div class="review-stat"><div class="review-stat-val">${studyDays}/7</div>${dayDelta}<div class="review-stat-lbl">学習日数</div></div>
     </div>`;
     if (bestDay.mins > 0) {
       html += `<div class="review-best-day">🏆 ベスト集中日: <strong>${DOW_FULL[dowIndex(bestDay.date)]}（${bestDay.mins}分）</strong></div>`;
