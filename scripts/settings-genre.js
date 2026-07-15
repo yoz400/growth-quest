@@ -1,3 +1,12 @@
+// IIFE外に残す: 仕様§4の急所6。外部ファイルが読み書きする状態。
+let earnedBadges;
+let sessionStartHour;
+let lastLevelUp;
+let lastStreakMilestone;
+let lastAvatarEvolution;
+let currentKokuQuote;
+
+(function () {
 // ═══════════════════════════════════════════════════════
 //  SETTINGS
 // ═══════════════════════════════════════════════════════
@@ -819,10 +828,10 @@ function saveShownHist() { localStorage.setItem('gq_words_hist', JSON.stringify(
 let userWords  = loadUserWords();
 let favIds     = loadFavIds();
 let shownHist  = loadShownHist();
-let lastLevelUp         = false;
-let lastStreakMilestone = false;
-let lastAvatarEvolution = false;
-let currentKokuQuote    = null;
+lastLevelUp         = false;
+lastStreakMilestone = false;
+lastAvatarEvolution = false;
+currentKokuQuote    = null;
 let currentDailyQuote   = null;
 
 // ── コアロジック ──────────────────────────────────────
@@ -1243,8 +1252,8 @@ function loadBadgeData() {
 }
 function saveBadgeData() { localStorage.setItem('gq_badges', JSON.stringify(earnedBadges)); }
 
-let earnedBadges = loadBadgeData();
-let sessionStartHour = new Date().getHours();
+earnedBadges = loadBadgeData();
+sessionStartHour = new Date().getHours();
 let badgesFilter = 'all';
 const badgeQueue = [];
 let badgeToastActive = false;
@@ -1340,3 +1349,48 @@ document.querySelectorAll('[data-bf]').forEach(btn => {
   });
 });
 
+window.applySettings = applySettings;
+window.exportAllData = exportAllData;
+window.importAllData = importAllData;
+window.fixDayRecord = fixDayRecord;
+window.runRecordMaintenance = runRecordMaintenance;
+window.genreIcon = genreIcon;
+window.renderGenreSelector = renderGenreSelector;
+window.quickAddGenre = quickAddGenre;
+window.quickDeleteGenre = quickDeleteGenre;
+window.openGenreModal = openGenreModal;
+window.renderGenreList = renderGenreList;
+window.showGenreForm = showGenreForm;
+window.hideGenreForm = hideGenreForm;
+window.saveGenreForm = saveGenreForm;
+window.QUOTE_CATS = QUOTE_CATS;
+window.SCENE_LABELS = SCENE_LABELS;
+window.QUOTES = QUOTES;
+window.pickQuote = pickQuote;
+window.detectDailyScene = detectDailyScene;
+window.SCENE_TAG_LABELS = SCENE_TAG_LABELS;
+window.renderDailyQuote = renderDailyQuote;
+window.updateDQFavBtn = updateDQFavBtn;
+window.updateKokuFavBtn = updateKokuFavBtn;
+window.toggleFav = toggleFav;
+window.copyQuoteToClipboard = copyQuoteToClipboard;
+window.openWordsModal = openWordsModal;
+window.renderWordsList = renderWordsList;
+window.showWordsForm = showWordsForm;
+window.hideWordsForm = hideWordsForm;
+window.renderScenePicks = renderScenePicks;
+window.saveWordsForm = saveWordsForm;
+window.RARITY_LABELS = RARITY_LABELS;
+window.CAT_LABELS = CAT_LABELS;
+window.checkPerfectWeek = checkPerfectWeek;
+window.BADGES = BADGES;
+window.loadBadgeData = loadBadgeData;
+window.saveBadgeData = saveBadgeData;
+window.checkBadges = checkBadges;
+window.showNextBadgeToast = showNextBadgeToast;
+window.openBadgesModal = openBadgesModal;
+window.renderBadgeGrid = renderBadgeGrid;
+window.EMOJI_OPTIONS = EMOJI_OPTIONS;
+window.COLOR_OPTIONS = COLOR_OPTIONS;
+window.SUSPICIOUS_DAY_MIN = SUSPICIOUS_DAY_MIN;
+})();
