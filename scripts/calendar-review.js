@@ -22,7 +22,11 @@ function dkey(date) {
 // ═══════════════════════════════════════════════════════
 function loadPlanner() { try { return JSON.parse(localStorage.getItem('gq_planner') || '[]'); } catch { return []; } }
 let plannerTasks = loadPlanner();
-function savePlanner() { localStorage.setItem('gq_planner', JSON.stringify(plannerTasks)); syncPlannerToCloud(); }
+function savePlanner() {
+  localStorage.setItem('gq_planner', JSON.stringify(plannerTasks));
+  syncPlannerToCloud();
+  renderHomePlanner();
+}
 
 // ── クラウド通知：GASウェブアプリへ予定を預ける（LINE等へ“閉じてても”送るため）──
 // no-cors の fire&forget。応答は読めないが、GAS側は受け取れる（CORS回避）。
@@ -185,6 +189,39 @@ function renderDayPlanner(dateKey) {
     row.querySelector('[data-act="cancel-del"]')?.addEventListener('click', () => {
       _plannerDeleteChoiceId = '';
       renderDayPlanner(dateKey);
+    });
+  });
+}
+
+function renderHomePlanner() {
+  const card = document.getElementById('today-plan-card');
+  const listEl = document.getElementById('today-plan-list');
+  if (!card || !listEl) return;
+
+  const dk = todayKey();
+  const list = planTasksOn(dk);
+  if (!list.length) {
+    card.style.display = 'none';
+    listEl.innerHTML = '';
+    return;
+  }
+
+  card.style.display = '';
+  listEl.innerHTML = list.map(t => `
+    <div class="thp-row ${t.done ? 'done' : ''}" data-id="${t.id}">
+      <button class="thp-check" title="完了/未完了">${t.done ? '✓' : '○'}</button>
+      <div class="thp-main">
+        ${t.time ? `<span class="thp-time">${t.time}</span>` : ''}
+        <span class="thp-text">${escHtml(t.text)}</span>
+      </div>
+    </div>
+  `).join('');
+
+  listEl.querySelectorAll('.thp-row').forEach(row => {
+    row.querySelector('.thp-check')?.addEventListener('click', () => {
+      togglePlannerDone(row.dataset.id, dk);
+      renderHomePlanner();
+      renderCalendar();
     });
   });
 }
@@ -565,6 +602,9 @@ document.getElementById('cal-next-btn').addEventListener('click', () => {
 });
 document.getElementById('cal-today-btn').addEventListener('click', () => {
   calYear = new Date().getFullYear(); calMonth = new Date().getMonth(); renderCalendar();
+});
+document.getElementById('today-plan-add')?.addEventListener('click', () => {
+  showDayPopup(todayKey());
 });
 
 // ═══════════════════════════════════════════════════════
@@ -2059,6 +2099,8 @@ document.getElementById('review-overlay').addEventListener('click', e => {
     Overlay.close('review-overlay');
 });
 document.getElementById('review-past-btn').addEventListener('click', showPastReviews);
+renderHomePlanner();
+GQ.on('day:changed', () => setTimeout(renderHomePlanner, 0));
 
 window.dkey = dkey;
 window.loadCloudUrl = loadCloudUrl;
