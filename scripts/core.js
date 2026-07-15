@@ -1,3 +1,29 @@
+// IIFE外に残す: 仕様§4の最難関急所。外部ファイルが読み書きする中枢状態。
+let _gqObservedDay;
+let data;
+let settings;
+let genres;
+let currentGenreId;
+let editingGenreId;
+let itemBuffs;
+let activeBuffs;
+let itemDex;
+let sugorokuData;
+let pendingSugorokuRoll;
+let _sgSpinInt;
+let _sgSpinT1;
+let _sgSpinT2;
+let _sgAutoClose;
+let _sgWalkTimers;
+let sgAnimating;
+let sgPendingWalk;
+let _sgPendingReward;
+let _sgJustRolled;
+let inventory;
+let equippedItems;
+let itemMemories;
+
+(function () {
 // ═══════════════════════════════════════════════════════
 //  DATA
 // ═══════════════════════════════════════════════════════
@@ -248,7 +274,7 @@ function loadGenres() {
 }
 function saveGenres() { localStorage.setItem('gq_genres', JSON.stringify(genres)); }
 
-let _gqObservedDay = null;
+_gqObservedDay = null;
 
 function todayKey() {
   const d = new Date();
@@ -262,11 +288,11 @@ function todayKey() {
   return today;
 }
 
-let data = loadData();
-let settings = loadSettings();
-let genres = loadGenres();
-let currentGenreId = genres[0]?.id || 'default';
-let editingGenreId = null;
+data = loadData();
+settings = loadSettings();
+genres = loadGenres();
+currentGenreId = genres[0]?.id || 'default';
+editingGenreId = null;
 
 // ═══════════════════════════════════════════════════════
 //  SUGOROKU SYSTEM — DATA
@@ -324,7 +350,7 @@ function loadItemBuffs() {
   catch { return def; }
 }
 function saveItemBuffs() { localStorage.setItem('gq_item_buffs', JSON.stringify(itemBuffs)); }
-let itemBuffs = loadItemBuffs();
+itemBuffs = loadItemBuffs();
 
 // ── 時限バフ（24時間など、時間で切れる効果）の保管庫 ──────────
 // 📜龍の覚醒(全XP2倍) や 👑覇者の宣言(クエストXP2倍) が使う。
@@ -335,7 +361,7 @@ function loadActiveBuffs() {
   catch { return {}; }
 }
 function saveActiveBuffs() { localStorage.setItem('gq_active_buffs', JSON.stringify(activeBuffs)); }
-let activeBuffs = loadActiveBuffs();
+activeBuffs = loadActiveBuffs();
 
 function getBuffMul(key) {
   const b = activeBuffs[key];
@@ -358,7 +384,7 @@ function loadItemDex() {
   catch { return {}; }
 }
 function saveItemDex() { localStorage.setItem('gq_item_dex', JSON.stringify(itemDex)); }
-let itemDex = loadItemDex();
+itemDex = loadItemDex();
 function recordItemUse(id) {
   if (!id) return;
   const e = itemDex[id] || { count: 0, last: 0 };
@@ -368,14 +394,17 @@ function recordItemUse(id) {
   saveItemDex();
 }
 
-let sugorokuData = loadSugorokuData();
-let pendingSugorokuRoll = null;
-let _sgSpinInt = null, _sgSpinT1 = null, _sgSpinT2 = null, _sgAutoClose = null;
-let _sgWalkTimers = [];   // 告の中の冒険レーン（コマ歩行）用タイマー
-let sgAnimating   = false;         // 歩行アニメ実行中フラグ
-let sgPendingWalk = null;          // { fromPos, rollTime } ─ 次の開放時にアニメ再生
-let _sgPendingReward = null;       // 到着マスで出すGET演出（装備/アイテム）
-let _sgJustRolled    = false;      // 今セッションでサイコロを振った→双六へ誘導
+sugorokuData = loadSugorokuData();
+pendingSugorokuRoll = null;
+_sgSpinInt = null;
+_sgSpinT1 = null;
+_sgSpinT2 = null;
+_sgAutoClose = null;
+_sgWalkTimers = [];   // 告の中の冒険レーン（コマ歩行）用タイマー
+sgAnimating   = false;         // 歩行アニメ実行中フラグ
+sgPendingWalk = null;          // { fromPos, rollTime } ─ 次の開放時にアニメ再生
+_sgPendingReward = null;       // 到着マスで出すGET演出（装備/アイテム）
+_sgJustRolled    = false;      // 今セッションでサイコロを振った→双六へ誘導
 
 // ═══════════════════════════════════════════════════════
 //  EQUIPMENT SYSTEM — DATA
@@ -592,8 +621,8 @@ function saveEquipped() {
   localStorage.setItem('gq_equipped', JSON.stringify(equippedItems));
 }
 
-let inventory     = loadInventory();
-let equippedItems = loadEquipped();
+inventory     = loadInventory();
+equippedItems = loadEquipped();
 
 // 整合性チェック：装備中の id が inventory に無い／マスターに無い場合は外す
 EQUIPMENT_CATEGORIES.forEach(cat => {
@@ -644,7 +673,7 @@ function loadItemMemories() {
   try { return JSON.parse(localStorage.getItem('gq_item_memories') || '{}'); }
   catch { return {}; }
 }
-let itemMemories = loadItemMemories();
+itemMemories = loadItemMemories();
 function saveItemMemories() {
   localStorage.setItem('gq_item_memories', JSON.stringify(itemMemories));
 }
@@ -2296,3 +2325,109 @@ function showSugorokuInKoku(result) {
     }, 1000);
   }
 }
+
+window.Overlay = Overlay;
+window.GQ = GQ;
+window.MODES = MODES;
+window.DEFAULT_DATA = DEFAULT_DATA;
+window.DEFAULT_SETTINGS = DEFAULT_SETTINGS;
+window.loadData = loadData;
+window.saveData = saveData;
+window.loadSettings = loadSettings;
+window.saveSettings = saveSettings;
+window.DEFAULT_GENRES = DEFAULT_GENRES;
+window.loadGenres = loadGenres;
+window.saveGenres = saveGenres;
+window.todayKey = todayKey;
+window.BOARD_CELL_TYPES = BOARD_CELL_TYPES;
+window.SUGOROKU_ITEMS = SUGOROKU_ITEMS;
+window.loadSugorokuData = loadSugorokuData;
+window.saveSugorokuData = saveSugorokuData;
+window.loadItemBuffs = loadItemBuffs;
+window.saveItemBuffs = saveItemBuffs;
+window.loadActiveBuffs = loadActiveBuffs;
+window.saveActiveBuffs = saveActiveBuffs;
+window.getBuffMul = getBuffMul;
+window.getActiveXpMultiplier = getActiveXpMultiplier;
+window.getQuestXpMultiplier = getQuestXpMultiplier;
+window.grantTimedBuff = grantTimedBuff;
+window.loadItemDex = loadItemDex;
+window.saveItemDex = saveItemDex;
+window.recordItemUse = recordItemUse;
+window.EQUIPMENT_CATEGORIES = EQUIPMENT_CATEGORIES;
+window.EQUIPPABLE_CATEGORIES = EQUIPPABLE_CATEGORIES;
+window.CATEGORY_LABEL = CATEGORY_LABEL;
+window.EQUIPMENT_RARITY_WEIGHTS = EQUIPMENT_RARITY_WEIGHTS;
+window.EQUIPMENT_DUPLICATE_COMPENSATION_XP = EQUIPMENT_DUPLICATE_COMPENSATION_XP;
+window.ITEM_MASTER = ITEM_MASTER;
+window.getItemById = getItemById;
+window.renderItemIcon = renderItemIcon;
+window.loadInventory = loadInventory;
+window.saveInventory = saveInventory;
+window.loadEquipped = loadEquipped;
+window.saveEquipped = saveEquipped;
+window.addItemToInventory = addItemToInventory;
+window.removeItemFromInventory = removeItemFromInventory;
+window.getOwnedItems = getOwnedItems;
+window.hasItem = hasItem;
+window.loadItemMemories = loadItemMemories;
+window.saveItemMemories = saveItemMemories;
+window.dayPartLabel = dayPartLabel;
+window.recordItemMemory = recordItemMemory;
+window.addCompanionMinutes = addCompanionMinutes;
+window.itemMemoryText = itemMemoryText;
+window.companionTimeText = companionTimeText;
+window.BOND_MINS = BOND_MINS;
+window.isBondedItem = isBondedItem;
+window.equipItem = equipItem;
+window.unequipItem = unequipItem;
+window.refreshEquipExperience = refreshEquipExperience;
+window.getEquippedItems = getEquippedItems;
+window.isEquipped = isEquipped;
+window.getUnownedItems = getUnownedItems;
+window.pickWeightedRarity = pickWeightedRarity;
+window.getRandomUnownedItem = getRandomUnownedItem;
+window.testEquipmentRarityRolls = testEquipmentRarityRolls;
+window.refreshEquipmentModalIfOpen = refreshEquipmentModalIfOpen;
+window.grantRandomEquipmentItem = grantRandomEquipmentItem;
+window.getEquippedEffectItem = getEquippedEffectItem;
+window.EQUIP_MOODS = EQUIP_MOODS;
+window.applyEquipMood = applyEquipMood;
+window.getEquipmentDiceBonus = getEquipmentDiceBonus;
+window.getEquipmentComment = getEquipmentComment;
+window.getEquipmentStreakProtect = getEquipmentStreakProtect;
+window.sgGetCellNum = sgGetCellNum;
+window.sgGetStage = sgGetStage;
+window.rollDice = rollDice;
+window.sgPickItem = sgPickItem;
+window.doSugorokuRoll = doSugorokuRoll;
+window.addBonusXP = addBonusXP;
+window.sgMoveDir = sgMoveDir;
+window.spawnSgBurst = spawnSgBurst;
+window.getWalkerCellPos = getWalkerCellPos;
+window.startWalkAnimation = startWalkAnimation;
+window.sgCellXY = sgCellXY;
+window.SG_ZONES = SG_ZONES;
+window.SPOT_ICONS = SPOT_ICONS;
+window.ZONE_PARTICLES = ZONE_PARTICLES;
+window.buildBoardSVG = buildBoardSVG;
+window.ITEM_NEXT_HINTS = ITEM_NEXT_HINTS;
+window.ITEM_EFFECTS = ITEM_EFFECTS;
+window.applyCosmicGacha = applyCosmicGacha;
+window.openDicePicker = openDicePicker;
+window.closeDicePicker = closeDicePicker;
+window.openItemDex = openItemDex;
+window.closeItemDex = closeItemDex;
+window.pickFixedDice = pickFixedDice;
+window.buildAreaView = buildAreaView;
+window.buildNextRewards = buildNextRewards;
+window.toggleBoardMap = toggleBoardMap;
+window.renderActiveBuffs = renderActiveBuffs;
+window.ITEM_FX = ITEM_FX;
+window.playItemUseEffect = playItemUseEffect;
+window.showItemToast = showItemToast;
+window.useItem = useItem;
+window.renderBoard = renderBoard;
+window.openBoardModal = openBoardModal;
+window.showSugorokuInKoku = showSugorokuInKoku;
+})();
