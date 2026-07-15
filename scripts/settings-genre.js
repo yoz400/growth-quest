@@ -31,6 +31,7 @@ function applySettings() {
   document.getElementById('set-anim').value = settings.anim;
   document.getElementById('set-sound').checked = settings.sound !== false;
   document.getElementById('set-notif').checked  = settings.notif  !== false;
+  document.getElementById('set-reminder-sound').checked = settings.reminderSound !== false;
   const avTypeSelect = document.getElementById('set-avatar-type');
   if (avTypeSelect) avTypeSelect.value = avatarType;
 }
@@ -79,6 +80,11 @@ document.getElementById('set-notif').addEventListener('change', async e => {
   settings.notif = e.target.checked;
   saveSettings(settings);
   if (e.target.checked) await requestNotifPermission();
+});
+document.getElementById('set-reminder-sound').addEventListener('change', e => {
+  settings.reminderSound = e.target.checked;
+  saveSettings(settings);
+  if (e.target.checked) playChime();
 });
 
 document.getElementById('set-avatar-type')?.addEventListener('change', e => {

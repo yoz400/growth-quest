@@ -301,6 +301,8 @@ document.querySelectorAll('.cdp-kind-btn').forEach(btn => {
 // 一度鳴らした予定は (id|日付|時刻) で記録して二度鳴らさない。日付が変わるとリセット。
 let _firedReminders = new Set();
 let _firedDate = '';
+let _snoozedReminders = [];
+let _snoozedKeys = new Set();
 (function initFiredReminders() {
   try {
     const obj = JSON.parse(localStorage.getItem('gq_planner_fired') || '{}');
@@ -312,33 +314,61 @@ let _firedDate = '';
 function saveFiredReminders() {
   localStorage.setItem('gq_planner_fired', JSON.stringify({ date: _firedDate, keys: [..._firedReminders] }));
 }
-function showReminderToast(task) {
+function reminderKey(task, dateKey) {
+  return `${task.id}|${dateKey}|${task.time}`;
+}
+function showReminderToast(task, dateKey) {
   const el = document.getElementById('reminder-toast'); if (!el) return;
-  el.innerHTML = `<span class="rmd-time">🔔 ${task.time}</span><span class="rmd-text">${escHtml(task.text)}</span>`;
+  const key = reminderKey(task, dateKey);
+  const canSnooze = !_snoozedKeys.has(key);
+  el.innerHTML = `<span class="rmd-time">🔔 ${task.time}</span><span class="rmd-text">${escHtml(task.text)}</span>
+    ${canSnooze ? `<button class="rmd-snooze" data-key="${key}">⏰ 10分後にもう一度</button>` : ''}`;
   el.classList.add('show');
   clearTimeout(el._t);
   el._t = setTimeout(() => el.classList.remove('show'), 8000);
 }
-function fireReminder(task) {
+function fireReminder(task, dateKey = todayKey()) {
   if (('Notification' in window) && Notification.permission === 'granted') {
     try { new Notification(`🔔 ${task.time} の予定`, { body: task.text }); } catch (e) {}
   }
-  showReminderToast(task);   // アプリ内バナーは常に出す
+  if (settings.reminderSound && typeof playChime === 'function') playChime();
+  showReminderToast(task, dateKey);   // アプリ内バナーは常に出す
+}
+function snoozeReminder(task, dateKey) {
+  const key = reminderKey(task, dateKey);
+  if (_snoozedKeys.has(key)) return;
+  const now = new Date();
+  _snoozedKeys.add(key);
+  _snoozedReminders.push({
+    key,
+    taskId: task.id,
+    dateKey,
+    time: task.time,
+    atMin: now.getHours() * 60 + now.getMinutes() + 10,
+  });
 }
 function checkPlannerReminders() {
   const dk = todayKey();
-  if (dk !== _firedDate) { _firedReminders = new Set(); _firedDate = dk; saveFiredReminders(); }
+  if (dk !== _firedDate) { _firedReminders = new Set(); _snoozedReminders = []; _snoozedKeys = new Set(); _firedDate = dk; saveFiredReminders(); }
   const now = new Date();
   const nowMin = now.getHours() * 60 + now.getMinutes();
+  const dueSnoozes = _snoozedReminders.filter(s => s.dateKey === dk && nowMin >= s.atMin);
+  _snoozedReminders = _snoozedReminders.filter(s => !(s.dateKey === dk && nowMin >= s.atMin));
+  dueSnoozes.forEach(s => {
+    const t = plannerTasks.find(x => x.id === s.taskId);
+    if (t && t.remind && t.time === s.time && !(t.doneDates || []).includes(dk) && planOccursOn(t, dk)) {
+      fireReminder(t, dk);
+    }
+  });
   planTasksOn(dk).forEach(t => {
     if (!t.remind || !t.time || t.done) return;
     const [hh, mm] = t.time.split(':').map(Number);
     const taskMin = hh * 60 + mm;
-    const key = `${t.id}|${dk}|${t.time}`;
+    const key = reminderKey(t, dk);
     if (_firedReminders.has(key)) return;
     // 時刻に到達（遅れ30分以内まで拾う。古すぎる予定は鳴らさない）
     if (nowMin >= taskMin && nowMin - taskMin <= 30) {
-      fireReminder(t);
+      fireReminder(t, dk);
       _firedReminders.add(key);
       saveFiredReminders();
     }
@@ -347,6 +377,12 @@ function checkPlannerReminders() {
 checkPlannerReminders();
 setInterval(checkPlannerReminders, 30000);   // 30秒ごとに確認
 document.getElementById('reminder-toast')?.addEventListener('click', e => {
+  const btn = e.target.closest && e.target.closest('.rmd-snooze');
+  if (btn) {
+    const dk = todayKey();
+    const task = planTasksOn(dk).find(t => reminderKey(t, dk) === btn.dataset.key);
+    if (task) snoozeReminder(task, dk);
+  }
   e.currentTarget.classList.remove('show');
 });
 

@@ -737,6 +737,13 @@ header {
 #reminder-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
 .rmd-time { font-weight: 700; color: #f59e0b; font-size: .82rem; white-space: nowrap; }
 .rmd-text { color: var(--text); font-size: .85rem; }
+.rmd-snooze {
+  font-family: inherit; font-size: .7rem; font-weight: 700;
+  color: #fbbf24; background: rgba(245,158,11,.12);
+  border: 1px solid rgba(245,158,11,.35); border-radius: 8px;
+  padding: 5px 8px; cursor: pointer;
+}
+.rmd-snooze:hover { background: rgba(245,158,11,.2); }
 
 /* ── 手帳：タスク／イベントの区別 ── */
 .cdp-kind { display: flex; gap: 6px; margin-bottom: 8px; }

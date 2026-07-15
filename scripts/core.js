@@ -243,6 +243,7 @@ const DEFAULT_SETTINGS = {
   hideTime: false,
   anim: 'random',
   sound: true,
+  reminderSound: true,
   notif: true,
 };
 
