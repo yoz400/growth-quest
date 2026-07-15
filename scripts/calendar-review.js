@@ -50,9 +50,12 @@ function testCloudNotify() {
 if (loadCloudUrl()) syncPlannerToCloud();   // 起動時に最新を1回預ける
 
 const PLAN_REPEAT_LABEL = { none:'', daily:'毎日', weekly:'毎週', monthly:'毎月' };
+let _plannerEditingId = null;
+let _plannerDeleteChoiceId = '';
 
 // その予定が、指定日に「出現」するか（繰り返しを展開して判定）
 function planOccursOn(task, dateKey) {
+  if ((task.skipDates || []).includes(dateKey)) return false;
   if (dateKey < task.date) return false;                 // 開始日より前は出ない
   if (task.repeat === 'daily')   return true;
   if (task.repeat === 'weekly')  return new Date(dateKey+'T00:00:00').getDay() === new Date(task.date+'T00:00:00').getDay();
@@ -83,6 +86,17 @@ function addPlannerTask(dateKey, text, time, repeat, remind, kind) {
   });
   savePlanner();
 }
+function updatePlannerTask(taskId, text, time, repeat, remind, kind) {
+  const t = plannerTasks.find(x => x.id === taskId); if (!t) return;
+  t.text = text;
+  t.time = time || null;
+  t.repeat = repeat || 'none';
+  t.kind = kind === 'event' ? 'event' : 'task';
+  t.remind = !!(remind && time);
+  t.doneDates = t.doneDates || [];
+  t.skipDates = t.skipDates || [];
+  savePlanner();
+}
 function togglePlannerDone(taskId, dateKey) {
   const t = plannerTasks.find(x => x.id === taskId); if (!t) return;
   t.doneDates = t.doneDates || [];
@@ -92,6 +106,12 @@ function togglePlannerDone(taskId, dateKey) {
 }
 function deletePlannerTask(taskId) {
   plannerTasks = plannerTasks.filter(x => x.id !== taskId);
+  savePlanner();
+}
+function skipPlannerTaskOn(taskId, dateKey) {
+  const t = plannerTasks.find(x => x.id === taskId); if (!t) return;
+  t.skipDates = t.skipDates || [];
+  if (!t.skipDates.includes(dateKey)) t.skipDates.push(dateKey);
   savePlanner();
 }
 function togglePlannerRemind(taskId) {
@@ -112,20 +132,27 @@ function renderDayPlanner(dateKey) {
         ? `<span class="cdp-task-evmark" title="予定（イベント）">📌</span>`
         : `<button class="cdp-task-check" data-act="check" title="完了/未完了">${t.done ? '✓' : '○'}</button>`;
       return `
-      <div class="cdp-task ${isEvent ? 'is-event' : ''} ${(!isEvent && t.done) ? 'done' : ''}" data-id="${t.id}">
-        ${lead}
-        <div class="cdp-task-main">
-          ${t.time ? `<span class="cdp-task-time">${t.time}</span>` : ''}
-          <span class="cdp-task-text">${escHtml(t.text)}</span>
-          ${t.repeat !== 'none' ? `<span class="cdp-task-rep">🔁${PLAN_REPEAT_LABEL[t.repeat]}</span>` : ''}
+      <div class="cdp-task-wrap" data-id="${t.id}">
+        <div class="cdp-task ${isEvent ? 'is-event' : ''} ${(!isEvent && t.done) ? 'done' : ''}">
+          ${lead}
+          <button class="cdp-task-main" data-act="edit" title="編集">
+            ${t.time ? `<span class="cdp-task-time">${t.time}</span>` : ''}
+            <span class="cdp-task-text">${escHtml(t.text)}</span>
+            ${t.repeat !== 'none' ? `<span class="cdp-task-rep">🔁${PLAN_REPEAT_LABEL[t.repeat]}</span>` : ''}
+          </button>
+          ${t.time ? `<button class="cdp-task-bell ${t.remind ? 'on' : ''}" data-act="bell" title="${t.remind ? '通知オン' : '通知オフ'}">${t.remind ? '🔔' : '🔕'}</button>` : ''}
+          <button class="cdp-task-del" data-act="del" title="削除">🗑</button>
         </div>
-        ${t.time ? `<button class="cdp-task-bell ${t.remind ? 'on' : ''}" data-act="bell" title="${t.remind ? '通知オン' : '通知オフ'}">${t.remind ? '🔔' : '🔕'}</button>` : ''}
-        <button class="cdp-task-del" data-act="del" title="削除">🗑</button>
+        ${_plannerDeleteChoiceId === t.id ? `<div class="cdp-delete-choices">
+          <button data-act="skip-one">⏭ この日だけスキップ</button>
+          <button data-act="delete-all">🗑 すべての回を削除</button>
+          <button data-act="cancel-del">やめる</button>
+        </div>` : ''}
       </div>`;
     }).join('')
     : `<div class="cdp-plan-empty">まだ予定はありません</div>`;
 
-  el.querySelectorAll('.cdp-task').forEach(row => {
+  el.querySelectorAll('.cdp-task-wrap').forEach(row => {
     const id = row.dataset.id;
     row.querySelector('[data-act="check"]')?.addEventListener('click', () => {
       togglePlannerDone(id, dateKey); renderDayPlanner(dateKey); renderCalendar();
@@ -133,12 +160,74 @@ function renderDayPlanner(dateKey) {
     row.querySelector('[data-act="bell"]')?.addEventListener('click', () => {
       togglePlannerRemind(id); renderDayPlanner(dateKey);
     });
+    row.querySelector('[data-act="edit"]')?.addEventListener('click', () => {
+      beginPlannerEdit(id);
+    });
     row.querySelector('[data-act="del"]')?.addEventListener('click', () => {
       const t = plannerTasks.find(x => x.id === id);
-      if (t && t.repeat !== 'none' && !confirm('繰り返しの予定です。すべての回をまとめて削除しますか？')) return;
+      if (t && t.repeat !== 'none') {
+        _plannerDeleteChoiceId = id;
+        renderDayPlanner(dateKey);
+        return;
+      }
       deletePlannerTask(id); renderDayPlanner(dateKey); renderCalendar();
     });
+    row.querySelector('[data-act="skip-one"]')?.addEventListener('click', () => {
+      skipPlannerTaskOn(id, dateKey);
+      _plannerDeleteChoiceId = '';
+      renderDayPlanner(dateKey); renderCalendar();
+    });
+    row.querySelector('[data-act="delete-all"]')?.addEventListener('click', () => {
+      deletePlannerTask(id);
+      _plannerDeleteChoiceId = '';
+      renderDayPlanner(dateKey); renderCalendar();
+    });
+    row.querySelector('[data-act="cancel-del"]')?.addEventListener('click', () => {
+      _plannerDeleteChoiceId = '';
+      renderDayPlanner(dateKey);
+    });
   });
+}
+
+function setPlannerKind(kind) {
+  document.querySelectorAll('.cdp-kind-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.kind === kind);
+  });
+}
+
+function resetPlannerForm(kind = 'task') {
+  _plannerEditingId = null;
+  _plannerDeleteChoiceId = '';
+  const textEl = document.getElementById('cdp-task-text');
+  if (textEl) textEl.value = '';
+  const timeEl = document.getElementById('cdp-task-time');
+  if (timeEl) timeEl.value = '';
+  const repEl = document.getElementById('cdp-task-repeat');
+  if (repEl) repEl.value = 'none';
+  const remindEl = document.getElementById('cdp-task-remind');
+  if (remindEl) remindEl.checked = false;
+  setPlannerKind(kind);
+  const addBtn = document.getElementById('cdp-task-add');
+  if (addBtn) addBtn.textContent = '追加';
+  const cancelBtn = document.getElementById('cdp-task-cancel');
+  if (cancelBtn) cancelBtn.hidden = true;
+}
+
+function beginPlannerEdit(taskId) {
+  const t = plannerTasks.find(x => x.id === taskId); if (!t) return;
+  _plannerEditingId = taskId;
+  _plannerDeleteChoiceId = '';
+  document.getElementById('cdp-task-text').value = t.text || '';
+  document.getElementById('cdp-task-time').value = t.time || '';
+  document.getElementById('cdp-task-repeat').value = t.repeat || 'none';
+  const remindEl = document.getElementById('cdp-task-remind');
+  if (remindEl) remindEl.checked = !!t.remind;
+  setPlannerKind(t.kind === 'event' ? 'event' : 'task');
+  const addBtn = document.getElementById('cdp-task-add');
+  if (addBtn) addBtn.textContent = '保存';
+  const cancelBtn = document.getElementById('cdp-task-cancel');
+  if (cancelBtn) cancelBtn.hidden = false;
+  document.getElementById('cdp-task-text')?.focus();
 }
 
 // 予定の追加（フォーム）
@@ -153,23 +242,21 @@ function _plannerAddFromForm() {
   const remind = !!document.getElementById('cdp-task-remind')?.checked;
   const kind   = document.querySelector('.cdp-kind-btn.active')?.dataset.kind || 'task';
   if (remind && time && typeof requestNotifPermission === 'function') requestNotifPermission();
-  addPlannerTask(dk, text, time, repeat, remind, kind);
-  textEl.value = '';
-  document.getElementById('cdp-task-time').value = '';
-  document.getElementById('cdp-task-repeat').value = 'none';
-  const remindEl = document.getElementById('cdp-task-remind'); if (remindEl) remindEl.checked = false;
+  if (_plannerEditingId) updatePlannerTask(_plannerEditingId, text, time, repeat, remind, kind);
+  else addPlannerTask(dk, text, time, repeat, remind, kind);
+  resetPlannerForm(kind);
   renderDayPlanner(dk); renderCalendar();
   textEl.focus();
 }
 document.getElementById('cdp-task-add')?.addEventListener('click', _plannerAddFromForm);
+document.getElementById('cdp-task-cancel')?.addEventListener('click', () => resetPlannerForm());
 document.getElementById('cdp-task-text')?.addEventListener('keydown', e => {
   if (e.key === 'Enter') { e.preventDefault(); _plannerAddFromForm(); }
 });
 // やること / 予定(イベント) の切り替え（選んだ種別は次の追加でも維持）
 document.querySelectorAll('.cdp-kind-btn').forEach(btn => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.cdp-kind-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
+    setPlannerKind(btn.dataset.kind || 'task');
   });
 });
 
@@ -410,6 +497,7 @@ function renderCalStats(y, m) {
 function showDayPopup(dateKey, cellEl) {
   const popup = document.getElementById('cal-day-popup');
   popup.dataset.date = dateKey;   // 「⏱ この日のタイムログ」ボタン用
+  resetPlannerForm();
   const mins  = data.history[dateKey] || 0;
   const det   = data.historyDetails?.[dateKey];
 
