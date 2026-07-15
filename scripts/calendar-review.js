@@ -636,6 +636,12 @@ function getPrevWeekGenres(weekKey) {
   return analyzeWeek(dkey(mon)).genreMins;
 }
 
+function getPrevWeekKey(weekKey) {
+  const mon = new Date(weekKey + 'T00:00:00');
+  mon.setDate(mon.getDate() - 7);
+  return dkey(mon);
+}
+
 function getNewBadgesThisWeek(weekKey) {
   const dates  = getWeekDates(weekKey);
   const start  = dates[0].getTime();
@@ -682,6 +688,20 @@ function buildSuggestions(an, weekKey) {
   }
 
   return sugs.slice(0, 3);
+}
+
+function buildGoalMeterHTML(weekKey, totalMins) {
+  const target = weeklyReviews[getPrevWeekKey(weekKey)]?.goal?.targetMins || 0;
+  if (!target) return '';
+
+  const pct = Math.min(100, Math.round((totalMins / target) * 100));
+  const achieved = totalMins >= target;
+  const status = achieved ? '🎉 目標達成！' : `あと${target - totalMins}分`;
+  return `<div class="rv-goal-meter${achieved ? ' achieved' : ''}">
+    <div class="rv-goal-head">🎯 先週たてた目標: <strong>${target}分</strong></div>
+    <div class="rv-goal-track"><div class="rv-goal-fill" style="width:${pct}%"></div></div>
+    <div class="rv-goal-note">${totalMins}分 / ${target}分 <span>${status}</span></div>
+  </div>`;
 }
 
 // ── UI ───────────────────────────────────────────────────
@@ -1631,6 +1651,7 @@ function renderReviewBody() {
       <div class="review-new-badges">${newBadges.map(b=>`<div class="review-badge-chip">${b.icon} ${b.name}</div>`).join('')}</div>`;
     }
   }
+  html += buildGoalMeterHTML(rvWeekKey, totalMins);
   html += `</div>`;
 
   // ─ Section 1.5: 学習タイプ診断 ──────────────────────
