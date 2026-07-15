@@ -3550,6 +3550,17 @@ header {
 .rv-donut-legend { display: flex; flex-direction: column; gap: 2px; width: 100%; }
 .rv-donut-leg { font-size: .62rem; color: rgba(255,255,255,.8); display: flex; align-items: center; gap: 5px; }
 .rv-leg-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+.rv-heatmap-svg { min-width: 0; }
+.rv-heatmap-legend {
+  display: flex; align-items: center; justify-content: center; flex-wrap: wrap;
+  gap: 4px; margin-top: 6px; font-size: .6rem; color: var(--text-dim);
+}
+.rv-heat-dot { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
+.rv-heat-dot.lv0 { background: rgba(255,255,255,.055); }
+.rv-heat-dot.lv1 { background: rgba(6,182,212,.22); }
+.rv-heat-dot.lv2 { background: rgba(6,182,212,.45); }
+.rv-heat-dot.lv3 { background: rgba(6,182,212,.70); }
+.rv-heat-dot.lv4 { background: rgba(6,182,212,.95); }
 
 /* ═══════════════════════════════════════════════════════
    週次レビュー 期間切り替えバー（日/週/月/期間）

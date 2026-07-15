@@ -1098,6 +1098,54 @@ function buildTrendLineSVG(wk) {
     + `<div class="rv-trend-legend">${legend}</div>`;
 }
 
+function buildStreakHeatmapSVG(wk) {
+  const curMon = new Date(wk + 'T00:00:00');
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const W = 300, H = 90, left = 16, top = 17, cell = 8.5, gap = 1.5;
+  const colorFor = mins => {
+    if (mins >= 60) return 'rgba(6,182,212,.95)';
+    if (mins >= 30) return 'rgba(6,182,212,.70)';
+    if (mins >= 15) return 'rgba(6,182,212,.45)';
+    if (mins >= 1)  return 'rgba(6,182,212,.22)';
+    return 'rgba(255,255,255,.055)';
+  };
+  const monthLabels = [];
+
+  const cells = Array.from({ length: 26 }, (_, col) => {
+    const mon = new Date(curMon);
+    mon.setDate(curMon.getDate() - 7 * (25 - col));
+    const x = left + col * (cell + gap);
+    const days = Array.from({ length: 7 }, (_, row) => {
+      const day = new Date(mon);
+      day.setDate(mon.getDate() + row);
+      if (day > today) return '';
+      if (day.getDate() === 1) {
+        monthLabels.push(`<text x="${x.toFixed(1)}" y="8" fill="rgba(255,255,255,.45)" font-size="7.5" text-anchor="middle">${day.getMonth()+1}月</text>`);
+      }
+      const key = dkey(day);
+      const mins = data.history?.[key] || 0;
+      const y = top + row * (cell + gap);
+      return `<g class="rv-day-bar" data-dk="${key}" style="cursor:pointer">
+        <rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${cell}" height="${cell}" rx="1.8" fill="${colorFor(mins)}">
+          <title>${day.getMonth()+1}/${day.getDate()} ${mins}分</title>
+        </rect>
+      </g>`;
+    }).join('');
+    return days;
+  }).join('');
+
+  const dowLabels = DOW_LABELS.map((label, row) =>
+    `<text x="1" y="${(top + row * (cell + gap) + cell - 1).toFixed(1)}" fill="rgba(255,255,255,.36)" font-size="7">${label}</text>`
+  ).join('');
+
+  return `<svg viewBox="0 0 ${W} ${H}" class="rv-chart-svg rv-heatmap-svg">${monthLabels.join('')}${dowLabels}${cells}</svg>
+    <div class="rv-heatmap-legend">
+      <span>なし</span><span class="rv-heat-dot lv0"></span><span class="rv-heat-dot lv1"></span><span>少し</span><span class="rv-heat-dot lv2"></span><span>ふつう</span><span class="rv-heat-dot lv3"></span><span>しっかり</span><span class="rv-heat-dot lv4"></span>
+    </div>`;
+}
+
 // 週リズム・レーダー（曜日別の今週の分）
 function buildWeekdayRadarSVG(an) {
   const days = an.days || [];
@@ -1165,6 +1213,10 @@ function renderChartsSection(an, prev, saved, wk) {
     <div class="rv-chart-block">
       <div class="rv-chart-cap">週ごとの学習時間（直近6週）</div>
       ${buildTrendLineSVG(wk)}
+    </div>
+    <div class="rv-chart-block">
+      <div class="rv-chart-cap">🌱 継続の足あと（直近26週）</div>
+      ${buildStreakHeatmapSVG(wk)}
     </div>
     <div class="rv-chart-2col">
       <div class="rv-chart-block">
