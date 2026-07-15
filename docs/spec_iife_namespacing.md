@@ -228,7 +228,20 @@ done
 >   boot.jsは8番目ロードなので、公開漏れがあっても「他ファイルの実行時参照が失敗」型が主(otomon除く)で
 >   D-3のような即・白画面より発見が遅れやすい→実機の機能テストで担保した
 
-**Phase D 進捗: D-1〜D-5 完了（7/8ファイル中5つがIIFE化）。残り D-6 settings-genre / D-7 progression / D-8 core.js(任意)。**
+> ✅ **D-6（settings-genre.js）レビュー完了（2026-07-15 クロ・?v=guild-88）**: 精査＋実機で検証し合格。
+> - **差分**: settings-genre.js本体をIIFEで包み、cross-file参照される44シンボルを公開（applySettings/
+>   exportAllData/importAllData/renderGenreSelector/genreIcon/checkBadges/openBadgesModal/BADGES/
+>   QUOTES/pickQuote/renderDailyQuote/EMOJI_OPTIONS/COLOR_OPTIONS 等。関数＋constを網羅）
+> - **急所6個の扱い（分離パターン・全て正しい）**: earnedBadges/sessionStartHour/lastLevelUp/
+>   lastStreakMilestone/lastAvatarEvolution/currentKokuQuote を IIFE外で `let X;`宣言→IIFE内で
+>   `X = …`(letなし)代入。全6個シャドウイング無しを確認
+> - **強化版公開漏れチェック（全シンボル）**: 検出ゼロ✅
+> - **実機**: boot.js完走(featUnlocks/guild/UNLOCK_DEFS生存)＝**フリーズなし**／急所6個に正しい値
+>   (earnedBadges=obj/sessionStartHour=number/lastLevelUp=boolean/currentKokuQuote=object)／
+>   44公開関数解決／private化(badgesFilter/currentDailyQuoteはwindow非公開)／
+>   設定・ジャンル・バッジ・名言・ギルド・すごろく・タイマー全OK／コンソールエラーゼロ
+
+**Phase D 進捗: D-1〜D-6 完了（8ファイル中6つがIIFE化）。残り D-7 progression(急所10) / D-8 core.js(急所13・任意)。**
 
 ---
 
