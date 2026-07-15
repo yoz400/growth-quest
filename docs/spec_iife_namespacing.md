@@ -257,7 +257,35 @@ done
 >   スキル(openSkillModal直接OK・79ノード描画、addSkillFruitで解放0→1件。ボタン"開かない"は
 >   skillData空のロック状態でD-7起因でない)／コンソールエラーゼロ
 
-**Phase D 進捗: D-1〜D-7 完了（8ファイル中7つがIIFE化）。残り D-8 core.js(急所13・data等中枢・任意)のみ。**
+> ✅ **D-8（core.js）レビュー完了（2026-07-15 クロ・?v=guild-90）**: **最難関＝最初にロードされる土台**
+> （data等の中枢状態＋全ファイルが使うGQ/Overlay/MODES/DEFAULT_DATAを持つ）を精査＋実機で検証し合格。
+> - **差分**: core.js本体をIIFEで包み、cross-file参照される**110シンボル**を公開（GQ/Overlay/MODES/
+>   DEFAULT_DATA/loadData/saveData/todayKey/doSugorokuRoll/addBonusXP/装備系/アイテム系/すごろく系ほぼ全部）
+> - **最重要＝土台定数の公開**: GQ/Overlay/MODES/DEFAULT_DATA が全て `window.X = X` で公開済み。
+>   core.jsは1番目ロードなので、これらが公開される前に2番目以降のファイルが読まれると即・全滅するが、
+>   IIFEは同期実行で末尾exportまで走ってから次ファイルが読まれるため成立
+> - **急所23個の扱い（元の13個＋すごろく/装備関連を追加した慎重版・全て分離パターン）**: data/settings/
+>   genres/currentGenreId/editingGenreId/itemBuffs/activeBuffs/itemDex/sugorokuData/pendingSugorokuRoll/
+>   _sg系7個/inventory/equippedItems/itemMemories を IIFE外宣言→IIFE内代入。全23個シャドウ無し
+> - **強化版公開漏れチェック（全シンボル）**: 検出ゼロ✅
+> - **実機（最高リスク＝白画面を最重点）**: **起動して画面描画OK・白画面なし**／GQ.on/Overlay.open/MODES/data
+>   が全ファイルから解決／**最後のboot.jsまで完走**＝8ファイル全部が壊れず繋がった／急所23個に正しい値／
+>   イベントバス(GQ.on/emit)動作・session:complete購読が全IIFE跨ぎで発火／doSugorokuRoll動作／
+>   すごろく盤・ギルド・設定・ジャンル・妖精・図鑑・タイマー全OK／コンソールエラーゼロ
+
+---
+
+## 🎉 Phase D 完了（2026-07-15・D-1〜D-8 全8ファイルIIFE化・?v=guild-90 本番デプロイ済み）
+
+**弱点1（グローバル名前空間の共有）を根治。** 8ファイル653宣言が1空間に同居していた状態を解消し、
+各ファイルは公開シンボルだけを `window.*` に載せ、内部状態はプライベート化された。
+- **成果**: 「うっかり共有」「名前衝突」「読み込み順の罠（過去2回の起動フリーズ元）」が構造的に激減
+- **安全に完遂できた要因**: ①IIFE＋`window.X=X`再公開で呼び出し側を無改修に保ち1コミット=1ファイルで進めた
+  ②急所（他ファイルが読む可変状態）は「IIFE外で`let X;`宣言→IIFE内で代入」の分離パターンで共有維持
+  ③毎コミット強化レシピ(function/const/let/var全対象)で公開漏れを洗い、実機で起動フリーズを検証
+- **この過程で検出・修正した事故**: D-3でCodexの`const timeWrapper`公開漏れ→起動フリーズをクロが検出・修正
+- **やらなかったこと（意図的）**: 共有状態の名前空間全面移設（`GQ.state.data`化）は見送り（ESモジュール級＝§5-E）。
+  中枢状態は今も素のグローバルのまま。次に共有状態を整理したくなったらそこが次フェーズ（急がない）
 
 ---
 
