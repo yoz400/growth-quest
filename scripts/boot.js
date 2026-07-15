@@ -1,6 +1,14 @@
 // ═══════════════════════════════════════════════════════
 //  SUGOROKU — EVENT LISTENERS
 // ═══════════════════════════════════════════════════════
+// IIFE外に残す: 仕様§4の急所5。外部ファイルが読み、再代入や共有参照がある状態。
+let featUnlocks;
+let tlAnchor;
+let dayLog;
+let playerName;
+let guild;
+
+(function () {
 document.getElementById('board-btn').addEventListener('click', openBoardModal);
 function handleBoardClose() {
   // 双六を閉じたら、保留していた妖精（褒めログ）を出す
@@ -60,7 +68,7 @@ checkWeeklyReviewTrigger();
 // ═══════════════════════════════════════════════════════
 function loadUnlocks() { try { return new Set(JSON.parse(localStorage.getItem('gq_unlocks') || '[]')); } catch { return new Set(); } }
 function saveUnlocks() { localStorage.setItem('gq_unlocks', JSON.stringify([...featUnlocks])); }
-let featUnlocks = loadUnlocks();
+featUnlocks = loadUnlocks();
 
 const UNLOCK_DEFS = [
   { key:'guild',     emoji:'🏰', label:'冒険者ギルド',    hint:'はじめての集中を1回終えると解放', cond:() => (data.sessions||0) >= 1 },
@@ -226,12 +234,12 @@ const TIMELOG_CATS = [
   { id:'other',    name:'その他',    emoji:'⭐', color:'#9ca3af', type:'free' },
 ];
 const _tlCat = id => TIMELOG_CATS.find(c => c.id === id) || TIMELOG_CATS[TIMELOG_CATS.length-1];
-let tlAnchor = new Date();
+tlAnchor = new Date();
 let _tlEditIdx = null;   // 編集中のブロック（ソート済みindex）／null=新規追加
 
 function loadDayLog() { try { return JSON.parse(localStorage.getItem('gq_day_log') || '{}'); } catch { return {}; } }
 function saveDayLog() { localStorage.setItem('gq_day_log', JSON.stringify(dayLog)); }
-let dayLog = loadDayLog();
+dayLog = loadDayLog();
 
 // ポモドーロ等のセッション完了時に、学習ブロックをタイムログへ自動追加する
 function autoLogStudyBlock(mins) {
@@ -1486,7 +1494,7 @@ if (_showTutBtn) {
 // ── 冒険者名 ──
 function loadPlayerName() { return localStorage.getItem('gq_player_name') || ''; }
 function savePlayerName(n) { localStorage.setItem('gq_player_name', n || ''); }
-let playerName = loadPlayerName();
+playerName = loadPlayerName();
 
 // ── 使命データ（育てる build / 断つ quit）──
 function loadMission() {
@@ -1983,7 +1991,7 @@ function loadGuild() {
   } catch { return { fame:0, completions:{}, daily:{}, weekly:{}, once:{}, contrib:{} }; }
 }
 function saveGuild() { localStorage.setItem('gq_guild', JSON.stringify(guild)); }
-let guild = loadGuild();
+guild = loadGuild();
 let guildFilter = 'all';
 
 // ── ⛩️ 誓いの祠（目標コミット）──
@@ -2758,3 +2766,25 @@ function maybeShowLoginBonus() {
   };
 }
 maybeShowLoginBonus();
+
+window.handleBoardClose = handleBoardClose;
+window.UNLOCK_DEFS = UNLOCK_DEFS;
+window.evaluateUnlocks = evaluateUnlocks;
+window.renderOnboarding = renderOnboarding;
+window.TIMELOG_CATS = TIMELOG_CATS;
+window._tlCat = _tlCat;
+window._tlToMin = _tlToMin;
+window._tlDur = _tlDur;
+window._tlFmtH = _tlFmtH;
+window._tlPopulateDrums = _tlPopulateDrums;
+window._tlSetTime = _tlSetTime;
+window.renderTimelogPalette = renderTimelogPalette;
+window.openTimelogModal = openTimelogModal;
+window.renderTimelog = renderTimelog;
+window.applyRoutineToday = applyRoutineToday;
+window.renderRoutine = renderRoutine;
+window.initTimelogExtras = initTimelogExtras;
+window.renderEquipmentModal = renderEquipmentModal;
+window.showEquipmentGetModal = showEquipmentGetModal;
+window.guildPickRecommended = guildPickRecommended;
+})();
