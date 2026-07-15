@@ -1,3 +1,16 @@
+// IIFE外に残す: 仕様§4の急所10。外部ファイルが読み書きする状態。
+let skillNotes;
+let skillData;
+let pendingNewSkills;
+let skillTreeAnimated;
+let _confPending;
+let _confFlushTimer;
+let praiseLogs;
+let _pendingPraisePrompt;
+let _praiseSessionDate;
+let _praiseSessionGenre;
+
+(function () {
 // ═══════════════════════════════════════════════════════
 //  SKILL TREE — DATA
 // ═══════════════════════════════════════════════════════
@@ -21,7 +34,7 @@ function loadSkillNotes() {
   try { return JSON.parse(localStorage.getItem('gq_skill_notes') || '{}'); } catch { return {}; }
 }
 function saveSkillNotes() { localStorage.setItem('gq_skill_notes', JSON.stringify(skillNotes)); }
-let skillNotes = loadSkillNotes();
+skillNotes = loadSkillNotes();
 
 // 成長の実をならせる：ノードを解放し、メモを記録する
 function addSkillFruit(genreId, stageIdx, text) {
@@ -43,9 +56,9 @@ function loadSkillData() {
 }
 function saveSkillData() { localStorage.setItem('gq_skills', JSON.stringify(skillData)); }
 
-let skillData = loadSkillData();
-let pendingNewSkills = [];
-let skillTreeAnimated = false;
+skillData = loadSkillData();
+pendingNewSkills = [];
+skillTreeAnimated = false;
 
 // ═══════════════════════════════════════════════════════
 //  XP / LEVEL
@@ -162,8 +175,8 @@ const CONFIDENCE_MESSAGES = {
   item_cosmic:        '🔮 宇宙の意志が、あなたを後押しします',
 };
 
-let _confPending = { amount: 0, lastMsg: '', levelUp: 0 };
-let _confFlushTimer = null;
+_confPending = { amount: 0, lastMsg: '', levelUp: 0 };
+_confFlushTimer = null;
 
 // 自信ゲージを加算（reason は CONFIDENCE_MESSAGES のキー）
 function addConfidence(amount, reason) {
@@ -239,7 +252,7 @@ function loadPraiseLogs() {
 function savePraiseLogs() {
   localStorage.setItem('growthPraiseLogs', JSON.stringify(praiseLogs));
 }
-let praiseLogs = loadPraiseLogs();
+praiseLogs = loadPraiseLogs();
 
 // 1日1回だけの confidence 報酬を管理（褒めログ等の繰返し付与防止）
 // localStorage: gq_confidence_rewards = { "praise_log": "YYYY-MM-DD", ... }
@@ -266,9 +279,9 @@ function addDailyConfidenceOnce(key, amount, reason, dateKey = todayKey()) {
 }
 
 // 状態：セッション完了後に告→モーダルへ遷移させるためのフラグ
-let _pendingPraisePrompt = false;
-let _praiseSessionDate   = '';
-let _praiseSessionGenre  = '';
+_pendingPraisePrompt = false;
+_praiseSessionDate   = '';
+_praiseSessionGenre  = '';
 
 function openPraiseModal(dateKey) {
   _praiseSessionDate = dateKey || todayKey();
@@ -478,3 +491,20 @@ function getPraiseLogsForWeek(weekKey) {
   return out;
 }
 
+window.SKILL_THRESHOLDS = SKILL_THRESHOLDS;
+window.addSkillFruit = addSkillFruit;
+window.xpForLevel = xpForLevel;
+window.addXP = addXP;
+window.renderXP = renderXP;
+window.setHeaderMotivation = setHeaderMotivation;
+window.CONFIDENCE_MESSAGES = CONFIDENCE_MESSAGES;
+window.addConfidence = addConfidence;
+window.showConfidenceLevelUp = showConfidenceLevelUp;
+window.renderConfidence = renderConfidence;
+window.addDailyConfidenceOnce = addDailyConfidenceOnce;
+window.openPraiseModal = openPraiseModal;
+window.closePraiseModal = closePraiseModal;
+window.openFairyModal = openFairyModal;
+window.closeFairyModal = closeFairyModal;
+window.getPraiseLogsForWeek = getPraiseLogsForWeek;
+})();
