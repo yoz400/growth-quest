@@ -206,6 +206,30 @@ done
 > - **偽陽性の切り分け**: review-bodyが空に見えたが、①innerTextは非表示要素で空を返す性質②git checkoutで
 >   guild-85(未ラップ)と比較したところ同条件で同じく空＝**合成データ由来の元挙動でD-4起因ではない**と確定
 
+> ✅ **D-5（boot.js）レビュー完了（2026-07-15 クロ・?v=guild-87）**: **最難関ファイル**（全イベント配線＋
+> INIT＋段階解放、2790行・109関数）を精査＋実機で検証し合格。公開漏れゼロ・起動フリーズなし。
+> - **差分**: boot.js本体をIIFEで包み、cross-file参照される20シンボルを公開（handleBoardClose/
+>   evaluateUnlocks/renderOnboarding/タイムログ系11個/renderEquipmentModal/showEquipmentGetModal/
+>   guildPickRecommended＋const UNLOCK_DEFS/TIMELOG_CATS/_tlCat/_tlToMin/_tlDur/_tlFmtH）。
+>   D-3の教訓どおりconstも公開できている
+> - **急所5個の扱い（分離パターン・全て正しい）**: featUnlocks/tlAnchor/dayLog/playerName/guild を
+>   **IIFE外で `let X;`(未初期化)宣言 → IIFE内で `X = loadX()`(letなし代入)**。全5個でシャドウイング
+>   (IIFE内のlet/const再宣言)が無いことをRead精査で確認＝外側bindingが正しく共有される
+> - **強化版公開漏れチェック（function/const/let/var全シンボル）**: 検出ゼロ✅。未公開のboot.js const
+>   (GUILD_NPCS/SUMMON_*/VOW_PRAISES等)は他ファイル非参照＝非公開で正しい
+> - **実機（サイレント死を最重点）**: 末尾export(guildPickRecommended/showEquipmentGetModal)まで到達
+>   ＝**boot.js完走・フリーズなし**／急所5個に正しい値(featUnlocks=Set,guild=obj,tlAnchor=Date,dayLog=obj,
+>   playerName=string)／private化が本物(vows/vowFormOpen/openGuildはwindow非公開)／
+>   ギルド・すごろく・スキル・ジャンル・設定・妖精ガイド・レビュー・図鑑・タイマー全機能OK(ボタン＋直接)／
+>   コンソールエラーゼロ
+> - **偽陽性の切り分け**: `void vows`/`openGuild()`直接呼びが"not defined"になったが、これは
+>   **正しくprivate化された証拠**（boot.js内部専用シンボル）。ギルドボタン自体はOK＝boot内部配線が健全
+> - **診断メモ**: 分類器(Bash)一時障害中はRead精査で急所シャドウ確認を先行、復旧後に静的チェック＋実機。
+>   boot.jsは8番目ロードなので、公開漏れがあっても「他ファイルの実行時参照が失敗」型が主(otomon除く)で
+>   D-3のような即・白画面より発見が遅れやすい→実機の機能テストで担保した
+
+**Phase D 進捗: D-1〜D-5 完了（7/8ファイル中5つがIIFE化）。残り D-6 settings-genre / D-7 progression / D-8 core.js(任意)。**
+
 ---
 
 ## 5. 受け入れ基準（各コミット共通）
