@@ -687,15 +687,18 @@ function positionGuideTutorial() {
   spot.style.width = `${rect.width + pad * 2}px`;
   spot.style.height = `${rect.height + pad * 2}px`;
 
-  label.textContent = step.label;
-  label.style.left = `${guideClamp(rect.left + rect.width / 2, 72, window.innerWidth - 72)}px`;
-  label.style.top = `${guideClamp(rect.top - 16, 22, window.innerHeight - 24)}px`;
-
   const panelWidth = Math.min(360, window.innerWidth - 28);
   const panelHeight = panel.offsetHeight || 170;
   const belowTop = rect.bottom + 18;
-  const aboveTop = rect.top - panelHeight - 18;
-  const top = belowTop + panelHeight < window.innerHeight - 12 ? belowTop : Math.max(12, aboveTop);
+  const placedBelow = belowTop + panelHeight < window.innerHeight - 12;
+  const top = placedBelow ? belowTop : Math.max(12, rect.top - panelHeight - 18);
+
+  label.textContent = step.label;
+  label.style.left = `${guideClamp(rect.left + rect.width / 2, 72, window.innerWidth - 72)}px`;
+  // パネルがターゲットの上に来る場合、ラベルを枠の内側上端に置く
+  // （rect.top-16 だとパネル本文に食い込むため）
+  const labelTop = placedBelow ? rect.top - 16 : rect.top + 22;
+  label.style.top = `${guideClamp(labelTop, 22, window.innerHeight - 24)}px`;
   const left = guideClamp(rect.left + rect.width / 2 - panelWidth / 2, 12, window.innerWidth - panelWidth - 12);
   panel.style.left = `${left}px`;
   panel.style.top = `${top}px`;

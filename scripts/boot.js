@@ -171,9 +171,10 @@ function renderOnboarding() {
   ];
   const allDone = steps.every(s => s.done);
   card.style.display = '';
-  // 未完了は空の“待機丸”（CSSのborderで描画）、完了は緑✓。押す用ではなく進捗の目印
-  document.getElementById('onboard-steps').innerHTML = steps.map(s =>
-    `<div class="onboard-step ${s.done?'done':''}"><span class="onboard-check">${s.done?'✓':''}</span>${s.label}</div>`
+  // 未完了は“手順番号”（1→2→3）、完了は緑✓。クエストの空○と見た目を分けて
+  // 「押すものではなく、やると自動で進むガイド」だと形で伝える
+  document.getElementById('onboard-steps').innerHTML = steps.map((s, i) =>
+    `<div class="onboard-step ${s.done?'done':''}"><span class="onboard-check">${s.done?'✓':(i+1)}</span>${s.label}</div>`
   ).join('');
 
   // 初回はSTARTボタンを“ぽわん”と光らせる（最初のセッション前だけ）

@@ -38,7 +38,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles/app.css?v=guild-97">
+<link rel="stylesheet" href="styles/app.css?v=guild-98">
 </head>
 <body>
 
@@ -105,7 +105,7 @@
   </div>
 
   <!-- はじめの一歩（新規ユーザー向けガイド・完了で自動的に消える） -->
-  <div class="glass" id="onboard-card" data-guide="start-timer" style="display:none">
+  <div class="glass" id="onboard-card" style="display:none">
     <div class="onboard-head">
       <span class="onboard-fairy">🧚</span>
       <div>
@@ -114,7 +114,7 @@
       </div>
     </div>
     <div class="onboard-steps" id="onboard-steps"></div>
-    <div class="onboard-hint" id="onboard-hint">✓ は、やると自動で付くよ。ここは押さなくて大丈夫。まずは下の光ってる START を押してね。</div>
+    <div class="onboard-hint" id="onboard-hint">1→2→3 の順にやると、自動で ✓ に変わるよ。まずは下の光ってる START を押してね。</div>
   </div>
 
   <!-- DAILY QUEST（基本クエスト＋選択肢クエストを1枚に統合） -->
@@ -161,7 +161,7 @@
     </div>
     <!-- ③ スタート / リセット（アニメ下） -->
     <div class="timer-btns">
-      <button id="start-btn">START</button>
+      <button id="start-btn" data-guide="start-timer">START</button>
       <button id="stop-btn" style="display:none">■ リセット</button>
     </div>
     <button id="pip-btn" title="小窓で表示 (PiP)" style="display:none">⧉ PiP</button>
@@ -959,14 +959,14 @@
   </div>
 </div>
 
-<script src="scripts/core.js?v=guild-97"></script>
-<script src="scripts/progression.js?v=guild-97"></script>
-<script src="scripts/quests.js?v=guild-97"></script>
-<script src="scripts/timer.js?v=guild-97"></script>
-<script src="scripts/settings-genre.js?v=guild-97"></script>
-<script src="scripts/calendar-review.js?v=guild-97"></script>
-<script src="scripts/features.js?v=guild-97"></script>
-<script src="scripts/boot.js?v=guild-97"></script>
+<script src="scripts/core.js?v=guild-98"></script>
+<script src="scripts/progression.js?v=guild-98"></script>
+<script src="scripts/quests.js?v=guild-98"></script>
+<script src="scripts/timer.js?v=guild-98"></script>
+<script src="scripts/settings-genre.js?v=guild-98"></script>
+<script src="scripts/calendar-review.js?v=guild-98"></script>
+<script src="scripts/features.js?v=guild-98"></script>
+<script src="scripts/boot.js?v=guild-98"></script>
 <script src="scripts/otomon.js?v=otomon-45"></script>
 
 <script>
