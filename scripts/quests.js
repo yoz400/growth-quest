@@ -436,9 +436,13 @@ function updateStreak(today) {
   const todayMs = new Date(today).getTime();
   const diffDays = Math.round((todayMs - lastMs) / msPerDay);
   const prevStreak = data.streak || 0;   // ← 切れ検知のため事前値を保存
+  const missedDates = getDatesBetween(last, today);
 
   if (diffDays === 1) {
     // 連続継続
+    data.streak = (data.streak || 0) + 1;
+  } else if (missedDates.length && missedDates.every(d => isShieldProtected(d, today))) {
+    // 守りの盾：今週内で保護済みの未達成日は、連続切れとして扱わない
     data.streak = (data.streak || 0) + 1;
   } else if (diffDays === 2 && data.freezeItems > 0) {
     // 1日空き → フリーズ消費（既存の優先処理）
@@ -463,6 +467,29 @@ function updateStreak(today) {
   // 連続が「切れた瞬間」を記録（次回のセッションで復帰ボーナス用）
   if (prevStreak > 0 && data.streak === 0) {
     data.streakWasBroken = true;
+  }
+}
+
+function getDatesBetween(startDateKey, endDateKey) {
+  const out = [];
+  const d = new Date(startDateKey + 'T00:00:00');
+  const end = new Date(endDateKey + 'T00:00:00');
+  d.setDate(d.getDate() + 1);
+  while (d < end) {
+    out.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`);
+    d.setDate(d.getDate() + 1);
+  }
+  return out;
+}
+
+function isShieldProtected(dateStr, todayStr = todayKey()) {
+  try {
+    const shield = JSON.parse(localStorage.getItem('gq_streak_shield_protected') || 'null');
+    if (!shield || !Array.isArray(shield.protectedDates)) return false;
+    if (todayStr < shield.weekStart || todayStr > shield.weekEnd) return false;
+    return shield.protectedDates.includes(dateStr);
+  } catch {
+    return false;
   }
 }
 

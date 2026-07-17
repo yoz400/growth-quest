@@ -110,7 +110,7 @@
 | クエスト/使命 | gq_daily_quests, gq_mission, gq_mission_reset, gq_nudge_course, gq_nudge_done, gq_vows |
 | ジャンル/スキル | gq_genres, gq_skills, gq_skill_notes |
 | 褒め/妖精/名言 | growthPraiseLogs（⚠️唯一の命名違反・既存データのため改名不可）, gq_words, gq_words_favs, gq_words_hist |
-| すごろく/装備 | gq_sugoroku, gq_inventory, gq_equipped, gq_item_buffs, gq_active_buffs, gq_item_dex, gq_item_memories |
+| すごろく/装備 | gq_sugoroku, gq_inventory, gq_equipped, gq_item_buffs, gq_active_buffs, gq_item_dex, gq_item_memories, gq_streak_shield_protected |
 | オトモン | gq_otomon, gq_eggs, gq_wake_items, gq_hatch_quest |
 | ギルド | gq_guild |
 | 手帳/タイムログ | gq_planner, gq_planner_fired, gq_day_log, gq_day_templates, gq_tl_punch, gq_tl_routine, gq_tl_routine_days |

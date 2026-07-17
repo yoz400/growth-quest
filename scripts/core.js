@@ -289,6 +289,38 @@ function todayKey() {
   return today;
 }
 
+/**
+ * 指定日が属する週（月〜日）の日付配列を返す。
+ * @param {Date} date
+ * @returns {string[]} ["YYYY-MM-DD", ...] 月曜〜日曜の7日分
+ */
+function getShieldWeekDates(date = new Date()) {
+  const day = date.getDay(); // 0=日, 1=月, ...
+  const monday = new Date(date);
+  monday.setDate(date.getDate() - ((day === 0 ? 7 : day) - 1));
+  monday.setHours(0, 0, 0, 0);
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  });
+}
+
+function getCompletedStudyDates() {
+  return Object.keys(data.history || {}).filter(date => (data.history[date] || 0) > 0);
+}
+
+/**
+ * 指定した週の日付リストのうち、学習セッションがなかった日を返す。
+ * @param {string[]} weekDates - ["YYYY-MM-DD", ...]
+ * @returns {string[]} 未達成日のリスト
+ */
+function getMissedDaysInWeek(weekDates) {
+  const completedDates = getCompletedStudyDates();
+  const today = todayKey();
+  return weekDates.filter(date => date <= today && !completedDates.includes(date));
+}
+
 data = loadData();
 settings = loadSettings();
 genres = loadGenres();
@@ -1592,7 +1624,7 @@ const ITEM_NEXT_HINTS = {
   torch:        ['🔦 探索の灯',     '通り道のアイテムを全部拾える'],
   crown:        ['👑 覇者の宣言',   '24時間クエスト達成XPが 2倍'],
   hourglass:    ['⏳ 時の砂',       '次のサイコロを3回振って最大'],
-  shield:       ['🛡 鉄壁の守護',   '🧊フリーズが1つ増え連続記録を守る'],
+  shield:       ['🛡 週間保護',     '今週さぼった日をまとめて守ってくれる盾'],
   lantern:      ['🏮 導きの灯',     '次のサイコロを2回振り良い方を採用'],
   // ── レア ──
   legend_gem:   ['🌟 天運の輝き',   '+50 XP & 次のサイコロ +3'],
@@ -1631,12 +1663,20 @@ const ITEM_EFFECTS = {
     apply() { addConfidence(15, 'item_study_book'); return null; },   // 自信トーストに任せる
   },
   shield: {
-    confirm: '🧊フリーズを1つ補充（連続記録の保険）',
+    confirm: '今週の未達成日をすべて保護する',
     apply() {
-      data.freezeItems = Math.min(3, (data.freezeItems || 0) + 1);
-      saveData(data);
-      if (typeof renderStreak === 'function') renderStreak();
-      return '🛡 フリーズ +1（連続記録を1日守れる）';
+      const weekDates = getShieldWeekDates();
+      const missedDays = getMissedDaysInWeek(weekDates);
+      const today = todayKey();
+      localStorage.setItem('gq_streak_shield_protected', JSON.stringify({
+        usedAt: today,
+        weekStart: weekDates[0],
+        weekEnd: weekDates[6],
+        protectedDates: missedDays,
+      }));
+      return missedDays.length > 0
+        ? `🛡 今週の未達成日 ${missedDays.length}日を保護しました！`
+        : '🛡 今週はすでにすべて達成済みです！';
     },
   },
   // ── レア（強力な複合効果）──
