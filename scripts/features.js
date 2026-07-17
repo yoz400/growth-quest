@@ -897,12 +897,14 @@ function openSkillModal() {
 //  AVATAR EVOLUTION SYSTEM
 // ═══════════════════════════════════════════════════════
 
+// 称号は「物語の旅」路線（2026-07-16 ヨージ決定・案C）。
+// レベルから毎回計算するだけで保存しないので、改名しても既存データに影響なし
 const AVATAR_STAGES = [
-  { title:'見習い',  minLv:1,  maxLv:4,  c1:'#9898aa', c2:'#666677' },
-  { title:'学徒',    minLv:5,  maxLv:9,  c1:'#67e8f9', c2:'#06b6d4' },
-  { title:'修行者',  minLv:10, maxLv:19, c1:'#06b6d4', c2:'#0891b2' },
-  { title:'賢者',    minLv:20, maxLv:49, c1:'#e63946', c2:'#c1121f' },
-  { title:'大賢者',  minLv:50, maxLv:Infinity, c1:'#fbbf24', c2:'#d97706' },
+  { title:'旅立ちの人',    minLv:1,  maxLv:4,  c1:'#9898aa', c2:'#666677' },
+  { title:'道をゆく者',    minLv:5,  maxLv:9,  c1:'#67e8f9', c2:'#06b6d4' },
+  { title:'探求者',        minLv:10, maxLv:19, c1:'#06b6d4', c2:'#0891b2' },
+  { title:'開拓者',        minLv:20, maxLv:49, c1:'#e63946', c2:'#c1121f' },
+  { title:'星をつかむ者',  minLv:50, maxLv:Infinity, c1:'#fbbf24', c2:'#d97706' },
 ];
 
 function getAvatarStageIndex(level) {
@@ -919,26 +921,27 @@ function buildEvolutionBadgeSVG(stageIdx, w, h) {
   const idx = Math.min(stageIdx, AVATAR_STAGES.length - 1);
   const stage = AVATAR_STAGES[idx];
   const uid = 'evb' + (++_avId);
+  // 旅路線のバッジ: 旅立ち=夜明け / 道=つづく道 / 探求=羅針盤 / 開拓=旗 / 星をつかむ=星と手
   const badges = [
     {
-      glyph: '見',
-      path: '<rect x="23" y="18" width="19" height="24" rx="3" fill="#d8d8e6"/><rect x="26" y="21" width="10" height="2" fill="#9898aa"/><rect x="26" y="26" width="12" height="2" fill="#9898aa"/><rect x="26" y="31" width="8" height="2" fill="#9898aa"/>'
+      glyph: '旅',
+      path: '<path d="M20 46h34" stroke="#9898aa" stroke-width="2.5" stroke-linecap="round"/><path d="M26 46a11 11 0 0 1 22 0Z" fill="#d8d8e6"/><path d="M37 24v5M24 29l3.5 3.5M50 29l-3.5 3.5" stroke="#d8d8e6" stroke-width="2.5" stroke-linecap="round"/>'
     },
     {
-      glyph: '学',
-      path: '<path d="M42 15 25 38" stroke="#e8fbff" stroke-width="4" stroke-linecap="round"/><path d="M41 15c8 2 13 7 15 14-7 0-12-2-15-7-2 6-6 10-12 13 0-8 4-15 12-20Z" fill="#baf7ff"/><circle cx="25" cy="38" r="3" fill="#fbbf24"/>'
+      glyph: '道',
+      path: '<path d="M24 50c14-6-2-13 8-20 6-4 12-6 17-11" stroke="#baf7ff" stroke-width="6.5" fill="none" stroke-linecap="round"/><path d="M24 50c14-6-2-13 8-20 6-4 12-6 17-11" stroke="#0891b2" stroke-width="1.6" fill="none" stroke-dasharray="4 4" stroke-linecap="round"/>'
     },
     {
-      glyph: '修',
-      path: '<path d="M19 20h13l6 4h12v24H37l-6-4H19V20Z" fill="#dff7fb"/><path d="M32 20v24M38 24v24" stroke="#0891b2" stroke-width="2"/><path d="M24 28h5M42 32h5M23 37h6M42 41h4" stroke="#06b6d4" stroke-width="2" stroke-linecap="round"/>'
+      glyph: '探',
+      path: '<circle cx="37" cy="34" r="15" fill="#dff7fb"/><circle cx="37" cy="34" r="15" fill="none" stroke="#0891b2" stroke-width="2.5"/><path d="M37 21v3M37 44v3M24 34h3M47 34h3" stroke="#0891b2" stroke-width="2" stroke-linecap="round"/><path d="M45 26 39.5 36.5 29 42l5.5-10.5Z" fill="#06b6d4"/><circle cx="37" cy="34" r="2.2" fill="#12121f"/>'
     },
     {
-      glyph: '賢',
-      path: '<path d="m37 13 5 14 15 1-12 9 4 15-12-8-12 8 4-15-12-9 15-1 5-14Z" fill="#ffd6db"/><path d="m37 20 3 8 9 1-7 5 2 9-7-5-7 5 2-9-7-5 9-1 3-8Z" fill="#e63946"/>'
+      glyph: '拓',
+      path: '<path d="M20 49c5-5 11-5 16-2 5 3 11 3 18 1v4H20Z" fill="#ffd6db" opacity=".75"/><path d="M31 17v32" stroke="#ffd6db" stroke-width="3" stroke-linecap="round"/><path d="M33 19h17l-5 6.5 5 6.5H33Z" fill="#e63946"/>'
     },
     {
-      glyph: '極',
-      path: '<path d="M18 44h38l-3-22-9 10-7-16-7 16-9-10-3 22Z" fill="#ffe08a"/><rect x="20" y="44" width="34" height="6" rx="2" fill="#d97706"/><circle cx="21" cy="22" r="4" fill="#fff2bd"/><circle cx="37" cy="15" r="4" fill="#fff2bd"/><circle cx="53" cy="22" r="4" fill="#fff2bd"/>'
+      glyph: '星',
+      path: '<path d="m37 13 4.6 10.2 11.2 1.1-8.6 7.2 2.8 11.2L37 37l-10 5.7 2.8-11.2-8.6-7.2 11.2-1.1Z" fill="#ffe08a"/><path d="M30 57v-7c0-2.4 1.8-3.6 3.4-3.6h7.2c1.6 0 3.4 1.2 3.4 3.6v7" fill="#fff2bd" stroke="#d97706" stroke-width="2"/><path d="M34.5 46.5v3.5M38 46.5v3.5M41.5 46.5v3.5" stroke="#d97706" stroke-width="1.4" stroke-linecap="round"/><circle cx="19" cy="19" r="2" fill="#fff2bd"/><circle cx="55" cy="16" r="1.8" fill="#fff2bd"/>'
     }
   ];
   const badge = badges[idx];
@@ -1177,7 +1180,7 @@ function buildAvatarSVG(stageIdx, w, h) {
   const uid = 'av' + (++_avId);
   const parts = [];
 
-  // 大賢者: 虹オーラリング
+  // 星をつかむ者: 虹オーラリング
   if (stageIdx === 4) {
     parts.push(`<defs>
       <linearGradient id="${uid}rg" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -1191,13 +1194,13 @@ function buildAvatarSVG(stageIdx, w, h) {
     <circle cx="40" cy="48" r="37" fill="none" stroke="url(#${uid}rg)" stroke-width="1.5" opacity="0.3"/>`);
   }
 
-  // 賢者+: 帽子
+  // 開拓者+: 帽子
   if (stageIdx >= 3) {
     parts.push(`<polygon points="40,3 22,22 58,22" fill="${c1}" opacity="0.9"/>
     <rect x="20" y="20" width="40" height="5" rx="2.5" fill="${c2}"/>`);
   }
 
-  // 賢者+: 杖
+  // 開拓者+: 杖
   if (stageIdx >= 3) {
     parts.push(`<line x1="12" y1="98" x2="12" y2="14" stroke="#d97706" stroke-width="3.5" stroke-linecap="round"/>
     <circle cx="12" cy="11" r="7" fill="#fbbf24"/>
@@ -1210,7 +1213,7 @@ function buildAvatarSVG(stageIdx, w, h) {
   <circle cx="44.5" cy="20.5" r="2" fill="${c2}"/>
   <path d="M36,27 Q40,31 44,27" stroke="${c2}" stroke-width="1.5" fill="none" stroke-linecap="round"/>`);
 
-  // 体（修行者以上: ローブ。それ未満: シンプル）
+  // 体（探求者以上: ローブ。それ未満: シンプル）
   if (stageIdx >= 2) {
     parts.push(`<path d="M27,38 Q22,62 20,88 L60,88 Q58,62 53,38 Z" fill="${c1}"/>
     <line x1="40" y1="40" x2="38" y2="88" stroke="${c2}" stroke-width="1.5"/>
@@ -1224,27 +1227,26 @@ function buildAvatarSVG(stageIdx, w, h) {
     <rect x="41" y="65" width="10" height="16" rx="5" fill="${c2}"/>`);
   }
 
-  // 学徒/修行者: 本
+  // 道をゆく者/探求者: 巻いた地図
   if (stageIdx >= 1 && stageIdx < 3) {
-    parts.push(`<rect x="54" y="33" width="14" height="18" rx="2" fill="#fde68a"/>
-    <rect x="54" y="33" width="3.5" height="18" rx="1.5" fill="#d97706"/>`);
+    parts.push(`<rect x="53" y="36" width="16" height="9" rx="4.5" fill="#fde68a"/>
+    <rect x="53" y="36" width="4" height="9" rx="2" fill="#d97706"/>
+    <rect x="65" y="36" width="4" height="9" rx="2" fill="#d97706"/>`);
   }
 
-  // 修行者: ペン
+  // 探求者: 歩き杖
   if (stageIdx === 2) {
-    parts.push(`<rect x="16" y="27" width="3" height="22" rx="1.5" fill="#e8e8f0"/>
-    <polygon points="17.5,49 15,56 20,56" fill="${c1}"/>`);
+    parts.push(`<rect x="16" y="28" width="3" height="26" rx="1.5" fill="#d9b38c"/>
+    <circle cx="17.5" cy="27" r="3" fill="#8a5c30"/>`);
   }
 
-  // 賢者+: 本の山
+  // 開拓者+: 開拓の旗
   if (stageIdx >= 3) {
-    parts.push(`<rect x="54" y="34" width="14" height="17" rx="2" fill="#fde68a"/>
-    <rect x="54" y="34" width="3.5" height="17" rx="1.5" fill="#d97706"/>
-    <rect x="55" y="51" width="13" height="14" rx="2" fill="#a5f3fc"/>
-    <rect x="55" y="51" width="3.5" height="14" rx="1.5" fill="#0891b2"/>`);
+    parts.push(`<rect x="57" y="30" width="2.5" height="26" rx="1.2" fill="#e8e8f0"/>
+    <polygon points="59.5,31 70,34.5 59.5,38" fill="${c1}"/>`);
   }
 
-  // 大賢者: キラキラ
+  // 星をつかむ者: キラキラ（星の輝き）
   if (stageIdx === 4) {
     parts.push(`<text x="2"  y="14" font-size="9" fill="#fbbf24" opacity="0.9">✦</text>
     <text x="67" y="20" font-size="8" fill="#f97316" opacity="0.8">✦</text>
@@ -1438,7 +1440,7 @@ function renderAvatarModal() {
     <div class="av-next-hint">${
       next
         ? `🌟 次の進化「${next.title}」まであと <strong>${fmtMinsHint(minsToNext)}</strong>の学習`
-        : '✨ 最高段階「大賢者」に到達！'
+        : `✨ 最高段階「${AVATAR_STAGES[AVATAR_STAGES.length - 1].title}」に到達！`
     }</div>
     <div class="av-stat-row">
       <div class="av-stat-item">
