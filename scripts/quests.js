@@ -441,7 +441,7 @@ function updateStreak(today) {
   if (diffDays === 1) {
     // 連続継続
     data.streak = (data.streak || 0) + 1;
-  } else if (missedDates.length && missedDates.every(d => isShieldProtected(d, today))) {
+  } else if (missedDates.length && missedDates.every(d => isShieldProtected(d))) {
     // 守りの盾：今週内で保護済みの未達成日は、連続切れとして扱わない
     data.streak = (data.streak || 0) + 1;
   } else if (diffDays === 2 && data.freezeItems > 0) {
@@ -482,11 +482,14 @@ function getDatesBetween(startDateKey, endDateKey) {
   return out;
 }
 
-function isShieldProtected(dateStr, todayStr = todayKey()) {
+// その日が守りの盾で保護されているか。
+// 判定は保護リストに入っているかだけで行う（学習を再開した日付は見ない）。
+// リストにはその週の休んだ日しか入らないので、再開が翌週以降になっても
+// 守った分はちゃんと効き、保護していない日を挟めば自然に連続は切れる。
+function isShieldProtected(dateStr) {
   try {
     const shield = JSON.parse(localStorage.getItem('gq_streak_shield_protected') || 'null');
     if (!shield || !Array.isArray(shield.protectedDates)) return false;
-    if (todayStr < shield.weekStart || todayStr > shield.weekEnd) return false;
     return shield.protectedDates.includes(dateStr);
   } catch {
     return false;
