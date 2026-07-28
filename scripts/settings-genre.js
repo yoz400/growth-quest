@@ -96,11 +96,22 @@ document.getElementById('set-avatar-type')?.addEventListener('change', e => {
 });
 
 // ── データのエクスポート / インポート（バックアップ） ──────
+// gq_ 接頭辞を持たない例外キーの一覧。
+// バックアップは「gq_ で始まるキー」を自動で拾う作りなので、
+// 命名規則から外れたキーはここに書かないと永久に取りこぼす。
+// （growthPraiseLogs は既存データのため改名できない。
+//   architecture_review.md §6 の台帳でも「唯一の命名違反」と記録済み）
+const LEGACY_BACKUP_KEYS = ['growthPraiseLogs'];
+
+function isBackupKey(k) {
+  return !!k && (k.startsWith('gq_') || LEGACY_BACKUP_KEYS.includes(k));
+}
+
 function exportAllData() {
   const out = { _app: 'GrowthQuest', _version: 1, _exportedAt: new Date().toISOString(), data: {} };
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i);
-    if (k && k.startsWith('gq_')) out.data[k] = localStorage.getItem(k);
+    if (isBackupKey(k)) out.data[k] = localStorage.getItem(k);
   }
   const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -120,10 +131,30 @@ function importAllData(file) {
     if (!parsed || parsed._app !== 'GrowthQuest' || !parsed.data) {
       alert('Growth Quest のバックアップファイルではないようです。'); return;
     }
-    const keys = Object.keys(parsed.data).filter(k => k.startsWith('gq_'));
+    const keys = Object.keys(parsed.data).filter(isBackupKey);
     if (!keys.length) { alert('復元できるデータが見つかりませんでした。'); return; }
     if (!confirm(`バックアップ（${(parsed._exportedAt||'').slice(0,10)}）から復元します。\n今の記録は上書きされます。よろしいですか？`)) return;
-    keys.forEach(k => localStorage.setItem(k, parsed.data[k]));
+
+    // 復元は「全部成功」か「1つも変えない」かのどちらかにする。
+    // 途中で失敗（容量オーバー等）すると新旧のデータが混ざった状態になり、
+    // バックアップから戻したはずが元より壊れる、という最悪の事故になるため、
+    // 書き込む前に今の値を控えておき、失敗したら全部元に戻す。
+    const backup = keys.map(k => [k, localStorage.getItem(k)]);
+    const written = [];
+    try {
+      keys.forEach(k => { localStorage.setItem(k, parsed.data[k]); written.push(k); });
+    } catch (err) {
+      // 書き込んだぶんを巻き戻す（元が無かったキーは削除して元通りにする）
+      written.forEach(k => {
+        const prev = backup.find(b => b[0] === k)[1];
+        if (prev === null) localStorage.removeItem(k); else localStorage.setItem(k, prev);
+      });
+      const full = err && err.name === 'QuotaExceededError';
+      alert(full
+        ? '復元できませんでした（ブラウザの保存容量がいっぱいです）。\n今の記録はそのまま残してあります。'
+        : `復元できませんでした（${err && err.name ? err.name : 'エラー'}）。\n今の記録はそのまま残してあります。`);
+      return;
+    }
     alert('復元しました。ページを再読み込みします。');
     location.reload();
   };

@@ -2,14 +2,24 @@
 //  Growth Quest — Service Worker
 //  バージョンを上げると古いキャッシュが自動削除されます
 // ═══════════════════════════════════════════════════════
-const CACHE_NAME = 'gq-cache-v12';
+const CACHE_NAME = 'gq-cache-v13';
 
 // インストール時に事前キャッシュするファイル一覧
 const PRECACHE_URLS = [
   './',
   './index.html',
   './styles/app.css',
-  './scripts/app.js',
+  // scripts/ は9本に分割済み（旧 scripts/app.js は存在しない）。
+  // index.html の <script> と同じ並び・同じ依存順で列挙する。
+  './scripts/core.js',
+  './scripts/progression.js',
+  './scripts/quests.js',
+  './scripts/timer.js',
+  './scripts/settings-genre.js',
+  './scripts/calendar-review.js',
+  './scripts/features.js',
+  './scripts/boot.js',
+  './scripts/otomon.js',
   './manifest.json',
   // アイコン類
   './assets/icons/favicon.ico',
@@ -58,8 +68,17 @@ const PRECACHE_URLS = [
 
 // ── install: 事前キャッシュ ──────────────────────────
 self.addEventListener('install', event => {
+  // ※ cache.addAll() は「1件でも404なら全部失敗」という仕様。
+  //   以前これで存在しないファイル1件のせいでSWが永久に起動できなかった。
+  //   1件ずつ入れて、失敗したものは警告を出して飛ばす（残りは正しくキャッシュされる）。
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(PRECACHE_URLS))
+    caches.open(CACHE_NAME).then(cache =>
+      Promise.all(PRECACHE_URLS.map(url =>
+        cache.add(url).catch(err => {
+          console.warn('[GQ SW] キャッシュできませんでした:', url, err);
+        })
+      ))
+    )
   );
   // 古いSWが残っていてもすぐに有効化する
   self.skipWaiting();

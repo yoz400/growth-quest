@@ -14,3 +14,14 @@ else
 fi
 n=$(grep -c "v=guild-$next" "$f")
 echo "guild-$cur → guild-$next（${n}か所を更新）"
+
+# 見張り: guild系以外の ?v= が混ざっていたら警告する。
+# （かつて otomon.js だけ ?v=otomon-N という別系列で、このスクリプトの
+#   対象外のまま置き去りになっていた。同じ事故を二度起こさないため）
+stray=$(grep -o '?v=[a-z]*-[0-9]*' "$f" | grep -v "^?v=guild-" | sort -u || true)
+if [ -n "$stray" ]; then
+  echo ""
+  echo "⚠️  guild系ではない ?v= が残っています（このスクリプトでは上がりません）:"
+  echo "$stray" | sed 's/^/    /'
+  echo "    → guild-$next に揃えてください"
+fi

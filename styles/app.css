@@ -13,6 +13,7 @@
   --glass: rgba(255,255,255,0.04);
   --glass-border: rgba(255,255,255,0.08);
   --text: #e8e8f0;
+  --text-soft: #b9b9cc;   /* --text と --text-dim の中間。説明文・補足の色 */
   --text-dim: #8a8aa0;
   --radius: 20px;
 }
@@ -2259,19 +2260,13 @@ header {
   transform: scale(.95) translateY(20px);
   transition: transform .35s cubic-bezier(.175,.885,.32,1.275);
 }
-#genre-overlay.open  .gq-panel,
-#settings-overlay.open .gq-panel,
-#badges-overlay.open .gq-panel,
-#words-overlay.open  .gq-panel,
-#avatar-overlay.open .gq-panel,
-#review-overlay.open .gq-panel,
-#guild-overlay.open  .gq-panel,
-#skill-overlay.open  .gq-panel,
-#board-overlay.open  .gq-panel,
-#equipment-overlay.open .gq-panel,
-#equipment-get-overlay.open .gq-panel,
-#tutorial-overlay.open .gq-panel,
-#praise-overlay.open .gq-panel {
+/* オーバーレイが開いたらパネルを定位置に戻す。
+   ※以前はIDを1つずつ列挙していたため、列挙し忘れた
+     #fairy-overlay（セッション後の妖精）と #otomon-overlay（図鑑）が
+     開いている間ずっと5%縮小＋20pxズレたままになっていた。
+     全オーバーレイのIDは "-overlay" で終わる規約なので、
+     ここで一括指定して列挙漏れが起きない形にする。 */
+[id$="-overlay"].open .gq-panel {
   transform: none;
 }
 

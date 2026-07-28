@@ -38,7 +38,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles/app.css?v=guild-106">
+<link rel="stylesheet" href="styles/app.css?v=guild-107">
 </head>
 <body>
 
@@ -580,6 +580,13 @@
     <div id="avatar-display-large"></div>
     <div id="avatar-type-selector"></div>
     <div id="avatar-stage-info"></div>
+    <!-- ⚠️ ここにボタンを足す前に読むこと（過去に2回、復活させかけた）
+         ・🎒装備 … 81358c9 で意図的に引退。装備画像が未完成でアバターに
+           重ねると絵が崩れたため。入手経路も de40443 でオトモンに置換済み。
+         ・💬響く言葉 … 一覧が未出会いの言葉までネタバレする作り
+           （renderWordsList が QUOTES を丸ごと表示）だったので削除。
+           直すなら gq_words_hist で「出会った言葉だけ」に絞るのが先。
+         どちらも「繋ぎ忘れ」ではなく、ヨージの判断による撤去。 -->
     <div id="avatar-actions">
       <button class="av-action-btn" id="avatar-open-badges">🏅 バッジを見る</button>
     </div>
@@ -959,15 +966,15 @@
   </div>
 </div>
 
-<script src="scripts/core.js?v=guild-106"></script>
-<script src="scripts/progression.js?v=guild-106"></script>
-<script src="scripts/quests.js?v=guild-106"></script>
-<script src="scripts/timer.js?v=guild-106"></script>
-<script src="scripts/settings-genre.js?v=guild-106"></script>
-<script src="scripts/calendar-review.js?v=guild-106"></script>
-<script src="scripts/features.js?v=guild-106"></script>
-<script src="scripts/boot.js?v=guild-106"></script>
-<script src="scripts/otomon.js?v=otomon-45"></script>
+<script src="scripts/core.js?v=guild-107"></script>
+<script src="scripts/progression.js?v=guild-107"></script>
+<script src="scripts/quests.js?v=guild-107"></script>
+<script src="scripts/timer.js?v=guild-107"></script>
+<script src="scripts/settings-genre.js?v=guild-107"></script>
+<script src="scripts/calendar-review.js?v=guild-107"></script>
+<script src="scripts/features.js?v=guild-107"></script>
+<script src="scripts/boot.js?v=guild-107"></script>
+<script src="scripts/otomon.js?v=guild-107"></script>
 
 <script>
 // ── Service Worker 登録 ────────────────────────────────
