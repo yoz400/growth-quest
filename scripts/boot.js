@@ -1234,10 +1234,13 @@ document.getElementById('equipment-get-overlay').addEventListener('click', e => 
   if (!app) return;
   let dragEl = null;
 
-  // 並べ替え対象ウィジェットの既知IDリスト（HTMLのデフォルト順）
+  // 並べ替え対象ウィジェットの既知IDリスト（index.html のデフォルト順と必ず一致させる）
+  // ※ここが実際のHTMLとズレると、後から追加したカードの挿入位置が狂う。
+  //   以前 'xp-panel' と 'mode-panel' が残っていたが、この2つは既にHTMLから
+  //   消えている（ヘッダーXP・タイマーカードへ統合済み）ので削除した。
   const KNOWN_IDS = [
-    'xp-panel', 'daily-quest-card', 'mission-card', 'genre-card', 'mode-panel',
-    'timer-card', 'stats-strip', 'punch-card', 'calendar-panel'
+    'genre-card', 'timer-card', 'daily-quest-card', 'mission-card',
+    'stats-strip', 'punch-card', 'calendar-panel'
   ];
   const STORAGE_KEY = 'gq_widget_order';
 

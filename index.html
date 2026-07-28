@@ -38,7 +38,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles/app.css?v=guild-107">
+<link rel="stylesheet" href="styles/app.css?v=guild-109">
 </head>
 <body>
 
@@ -104,42 +104,9 @@
     <div id="login-bonus-card"></div>
   </div>
 
-  <!-- はじめの一歩（新規ユーザー向けガイド・完了で自動的に消える） -->
-  <div class="glass" id="onboard-card" style="display:none">
-    <div class="onboard-head">
-      <span class="onboard-fairy">🧚</span>
-      <div>
-        <div class="onboard-title">はじめの一歩</div>
-        <div class="onboard-sub" id="onboard-sub">むずかしいことは無し。まず5分だけ。</div>
-      </div>
-    </div>
-    <div class="onboard-steps" id="onboard-steps"></div>
-    <div class="onboard-hint" id="onboard-hint">1→2→3 の順にやると、自動で ✓ に変わるよ。まずは下の光ってる START を押してね。</div>
-  </div>
-
-  <!-- DAILY QUEST（基本クエスト＋選択肢クエストを1枚に統合） -->
-  <div class="glass widget" id="daily-quest-card" data-guide="daily-quests">
-    <div class="widget-grip" title="ドラッグして並べ替え" aria-hidden="true">⠿</div>
-    <div class="quest-header">📜 今日のクエスト</div>
-    <div class="quest-list" id="quest-list"></div>
-    <div id="nudge-body"></div>
-  </div>
-
-  <!-- ⚔ あなたの使命（召喚で決めた目標・育てる/断つ） -->
-  <div class="glass widget" id="mission-card" style="display:none">
-    <div class="widget-grip" title="ドラッグして並べ替え" aria-hidden="true">⠿</div>
-    <div class="quest-header mc-header">⚔ あなたの使命</div>
-    <div id="mission-body"></div>
-  </div>
-
-  <!-- 今日の予定（固定カード。widget並べ替えには入れない） -->
-  <div class="glass" id="today-plan-card" style="display:none">
-    <div class="today-plan-head">
-      <div class="quest-header">📅 今日の予定</div>
-      <button id="today-plan-add" class="today-plan-add" title="今日の予定を追加">＋</button>
-    </div>
-    <div id="today-plan-list"></div>
-  </div>
+  <!-- ⚠️ ここから下の「ジャンル → タイマー」の2枚は、このアプリの本体です。
+       ジャンルを選ぶ → STARTを押す → 25分たつ、が「学習が続く」の全部。
+       他のカードをこの2枚より上に入れないこと（STARTが画面外に沈むため）。 -->
 
   <!-- GENRE SELECTOR -->
   <div class="glass widget" id="genre-card">
@@ -191,6 +158,45 @@
     <div class="break-title">☕ 休憩タイム</div>
     <div id="break-timer-display">05:00</div>
     <button class="break-skip-btn" id="break-skip-btn">スキップ</button>
+  </div>
+
+  <!-- はじめの一歩（新規ユーザー向けガイド・完了で自動的に消える）
+       ※タイマーより「下」に置くこと。上に置くと214px押し下げられて
+         初回起動時に START が画面外へ沈む（実測で確認済み） -->
+  <div class="glass" id="onboard-card" style="display:none">
+    <div class="onboard-head">
+      <span class="onboard-fairy">🧚</span>
+      <div>
+        <div class="onboard-title">はじめの一歩</div>
+        <div class="onboard-sub" id="onboard-sub">むずかしいことは無し。まず5分だけ。</div>
+      </div>
+    </div>
+    <div class="onboard-steps" id="onboard-steps"></div>
+    <div class="onboard-hint" id="onboard-hint">1→2→3 の順にやると、自動で ✓ に変わるよ。まずは上の光ってる START を押してね。</div>
+  </div>
+
+  <!-- DAILY QUEST（基本クエスト＋選択肢クエストを1枚に統合） -->
+  <div class="glass widget" id="daily-quest-card" data-guide="daily-quests">
+    <div class="widget-grip" title="ドラッグして並べ替え" aria-hidden="true">⠿</div>
+    <div class="quest-header">📜 今日のクエスト</div>
+    <div class="quest-list" id="quest-list"></div>
+    <div id="nudge-body"></div>
+  </div>
+
+  <!-- ⚔ あなたの使命（召喚で決めた目標・育てる/断つ） -->
+  <div class="glass widget" id="mission-card" style="display:none">
+    <div class="widget-grip" title="ドラッグして並べ替え" aria-hidden="true">⠿</div>
+    <div class="quest-header mc-header">⚔ あなたの使命</div>
+    <div id="mission-body"></div>
+  </div>
+
+  <!-- 今日の予定（固定カード。widget並べ替えには入れない） -->
+  <div class="glass" id="today-plan-card" style="display:none">
+    <div class="today-plan-head">
+      <div class="quest-header">📅 今日の予定</div>
+      <button id="today-plan-add" class="today-plan-add" title="今日の予定を追加">＋</button>
+    </div>
+    <div id="today-plan-list"></div>
   </div>
 
   <!-- STATS -->
@@ -966,15 +972,15 @@
   </div>
 </div>
 
-<script src="scripts/core.js?v=guild-107"></script>
-<script src="scripts/progression.js?v=guild-107"></script>
-<script src="scripts/quests.js?v=guild-107"></script>
-<script src="scripts/timer.js?v=guild-107"></script>
-<script src="scripts/settings-genre.js?v=guild-107"></script>
-<script src="scripts/calendar-review.js?v=guild-107"></script>
-<script src="scripts/features.js?v=guild-107"></script>
-<script src="scripts/boot.js?v=guild-107"></script>
-<script src="scripts/otomon.js?v=guild-107"></script>
+<script src="scripts/core.js?v=guild-109"></script>
+<script src="scripts/progression.js?v=guild-109"></script>
+<script src="scripts/quests.js?v=guild-109"></script>
+<script src="scripts/timer.js?v=guild-109"></script>
+<script src="scripts/settings-genre.js?v=guild-109"></script>
+<script src="scripts/calendar-review.js?v=guild-109"></script>
+<script src="scripts/features.js?v=guild-109"></script>
+<script src="scripts/boot.js?v=guild-109"></script>
+<script src="scripts/otomon.js?v=guild-109"></script>
 
 <script>
 // ── Service Worker 登録 ────────────────────────────────
