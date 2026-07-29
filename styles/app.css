@@ -96,6 +96,16 @@ body::before {
   max-width: 480px;
   margin: 0 auto;
   padding: 16px;
+  /* iPhoneのノッチ・ホームバーを避ける（セーフエリア）。
+     ホーム画面から起動すると black-translucent の指定により画面いっぱいに
+     広がるため、この余白が無いとヘッダーがステータスバーに潜る。
+     ※ <meta name="viewport"> に viewport-fit=cover が無いと env() は0を返す。
+       env() 非対応ブラウザは上の padding:16px がそのまま残る（2行書きの意図）。 */
+  padding:
+    calc(16px + env(safe-area-inset-top,    0px))
+    calc(16px + env(safe-area-inset-right,  0px))
+    calc(16px + env(safe-area-inset-bottom, 0px))
+    calc(16px + env(safe-area-inset-left,   0px));
   min-height: 100vh;
   display: flex; flex-direction: column; gap: 14px;
 }
@@ -2422,7 +2432,15 @@ header {
   .icon-btn-label { font-size: .45rem; }
   .logo { font-size: .95rem; }
   #avatar-btn { width: 34px; height: 34px; }
+  /* 狭い画面でも余白は詰めるが、セーフエリア分は必ず確保する（上の #app と同じ意図） */
   #app { padding: 10px; gap: 10px; }
+  #app {
+    padding:
+      calc(10px + env(safe-area-inset-top,    0px))
+      calc(10px + env(safe-area-inset-right,  0px))
+      calc(10px + env(safe-area-inset-bottom, 0px))
+      calc(10px + env(safe-area-inset-left,   0px));
+  }
   #timer-display { font-size: 2rem; }
   .mode-tab .mode-name { font-size: .78rem; }
   .mode-tab .mode-desc { font-size: .6rem; }
