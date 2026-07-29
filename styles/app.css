@@ -4109,6 +4109,7 @@ header.glass { flex-wrap: wrap; row-gap: 8px; }
   border: 1px solid rgba(74,222,128,.35);
   box-shadow: 0 0 20px rgba(74,222,128,.14);
   background: linear-gradient(160deg, rgba(74,222,128,.10), rgba(6,182,212,.04));
+  padding: 16px;   /* .glass は余白を持たないので、ここで入れないと文字が枠に貼り付く */
 }
 .onboard-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
 .onboard-fairy { font-size: 2rem; animation: fairyFloat 3s ease-in-out infinite; }
@@ -4353,6 +4354,13 @@ body.eq-mood-galaxy    .anim-wrap::after {
 }
 .fg-jump:hover { background: rgba(232,121,249,.28); transform: translateX(2px); }
 .fg-lock-mini { flex: none; font-size: .82rem; opacity: .75; }
+
+/* ── ホームカードの余白（使命・打刻） ──
+   この2枚だけ専用CSSが無く、.glass も余白を持たないため、
+   中身が枠線に貼り付いていた。他のカードと同じ余白に揃える。
+   ※上端は #app .widget の padding-top:30px（つまみ帯の場所）が
+     優先されるので、ここでは触らない。 */
+#mission-card, #punch-card { padding: 14px 16px; }
 
 /* ── タイムログ：打刻（いまからボタン） ── */
 .tl-punch-status {
