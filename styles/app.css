@@ -5102,6 +5102,35 @@ body.eq-mood-galaxy    .anim-wrap::after {
 .lb-dot-gift.on { filter: none; transform: scale(1.15); }
 .lb-divider { display: flex; align-items: center; gap: 10px; margin: 6px 2px 12px; color: var(--text-dim); font-size: .68rem; }
 .lb-divider::before, .lb-divider::after { content:''; flex:1; height:1px; background: rgba(255,255,255,.12); }
+
+/* ── 「おかえり」画面（久しぶりに戻ってきた日）──────────────
+   通常のログインボーナスが赤系の「🔥連続」で煽るのに対し、
+   こちらは緑系で静かに迎える。数字を大きく出さないのが要点。 */
+.cb-away {
+  font-size: 1.05rem; font-weight: 800; color: #86efac;
+  margin: 2px 0 6px; letter-spacing: .04em;
+}
+.cb-line {
+  font-size: .8rem; color: var(--text-soft); line-height: 1.6;
+  margin-bottom: 16px;
+}
+.cb-kept {
+  display: flex; justify-content: center; gap: 10px;
+  margin-bottom: 16px; flex-wrap: wrap;
+}
+.cb-kept-item {
+  flex: 1 1 0; min-width: 78px;
+  background: rgba(74,222,128,.08);
+  border: 1px solid rgba(74,222,128,.22);
+  border-radius: 12px; padding: 10px 6px;
+}
+.cb-kept-item b {
+  display: block; font-size: .92rem; font-weight: 800; color: #d1fae5;
+  line-height: 1.3; word-break: break-word;
+}
+.cb-kept-item span {
+  display: block; font-size: .62rem; color: var(--text-dim); margin-top: 3px;
+}
 .lb-milestone { font-size: .78rem; font-weight: 800; color: #fcd34d; margin-bottom: 8px; }
 .lb-reward { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 18px; }
 .lb-orb {

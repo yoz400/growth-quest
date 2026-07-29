@@ -2696,18 +2696,82 @@ function renderLoginBonus(streak, reward) {
     </div>
     <button class="lb-claim" id="lb-claim-btn">受け取る</button>`;
 
-  // きらめき
+  _lbSparkles();
+  document.getElementById('lb-claim-btn').addEventListener('click', claimLoginBonus);
+}
+
+// きらめきの粒を撒く（通常のログインボーナスと「おかえり」画面の共用）
+function _lbSparkles() {
   const spk = document.getElementById('lb-sparkles');
-  if (spk) {
-    const cols = ['#fde68a', '#a7f3d0', '#bae6fd', '#fff'];
-    let html = '';
-    for (let i = 0; i < 14; i++) {
-      html += `<span class="hw-spk" style="left:${5 + Math.random()*90}%;top:${6 + Math.random()*86}%;
-        --dl:${(Math.random()*2.5).toFixed(2)}s;--sz:${(3 + Math.random()*4).toFixed(1)}px;
-        background:${cols[i % cols.length]}"></span>`;
-    }
-    spk.innerHTML = html;
+  if (!spk) return;
+  const cols = ['#fde68a', '#a7f3d0', '#bae6fd', '#fff'];
+  let html = '';
+  for (let i = 0; i < 14; i++) {
+    html += `<span class="hw-spk" style="left:${5 + Math.random()*90}%;top:${6 + Math.random()*86}%;
+      --dl:${(Math.random()*2.5).toFixed(2)}s;--sz:${(3 + Math.random()*4).toFixed(1)}px;
+      background:${cols[i % cols.length]}"></span>`;
   }
+  spk.innerHTML = html;
+}
+
+// ── 「おかえり」画面 ────────────────────────────────────
+// 連続が切れた状態で戻ってきた日は、通常のログインボーナス
+//（🔥連続ログイン 1日目）の代わりにこちらを出す。
+// 理由: 久しぶりに開いた人がアプリから最初に受け取る情報が
+//       「連続1日目」「連続日数0」＝どちらも“失ったもの”の通知だと、
+//       せっかく開いたその日に再離脱する。失ったものではなく
+//       「残っているもの」を最初に見せる。
+
+// 前回“学習した”日から何日空いたか（0=今日すでに学習, 1=昨日学習）
+function _daysSinceLastStudy() {
+  const last = data.streakLastDate;
+  if (!last) return 0;
+  const ms = new Date(todayKey() + 'T00:00:00') - new Date(last + 'T00:00:00');
+  return Math.max(0, Math.round(ms / 86400000));
+}
+
+// 「連続が切れた状態で戻ってきた日」か。
+// 守りの盾で守られた場合は streak が残るので、ここには入らない（祝う画面のままでよい）
+function _isComebackToday() {
+  return _daysSinceLastStudy() >= 2 && (data.streak || 0) === 0 && (data.sessions || 0) > 0;
+}
+
+function renderComebackWelcome(away, reward) {
+  const card = document.getElementById('login-bonus-card');
+  if (!card) return;
+  const nm    = adventurerName();
+  const stage = AVATAR_STAGES[getAvatarStageIndex(data.level)];
+  const face  = (AV_FACE_FRAME[avatarType] || AV_FACE_FRAME.A).src;
+  const buddy = (window.Otomon && window.Otomon.getActiveOtomon)
+    ? window.Otomon.getActiveOtomon() : null;
+
+  const mins = data.totalMinutes || 0;
+  const totalText = mins >= 60 ? `${Math.floor(mins / 60)}時間${mins % 60}分` : `${mins}分`;
+  const awayText  = away >= 30 ? `${Math.floor(away / 30)}か月ぶり` : `${away}日ぶり`;
+
+  card.innerHTML = `
+    <div class="lb-sparkles" id="lb-sparkles"></div>
+    <div class="lb-badge">🌿 おかえりなさい、${escHtml(nm)}</div>
+    <div class="lb-avatar" style="--ring:${stage.c1}">
+      <img src="${face}" alt="" onerror="this.style.display='none'">
+      <span class="lb-stage" style="background:linear-gradient(135deg,${stage.c1},${stage.c2})">${stage.title}・Lv${data.level}</span>
+    </div>
+    <div class="cb-away">${awayText}</div>
+    <div class="cb-line">戻ってきたこと自体が、もう一歩です。</div>
+    <div class="lb-divider"><span>ぜんぶ残っています</span></div>
+    <div class="cb-kept">
+      <div class="cb-kept-item"><b>Lv ${data.level}</b><span>レベル</span></div>
+      <div class="cb-kept-item"><b>${totalText}</b><span>これまでの学び</span></div>
+      ${buddy ? `<div class="cb-kept-item"><b>${buddy.emoji || '🐾'}</b><span>${escHtml(buddy.name)}</span></div>` : ''}
+    </div>
+    <div class="lb-divider"><span>おかえりボーナス</span></div>
+    <div class="lb-reward">
+      <div class="lb-orb">✨</div>
+      <div class="lb-reward-xp">+${reward.xp} <small>XP</small></div>
+    </div>
+    <button class="lb-claim" id="lb-claim-btn">また、はじめる</button>`;
+
+  _lbSparkles();
   document.getElementById('lb-claim-btn').addEventListener('click', claimLoginBonus);
 }
 
@@ -2761,7 +2825,9 @@ function maybeShowLoginBonus() {
   const streak = _computeLoginStreak();
   const reward = _loginBonusXP(streak);
   _pendingLoginXP = reward.xp;
-  renderLoginBonus(streak, reward);
+  // 久しぶりに戻ってきた日は「おかえり」画面に差し替える（喪失の通知を最初に出さない）
+  if (_isComebackToday()) renderComebackWelcome(_daysSinceLastStudy(), reward);
+  else                    renderLoginBonus(streak, reward);
   const overlay = document.getElementById('login-bonus-overlay');
   Overlay.open('login-bonus-overlay');
   // 背景タップで閉じる（受け取らずに閉じても、その日は再表示しない）
