@@ -419,7 +419,8 @@ function renderStreak() {
 
   if (data.lastDate && data.lastDate !== today) {
     data.todayMinutes = 0;
-    updateStreak(today);
+    // 起動時は「切れているか」の判定だけ（連続は学習したときにだけ伸ばす）
+    updateStreak(today, { onOpen: true });
   }
   if (!data.lastDate || data.lastDate !== today) {
     data.lastDate = today;
@@ -427,7 +428,18 @@ function renderStreak() {
   }
 })();
 
-function updateStreak(today) {
+// 連続日数(data.streak)を更新する。
+//
+// opts.onOpen … 「アプリを開いただけ」の呼び出し（今日はまだ学習していない）。
+//   この場合は連続を伸ばさず、フリーズ等のアイテムも消費せず、
+//   “切れているかどうか”の判定だけを行う。
+//
+// ⚠️ ここを onOpen で区別しないと、1日で2回加算される。
+//    ①開いたとき initDaily → updateStreak（streakLastDate は更新しない）
+//    ②学習したとき recordSessionCompletion → updateStreak（同じ差分でもう一度加算）
+//    実際、昨日1日だけ学習した状態でアプリを開くと連続が2になっていた。
+function updateStreak(today, opts) {
+  const onOpen = !!(opts && opts.onOpen);
   const last = data.streakLastDate;
   if (!last) { return; }
 
@@ -437,35 +449,46 @@ function updateStreak(today) {
   const diffDays = Math.round((todayMs - lastMs) / msPerDay);
   const prevStreak = data.streak || 0;   // ← 切れ検知のため事前値を保存
   const missedDates = getDatesBetween(last, today);
+  let broken = false;                    // 連続が“本当に”切れたか（値とは別に持つ）
 
   if (diffDays === 1) {
-    // 連続継続
-    data.streak = (data.streak || 0) + 1;
+    // 連続継続（学習した回だけ伸ばす）
+    if (!onOpen) data.streak = (data.streak || 0) + 1;
   } else if (missedDates.length && missedDates.every(d => isShieldProtected(d))) {
     // 守りの盾：今週内で保護済みの未達成日は、連続切れとして扱わない
-    data.streak = (data.streak || 0) + 1;
+    if (!onOpen) data.streak = (data.streak || 0) + 1;
   } else if (diffDays === 2 && data.freezeItems > 0) {
     // 1日空き → フリーズ消費（既存の優先処理）
-    data.freezeItems--;
-    data.freezeEverUsed = true;
-    data.streak = (data.streak || 0) + 1;
+    // ※開いただけでアイテムを消費しないよう onOpen では手をつけない
+    if (!onOpen) {
+      data.freezeItems--;
+      data.freezeEverUsed = true;
+      data.streak = (data.streak || 0) + 1;
+    }
   } else if (diffDays === 2 && data.freezeItems === 0) {
     // フリーズ尽きた → 装備の streak_protect で救えるか判定
     const protect = getEquipmentStreakProtect();
     if (protect && data.streakProtectUsedFor !== data.streakLastDate) {
-      data.streakProtectUsedFor = data.streakLastDate;   // 同日二重発動を防ぐ
-      data.streak = (data.streak || 0) + 1;
-      // freezeEverUsed は変更しない（既存のバッジ条件を汚さない）
-      console.log(`${protect.item.name}が連続記録を守った（${data.streakLastDate} → ${today}）`);
+      if (!onOpen) {
+        data.streakProtectUsedFor = data.streakLastDate;   // 同日二重発動を防ぐ
+        data.streak = (data.streak || 0) + 1;
+        // freezeEverUsed は変更しない（既存のバッジ条件を汚さない）
+        console.log(`${protect.item.name}が連続記録を守った（${data.streakLastDate} → ${today}）`);
+      }
     } else {
-      data.streak = 0;
+      broken = true;
+      // 学習した回は「今日が新しい1日目」。0のままにすると、
+      // 休み明けに集中しても連続が始まらない（＝おかえりの直後に0を見せてしまう）
+      data.streak = onOpen ? 0 : 1;
     }
   } else if (diffDays > 1) {
-    data.streak = 0;
+    broken = true;
+    data.streak = onOpen ? 0 : 1;
   }
 
-  // 連続が「切れた瞬間」を記録（次回のセッションで復帰ボーナス用）
-  if (prevStreak > 0 && data.streak === 0) {
+  // 連続が「切れた瞬間」を記録（次回のセッションで復帰ボーナス用）。
+  // 学習して1日目に戻った場合も“切れた”ことに変わりはないので broken で判定する。
+  if (prevStreak > 0 && broken) {
     data.streakWasBroken = true;
   }
 }
