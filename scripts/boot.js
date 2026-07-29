@@ -2613,25 +2613,23 @@ function _heroGreeting() {
 }
 
 // 連続ログイン日数（学習ストリークとは別。アプリを開いた日でカウント）
-function _computeLoginStreak() {
-  const today = todayKey();
-  const last  = localStorage.getItem('gq_login_last');
-  let streak  = parseInt(localStorage.getItem('gq_login_streak') || '0') || 0;
-  if (last === today) return streak;          // 今日は既にカウント済み
-  const y = new Date(); y.setDate(y.getDate() - 1);
-  streak = (last === dkey(y)) ? streak + 1 : 1;  // 昨日も来ていれば継続、空けばリセット
-  localStorage.setItem('gq_login_streak', String(streak));
-  localStorage.setItem('gq_login_last', today);
-  return streak;
-}
+// ※ 旧 _computeLoginStreak()（開いた日で数える「連続ログイン日数」）は廃止した。
+//    学習の連続(data.streak)と2本走っていたため、久しぶりに開いた日に
+//    ホームは「連続日数 0」・モーダルは「連続ログイン 1日目」と、
+//    同じ画面で違う数字が出ていた。連続の表示は data.streak に一本化する。
+//    gq_login_streak / gq_login_last はもう書き込まない（バッジ条件にも未使用）。
 
-// ボーナスXP：基本20 ＋ 連続日数ボーナス（最大10日分）＋ 節目ボーナス
-function _loginBonusXP(streak) {
-  let xp = 20 + Math.min(streak, 10) * 10;
-  let milestone = '';
-  if (streak > 0 && streak % 30 === 0) { xp += 300; milestone = `🎉 ${streak}日達成・特大ボーナス！`; }
-  else if (streak > 0 && streak % 7 === 0) { xp += 80; milestone = `✨ ${streak}日達成ボーナス！`; }
-  return { xp, milestone };
+// ログインボーナスのXP（一律・少額）。
+//
+// 以前は 20 + 連続日数×10（最大120）＋節目ボーナス（+80/+300）で最大420XPあり、
+// 25分の集中(25XP)の16.8倍だった。しかも連続日数は「開いた日」で数えるので、
+// 学習を1秒もしなくても毎日120XPが入り続ける状態だった。
+// この枠は timer.js の FIRST_SESSION_XP（今日はじめての集中）へ移してある。
+// ここは「毎日開いてくれてありがとう」の会釈程度に留める。
+const LOGIN_BONUS_XP = 20;
+
+function _loginBonusXP() {
+  return { xp: LOGIN_BONUS_XP, milestone: '' };
 }
 
 // ヘッダー（赤枠）を豪華な見た目に変える。当日中は維持
@@ -2669,7 +2667,7 @@ function renderLoginBonus(streak, reward) {
   const face = (AV_FACE_FRAME[avatarType] || AV_FACE_FRAME.A).src;
 
   // 週の進み（7日マイルストーンに向けたドット。7日目は宝箱）
-  const inWeek = ((streak - 1) % 7) + 1;   // 1..7
+  const inWeek = streak > 0 ? ((streak - 1) % 7) + 1 : 0;   // 0..7
   let dots = '';
   for (let i = 1; i <= 7; i++) {
     const on = i <= inWeek;
@@ -2678,6 +2676,14 @@ function renderLoginBonus(streak, reward) {
       : `<span class="lb-dot ${on ? 'on' : ''}"></span>`;
   }
 
+  // まだ連続が始まっていない日に「0日目」と突きつけない。前を向いた言葉にする。
+  const streakBlock = streak > 0
+    ? `<div class="lb-streak-label">🔥 連続学習</div>
+       <div class="lb-streak-num"><b>${streak}</b><span>日目</span></div>
+       <div class="lb-dots">${dots}</div>`
+    : `<div class="lb-streak-label lb-streak-start">🌱 今日から、はじめよう</div>
+       <div class="lb-dots">${dots}</div>`;
+
   card.innerHTML = `
     <div class="lb-sparkles" id="lb-sparkles"></div>
     <div class="lb-badge">${gicon} ${gtext}、${escHtml(nm)}</div>
@@ -2685,9 +2691,7 @@ function renderLoginBonus(streak, reward) {
       <img src="${face}" alt="" onerror="this.style.display='none'">
       <span class="lb-stage" style="background:linear-gradient(135deg,${stage.c1},${stage.c2})">${stage.title}・Lv${data.level}</span>
     </div>
-    <div class="lb-streak-label">🔥 連続ログイン</div>
-    <div class="lb-streak-num"><b>${streak}</b><span>日目</span></div>
-    <div class="lb-dots">${dots}</div>
+    ${streakBlock}
     <div class="lb-divider"><span>ログインボーナス</span></div>
     ${reward.milestone ? `<div class="lb-milestone">${reward.milestone}</div>` : ''}
     <div class="lb-reward">
@@ -2822,8 +2826,8 @@ function maybeShowLoginBonus() {
   const summoned = localStorage.getItem('gq_summoned') === '1';
   if (!summoned && !(data.sessions > 0)) return;
 
-  const streak = _computeLoginStreak();
-  const reward = _loginBonusXP(streak);
+  const streak = data.streak || 0;   // 学習の連続日数（開いた日ではなく、学習した日）
+  const reward = _loginBonusXP();
   _pendingLoginXP = reward.xp;
   // 久しぶりに戻ってきた日は「おかえり」画面に差し替える（喪失の通知を最初に出さない）
   if (_isComebackToday()) renderComebackWelcome(_daysSinceLastStudy(), reward);

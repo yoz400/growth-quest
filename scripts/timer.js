@@ -7,6 +7,11 @@ let remaining = 0;
 let elapsed = 0;
 
 (function () {
+// 🌅 今日はじめての集中に付くボーナスXP。
+// ログインボーナス（開くだけで最大420XP）から重心を移すために新設した枠。
+// ここを増減させると「学習した日」の手応えが直接変わる調整つまみ。
+const FIRST_SESSION_XP = 80;
+
 let timerState = 'idle'; // idle | running | paused
 let intervalId = null;
 let sessionMinutes = 0;
@@ -291,6 +296,10 @@ function stopTimer() {
     if (_isFirstToday)      addConfidence(2, 'first_today');
     if (_isResumeFromBreak) { addConfidence(5, 'resume_after_break'); data.streakWasBroken = false; saveData(data); }
 
+    // 🌅 今日はじめての集中ボーナス（ログインボーナスから移した分）
+    const _firstXp = _isFirstToday ? FIRST_SESSION_XP : 0;
+    if (_firstXp) addBonusXP(_firstXp);
+
     const cfg = MODES[currentMode];
     if (currentMode === 'flow') {
       // フローモードは自分で終えるのが「完了」→ 達成の告（すごろくも振る）
@@ -299,13 +308,13 @@ function stopTimer() {
       addBonusXP(_sgResult.bonusXP);
       playChime();
       showTimerNotif('セッション完了！', `${mins}分間、集中できました！`);
-      showKoku(mins, cfg.break, 'complete', 0);
+      showKoku(mins, cfg.break, 'complete', 0, _firstXp);
     } else {
       // ポモドーロ/ディープを目標時間の前に手動停止 → 労いの告（控えめにすごろく前進）
       const _sgResult = doSugorokuRoll(currentMode, mins, true);
       pendingSugorokuRoll = _sgResult;
       addBonusXP(_sgResult.bonusXP);
-      showKoku(mins, cfg.break, 'partial', 0);
+      showKoku(mins, cfg.break, 'partial', 0, _firstXp);
     }
     // 告が閉じたら「褒めログ入力」モーダルを案内
     _pendingPraisePrompt = true;
@@ -436,13 +445,16 @@ function completeSession() {
   if (mins >= 5)             addConfidence(1, 'session_5min');
   if (_isFirstToday)         addConfidence(2, 'first_today');
   if (_isResumeFromBreak)    { addConfidence(5, 'resume_after_break'); data.streakWasBroken = false; saveData(data); }
+  // 🌅 今日はじめての集中ボーナス（ログインボーナスから移した分）
+  const _firstXp = _isFirstToday ? FIRST_SESSION_XP : 0;
+  if (_firstXp) addBonusXP(_firstXp);
   checkBadges();
   if (typeof evaluateUnlocks === 'function') evaluateUnlocks();
   if (typeof renderOnboarding === 'function') renderOnboarding();
   playChime();
   showTimerNotif('セッション完了！', `${mins}分間、集中できました！`);
   resetTabTitle();
-  showKoku(mins, cfg.break, 'complete', 0);
+  showKoku(mins, cfg.break, 'complete', 0, _firstXp);
   // 告が閉じたら「褒めログ入力」モーダルを案内
   _pendingPraisePrompt = true;
   _praiseSessionDate   = _today;
@@ -505,11 +517,13 @@ document.addEventListener('visibilitychange', () => {
 // ═══════════════════════════════════════════════════════
 //  告 SYSTEM
 // ═══════════════════════════════════════════════════════
-function showKoku(mins, breakMins, kind, equipBonusXp) {
+function showKoku(mins, breakMins, kind, equipBonusXp, firstTodayXp) {
   // kind: 'complete'（完走）= 達成の告 / 'partial'（途中停止）= 労いの告
   // equipBonusXp: 旧装備ボーナス表示用（XP倍率廃止により現在は常に0）
+  // firstTodayXp: 今日はじめての集中ボーナス（0なら行ごと出さない）
   kind = kind || 'complete';
   equipBonusXp = equipBonusXp || 0;
+  firstTodayXp = firstTodayXp || 0;
   const isPartial = kind === 'partial';
   const overlay = document.getElementById('koku-overlay');
   const result = document.getElementById('koku-result');
@@ -532,6 +546,11 @@ function showKoku(mins, breakMins, kind, equipBonusXp) {
     ? `<span class="koku-equip-bonus">⚡ 装備ボーナス +${equipBonusXp} XP</span><br>`
     : '';
 
+  // 今日はじめての集中ボーナス（トーストを増やさず、この告の中で知らせる）
+  const firstLine = firstTodayXp > 0
+    ? `<span class="koku-first-bonus">🌅 今日はじめての集中 +${firstTodayXp} XP</span><br>`
+    : '';
+
   overlay.className = 'style-' + settings.kokuStyle;
 
   result.innerHTML = `
@@ -539,6 +558,7 @@ function showKoku(mins, breakMins, kind, equipBonusXp) {
     ${headline}<br>
     集中時間 ${mins}分 &nbsp;/&nbsp; 経験値 <strong>+${xpGained} XP</strong><br>
     ${equipLine}
+    ${firstLine}
     累計 ${data.totalMinutes}分<br>
     ${streakMsg ? streakMsg + '<br>' : ''}
     <span class="result-divider">────────────────</span>
