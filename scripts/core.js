@@ -1485,18 +1485,11 @@ function sgCellXY(n) {
 }
 
 // ── すごろくゾーン定義（10マスごとに世界が変わる）──
-const SG_ZONES = [
-  { start:1,  end:10,  name:'草　原',   terrain:'grassland', emoji:'🌿', accent:'#86efac', rgb:'134,239,172' },
-  { start:11, end:20,  name:'深い森',   terrain:'forest',    emoji:'🌲', accent:'#4ade80', rgb:'74,222,128'  },
-  { start:21, end:30,  name:'洞　窟',   terrain:'cave',      emoji:'💎', accent:'#a78bfa', rgb:'167,139,250' },
-  { start:31, end:40,  name:'古代遺跡', terrain:'ruins',     emoji:'🏛', accent:'#fb923c', rgb:'251,146,60'  },
-  { start:41, end:50,  name:'砂　漠',   terrain:'desert',    emoji:'🌵', accent:'#fbbf24', rgb:'251,191,36'  },
-  { start:51, end:60,  name:'大海原',   terrain:'ocean',     emoji:'🌊', accent:'#38bdf8', rgb:'56,189,248'  },
-  { start:61, end:70,  name:'凍る雪山', terrain:'snow',      emoji:'❄️', accent:'#bae6fd', rgb:'186,230,253' },
-  { start:71, end:80,  name:'天空の城', terrain:'sky',       emoji:'☁️', accent:'#c4b5fd', rgb:'196,181,253' },
-  { start:81, end:90,  name:'火　山',   terrain:'volcano',   emoji:'🔥', accent:'#f87171', rgb:'248,113,113' },
-  { start:91, end:100, name:'龍の城',   terrain:'dragon',    emoji:'🐉', accent:'#fbbf24', rgb:'220,38,38'   },
-];
+// 情報源は scripts/areas.js（唯一の正典）。ここは表示用の形に変換するだけ。
+const SG_ZONES = (window.Areas?.getStage('stage1').areas || []).map(a => ({
+  start: a.range[0], end: a.range[1],
+  name: a.name, terrain: a.terrain, emoji: a.emoji, accent: a.accent, rgb: a.rgb,
+}));
 
 // ── 地形×タイプ別スポット絵文字 ──
 const SPOT_ICONS = {
