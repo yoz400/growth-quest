@@ -766,18 +766,8 @@ function nextGuideTutorialStep() {
 }
 
 function showGuideStartToast() {
-  const t = document.getElementById('confidence-toast');
-  if (!t) return;
-  t.innerHTML = '🧚 いい一歩だったね。<br><span style="opacity:.85;font-weight:400">完璧じゃなくていいよ。今日の冒険は、もう始まってる。</span>';
-  t.classList.remove('levelup');
-  t.classList.add('multiline');
-  void t.offsetWidth;
-  t.classList.add('show');
-  clearTimeout(t._timer);
-  t._timer = setTimeout(() => {
-    t.classList.remove('show');
-    setTimeout(() => t.classList.remove('multiline'), 400);
-  }, 3600);
+  Toast.show('🧚 いい一歩だったね。<br><span style="opacity:.85;font-weight:400">完璧じゃなくていいよ。今日の冒険は、もう始まってる。</span>',
+    { kind: 'multiline', ms: 3400, priority: 30 });
 }
 
 function resetGuideTutorial() {

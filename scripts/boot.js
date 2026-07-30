@@ -116,28 +116,14 @@ function evaluateUnlocks(silent) {
 }
 
 function showUnlockToast(def) {
-  const t = document.getElementById('confidence-toast');
-  if (!t) return;
-  t.innerHTML = `🔓 新機能アンロック！<br><span style="opacity:.9;font-weight:700">${def.emoji} ${def.label}</span>`;
-  t.classList.remove('levelup'); t.classList.add('multiline');
-  void t.offsetWidth; t.classList.add('show');
-  clearTimeout(t._timer);
-  t._timer = setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.classList.remove('multiline'), 400); }, 3000);
+  Toast.show(`🔓 新機能アンロック！<br><span style="opacity:.9;font-weight:700">${def.emoji} ${def.label}</span>`,
+    { kind: 'multiline', ms: 2800, priority: 80 });
 }
 
 function showLockedHintToast(def) {
-  const t = document.getElementById('confidence-toast');
-  if (!t) return;
-  t.innerHTML = `🔒 まだ見ぬ機能<br><span style="opacity:.9;font-weight:700">${def.hint}</span>`;
-  t.classList.remove('levelup');
-  t.classList.add('multiline');
-  void t.offsetWidth;
-  t.classList.add('show');
-  clearTimeout(t._timer);
-  t._timer = setTimeout(() => {
-    t.classList.remove('show');
-    setTimeout(() => t.classList.remove('multiline'), 400);
-  }, 3000);
+  // ロック中ボタンを押した本人への返事。待たされると壊れて見えるので最優先
+  Toast.show(`🔒 まだ見ぬ機能<br><span style="opacity:.9;font-weight:700">${def.hint}</span>`,
+    { kind: 'multiline', ms: 2800, priority: 100 });
 }
 
 document.addEventListener('click', e => {
@@ -2296,28 +2282,19 @@ function completeGuildQuest(id, note) {
 }
 
 function showGuildToast(q, promotedRank) {
-  const t = document.getElementById('confidence-toast');
-  if (!t) return;
   const npc = GUILD_NPCS[q.npc];
+  let html;
   if (promotedRank) {
-    t.innerHTML = `🏰 ギルドが格上げ！<br><b>${promotedRank}</b><br>` +
+    html = `🏰 ギルドが格上げ！<br><b>${promotedRank}</b><br>` +
       `<span style="opacity:.75;font-weight:400">${GUILD_NPCS.mimi.icon}「みんなの頑張りのおかげです！」</span>`;
   } else {
     const lines = GUILD_NPC_LINES[q.npc] || [];
     const line = lines.length ? lines[Math.floor(Math.random() * lines.length)] : '';
-    t.innerHTML = `📜 依頼を達成！<br>` +
+    html = `📜 依頼を達成！<br>` +
       `<span style="opacity:.85;font-weight:400">${q.title}</span>` +
       (line ? `<br><span style="opacity:.75;font-weight:400">${npc.icon}「${line}」</span>` : '');
   }
-  t.classList.remove('levelup');
-  t.classList.add('multiline');
-  void t.offsetWidth;
-  t.classList.add('show');
-  clearTimeout(t._timer);
-  t._timer = setTimeout(() => {
-    t.classList.remove('show');
-    setTimeout(() => t.classList.remove('multiline'), 400);
-  }, 3200);
+  Toast.show(html, { kind: 'multiline', ms: 3000, priority: promotedRank ? 80 : 50 });
 }
 
 // ── 今日のおすすめ依頼を1つ選ぶ ──

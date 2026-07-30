@@ -111,19 +111,9 @@ document.getElementById('quest-list')?.addEventListener('click', e => {
 });
 
 function showQuestDoneToast(quest) {
-  const t = document.getElementById('confidence-toast');
-  if (!t) return;
-  t.innerHTML = `📜 クエスト達成！<br>` +
-                `<span style="opacity:.85;font-weight:400">${quest.label}</span>`;
-  t.classList.remove('levelup');
-  t.classList.add('multiline');
-  void t.offsetWidth;
-  t.classList.add('show');
-  clearTimeout(t._timer);
-  t._timer = setTimeout(() => {
-    t.classList.remove('show');
-    setTimeout(() => t.classList.remove('multiline'), 400);
-  }, 2600);
+  Toast.show(`📜 クエスト達成！<br>` +
+    `<span style="opacity:.85;font-weight:400">${quest.label}</span>`,
+    { kind: 'multiline', ms: 2400, priority: 50 });
 }
 
 // 起動時の初期描画（DOM 構築済みのスクリプト末尾実行を前提）
@@ -225,19 +215,9 @@ function completeNudge(questId, payload) {
 }
 
 function showNudgeToast(q) {
-  const t = document.getElementById('confidence-toast');
-  if (!t) return;
-  t.innerHTML = `🧭 ${q.label} 達成！ <b>+${q.xp}XP</b><br>` +
-                `<span style="opacity:.85;font-weight:400">${q.msg}</span>`;
-  t.classList.remove('levelup');
-  t.classList.add('multiline');
-  void t.offsetWidth;
-  t.classList.add('show');
-  clearTimeout(t._timer);
-  t._timer = setTimeout(() => {
-    t.classList.remove('show');
-    setTimeout(() => t.classList.remove('multiline'), 400);
-  }, 3200);
+  Toast.show(`🧭 ${q.label} 達成！ <b>+${q.xp}XP</b><br>` +
+    `<span style="opacity:.85;font-weight:400">${q.msg}</span>`,
+    { kind: 'multiline', ms: 3000, priority: 50 });
 }
 
 // 「今日のクエスト」カード内に統合表示する。

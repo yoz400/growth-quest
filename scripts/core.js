@@ -199,6 +199,81 @@ const Overlay = (() => {
   return { open, close, closeAll, topId };
 })();
 
+/* ===== Toast: ひとつの表示枠を順番待ちにする交通整理 =====
+   #confidence-toast という枠は1つしかないのに、12か所が直接
+   innerHTML を書き換えて奪い合っていた。セッションを終えると報酬が
+   一斉に発火するため、後から来たものが前を消し、何が起きたのか
+   分からないまま流れていく（実機で確認済み）。
+   OverlayManager と同じ考え方で、ここに一本化して順番に出す。
+
+   priority: 大きいほど先に出る。
+     100 ユーザーの操作に対する即時の返事（押した→出る、を崩さない）
+      90 レベルアップ級の祝い事
+      80 新機能アンロック・ギルド格上げ
+      60 世界樹の実
+      50 クエスト/依頼の達成
+      40 記録の保存・アイテム
+      20 自信ゲージなど、消えても致命的でないもの                     */
+const Toast = (() => {
+  const GAP       = 260;   // 次を出すまでの間
+  const MAX_QUEUE = 5;     // 溜まりすぎたら低優先を捨てる（行列で待たせない）
+  let queue     = [];
+  let busy      = false;
+  let seq       = 0;
+  let scheduled = false;
+
+  const el = () => document.getElementById('confidence-toast');
+
+  // セッション完了時のように同じ瞬間に何件も投げ込まれるので、
+  // すぐには出さず「そのターンの受付が終わってから」出し始める。
+  // （即座に出すと、最初に呼ばれた1件が優先順位を無視して先頭に来る）
+  function schedule() {
+    if (scheduled) return;
+    scheduled = true;
+    setTimeout(() => { scheduled = false; pump(); }, 0);
+  }
+
+  function show(html, opts) {
+    opts = opts || {};
+    queue.push({
+      html: String(html),
+      kind: opts.kind || 'plain',        // plain | multiline | levelup
+      ms:   opts.ms   || 2600,
+      pri:  typeof opts.priority === 'number' ? opts.priority : 50,
+      seq:  ++seq,
+    });
+    // 同じ優先度なら来た順。溢れたぶんは優先度の低いものから捨てる
+    queue.sort((a, b) => (b.pri - a.pri) || (a.seq - b.seq));
+    if (queue.length > MAX_QUEUE) queue = queue.slice(0, MAX_QUEUE);
+    schedule();
+  }
+
+  function pump() {
+    if (busy || !queue.length) return;
+    const t = el();
+    if (!t) { queue = []; return; }
+    const item = queue.shift();
+    busy = true;
+    clearTimeout(t._timer);
+    t.classList.remove('show', 'levelup', 'multiline');
+    t.innerHTML = item.html;
+    if (item.kind === 'levelup')   t.classList.add('levelup');
+    if (item.kind === 'multiline') t.classList.add('multiline');
+    void t.offsetWidth;            // アニメを再生させるための reflow
+    t.classList.add('show');
+    t._timer = setTimeout(() => {
+      t.classList.remove('show');
+      setTimeout(() => {
+        t.classList.remove('levelup', 'multiline');
+        busy = false;
+        pump();
+      }, GAP);
+    }, item.ms);
+  }
+
+  return { show };
+})();
+
 /* ===== GQ EventBus: 機能同士を疎結合にする通知係 ===== */
 const GQ = (() => {
   const handlers = new Map();
@@ -2059,16 +2134,10 @@ function playItemUseEffect(item) {
   setTimeout(() => ov.remove(), 1400);
 }
 
-// アイテム使用トースト（confidence-toast の表示枠を再利用）
+// アイテム使用トースト（Toast の順番待ちに乗せる）
+// ユーザーが「使う」を押した直後の返事なので、少し優先度を上げておく
 function showItemToast(msg) {
-  const t = document.getElementById('confidence-toast');
-  if (!t) return;
-  t.innerHTML = msg;
-  t.classList.remove('levelup');
-  void t.offsetWidth;          // アニメ再生のため reflow
-  t.classList.add('show');
-  clearTimeout(t._timer);
-  t._timer = setTimeout(() => t.classList.remove('show'), 2800);
+  Toast.show(msg, { ms: 2600, priority: 70 });
 }
 
 function useItem(itemId) {
@@ -2368,6 +2437,7 @@ function showSugorokuInKoku(result) {
 }
 
 window.Overlay = Overlay;
+window.Toast = Toast;
 window.GQ = GQ;
 window.MODES = MODES;
 window.DEFAULT_DATA = DEFAULT_DATA;

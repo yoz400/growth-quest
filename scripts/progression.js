@@ -209,23 +209,13 @@ function _flushConfidenceToast() {
 }
 
 function showConfidenceToast(amount, message) {
-  const t = document.getElementById('confidence-toast');
-  if (!t) return;
-  t.innerHTML = `💪 +${amount} <span style="opacity:.85;font-weight:400">${message}</span>`;
-  t.classList.remove('levelup');
-  void t.offsetWidth;          // アニメ再生のため reflow
-  t.classList.add('show');
-  clearTimeout(t._timer);
-  t._timer = setTimeout(() => t.classList.remove('show'), 2800);
+  Toast.show(`💪 +${amount} <span style="opacity:.85;font-weight:400">${message}</span>`,
+    { ms: 2400, priority: 20 });   // 消えても致命的でない＝いちばん後ろ
 }
 
 function showConfidenceLevelUp(newLevel) {
-  const t = document.getElementById('confidence-toast');
-  if (!t) return;
-  t.innerHTML = `🎉 自信レベルアップ！ <strong>Lv ${newLevel}</strong>`;
-  t.classList.add('show', 'levelup');
-  clearTimeout(t._timer);
-  t._timer = setTimeout(() => t.classList.remove('show', 'levelup'), 3500);
+  Toast.show(`🎉 自信レベルアップ！ <strong>Lv ${newLevel}</strong>`,
+    { kind: 'levelup', ms: 3200, priority: 90 });
 }
 
 function renderConfidence() {
@@ -333,19 +323,9 @@ function savePraise() {
 }
 
 function showPraiseSavedToast() {
-  const t = document.getElementById('confidence-toast');
-  if (!t) return;
-  t.innerHTML = `💛 今日の成長を記録しました<br>` +
-                `<span style="opacity:.85;font-weight:400">これは未来の自信の証拠です</span>`;
-  t.classList.remove('levelup');
-  t.classList.add('multiline');
-  void t.offsetWidth;
-  t.classList.add('show');
-  clearTimeout(t._timer);
-  t._timer = setTimeout(() => {
-    t.classList.remove('show');
-    setTimeout(() => t.classList.remove('multiline'), 400);
-  }, 3500);
+  Toast.show(`💛 今日の成長を記録しました<br>` +
+    `<span style="opacity:.85;font-weight:400">これは未来の自信の証拠です</span>`,
+    { kind: 'multiline', ms: 3200, priority: 40 });
 }
 
 // イベントリスナー
@@ -454,19 +434,9 @@ function saveFairy() {
 }
 
 function showFairyToast(stage, g) {
-  const t = document.getElementById('confidence-toast');
-  if (!t) return;
-  t.innerHTML = `🌳 ${g ? g.emoji + ' ' + g.name : ''} の樹に実がなった<br>` +
-    `<span style="opacity:.85;font-weight:400">${stage.emoji} ${stage.name} — ${stage.desc.split('。')[0]}</span>`;
-  t.classList.remove('levelup');
-  t.classList.add('multiline');
-  void t.offsetWidth;
-  t.classList.add('show');
-  clearTimeout(t._timer);
-  t._timer = setTimeout(() => {
-    t.classList.remove('show');
-    setTimeout(() => t.classList.remove('multiline'), 400);
-  }, 3800);
+  Toast.show(`🌳 ${g ? g.emoji + ' ' + g.name : ''} の樹に実がなった<br>` +
+    `<span style="opacity:.85;font-weight:400">${stage.emoji} ${stage.name} — ${stage.desc.split('。')[0]}</span>`,
+    { kind: 'multiline', ms: 3600, priority: 60 });
 }
 
 document.getElementById('fairy-text').addEventListener('input', updateFairySave);
