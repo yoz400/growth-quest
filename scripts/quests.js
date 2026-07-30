@@ -187,7 +187,11 @@ function saveNudgeDone() {
   localStorage.setItem('gq_nudge_done', JSON.stringify(nudgeDone));
 }
 let nudgeDone = loadNudgeDone();
-let nudgeCourseId = localStorage.getItem('gq_nudge_course') || '';
+// ここで例外が飛ぶと quests.js の評価が途中で止まり、以降の let が
+// 未初期化のまま残って起動フリーズになる（保存領域が使えない環境で実際に起きた）
+let nudgeCourseId = (function () {
+  try { return localStorage.getItem('gq_nudge_course') || ''; } catch (e) { return ''; }
+})();
 
 function currentNudgeCourse() { return NUDGE_COURSES.find(c => c.id === nudgeCourseId) || null; }
 

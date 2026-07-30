@@ -40,7 +40,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles/app.css?v=guild-114">
+<link rel="stylesheet" href="styles/app.css?v=guild-116">
 </head>
 <body>
 
@@ -974,15 +974,114 @@
   </div>
 </div>
 
-<script src="scripts/core.js?v=guild-114"></script>
-<script src="scripts/progression.js?v=guild-114"></script>
-<script src="scripts/quests.js?v=guild-114"></script>
-<script src="scripts/timer.js?v=guild-114"></script>
-<script src="scripts/settings-genre.js?v=guild-114"></script>
-<script src="scripts/calendar-review.js?v=guild-114"></script>
-<script src="scripts/features.js?v=guild-114"></script>
-<script src="scripts/boot.js?v=guild-114"></script>
-<script src="scripts/otomon.js?v=guild-114"></script>
+<!-- ─── 保存領域(localStorage)が使えないときの代替 ─────────────────
+     Safariで file:// のまま開いた場合や、プライベートブラウズ・
+     「すべてのCookieをブロック」設定では、localStorage に触るだけで
+     SecurityError が飛ぶ。GQは起動時に28か所も保存領域を読むため、
+     保護されていない数か所で例外が飛び、ファイルの評価が途中で止まり、
+     ロゴ画面のまま固まっていた（実際に再現・確認済み）。
+
+     ここでは「使えるかどうか」を先に試し、使えない場合はメモリ上の
+     代替に差し替えて、起動だけは必ず通す。記録は残らないので警告も出す。
+     ※必ず scripts/*.js より前に置くこと -->
+<script>
+(function () {
+  var usable = false;
+  try {
+    var probe = '__gq_probe__';
+    window.localStorage.setItem(probe, '1');
+    window.localStorage.removeItem(probe);
+    usable = true;
+  } catch (e) { usable = false; }
+  if (usable) return;   // 通常はここで終わり（本番・通常のブラウザは無影響）
+
+  var mem = Object.create(null);
+  var shim = {
+    getItem:    function (k) { k = String(k); return (k in mem) ? mem[k] : null; },
+    setItem:    function (k, v) { mem[String(k)] = String(v); },
+    removeItem: function (k) { delete mem[String(k)]; },
+    clear:      function () { mem = Object.create(null); },
+    key:        function (i) { var ks = Object.keys(mem); return i < ks.length ? ks[i] : null; }
+  };
+  Object.defineProperty(shim, 'length', { get: function () { return Object.keys(mem).length; } });
+  try {
+    Object.defineProperty(window, 'localStorage', { configurable: true, get: function () { return shim; } });
+    window.GQ_STORAGE_UNAVAILABLE = true;
+  } catch (e) { return; }
+
+  // 記録が残らないことは、はっきり伝える（黙って動くほうが危ない）
+  window.addEventListener('load', function () {
+    var b = document.createElement('div');
+    b.setAttribute('style', [
+      'position:fixed', 'left:10px', 'right:10px', 'top:10px', 'z-index:99998',
+      'background:#3a2a08', 'border:1px solid #f4a261', 'border-radius:10px',
+      'padding:10px 12px', 'color:#ffedd5', 'font-size:12px', 'line-height:1.6',
+      'font-family:-apple-system,BlinkMacSystemFont,sans-serif', 'text-align:left'
+    ].join(';'));
+    b.textContent = '⚠️ このブラウザでは記録を保存できません（保存領域が使えない状態です）。'
+      + 'お試しでは使えますが、閉じると消えます。'
+      + 'ファイルを直接開いている場合は https://yoz400.github.io/growth-quest/ を開いてください。';
+    document.body.appendChild(b);
+  });
+})();
+</script>
+
+<!-- ─── 起動エラーを画面に出す安全網 ───────────────────────────
+     過去に3回、起動時の例外でロゴ画面のまま止まる事故が起きている。
+     スマホやホーム画面起動ではコンソールを開けないため、原因が
+     まったく分からないまま時間を溶かす。ここで例外を捕まえて画面に出す。
+     ※必ず scripts/*.js より前に置くこと（後ろだと取りこぼす） -->
+<script>
+(function () {
+  var shown = false;
+  function show(msg, where) {
+    if (shown) return;
+    shown = true;
+    var box = document.createElement('div');
+    box.setAttribute('style', [
+      'position:fixed', 'left:12px', 'right:12px', 'bottom:12px', 'z-index:99999',
+      'background:#2a0f14', 'border:1px solid #e63946', 'border-radius:12px',
+      'padding:14px 16px', 'color:#ffe4e6', 'font-size:13px', 'line-height:1.6',
+      'font-family:-apple-system,BlinkMacSystemFont,sans-serif',
+      'text-align:left', 'white-space:pre-wrap', 'word-break:break-word',
+      'max-height:60vh', 'overflow:auto'
+    ].join(';'));
+    var t = document.createElement('div');
+    t.setAttribute('style', 'font-weight:800;color:#fca5a5;margin-bottom:6px');
+    t.textContent = '⚠️ 起動できませんでした';
+    var m = document.createElement('div');
+    m.textContent = msg + (where ? '\n（' + where + '）' : '');
+    var h = document.createElement('div');
+    h.setAttribute('style', 'margin-top:8px;font-size:11px;opacity:.75');
+    h.textContent = 'この文章をそのままクロに見せてください。記録は消えていません。';
+    box.appendChild(t); box.appendChild(m); box.appendChild(h);
+    (document.body || document.documentElement).appendChild(box);
+    // ロゴ画面が消えないまま止まるので、隠さずに出したままにする
+    var ls = document.getElementById('launch-screen');
+    if (ls) { ls.style.opacity = '.25'; }
+  }
+  window.addEventListener('error', function (e) {
+    // 画像やスクリプトの読み込み失敗（message が無い）は対象外
+    if (e && e.message) {
+      show(e.message, (String(e.filename || '').split('/').pop() || '') + ':' + e.lineno);
+    }
+  });
+  window.addEventListener('unhandledrejection', function (e) {
+    var r = e && e.reason;
+    show(String((r && r.message) || r || 'Promise エラー'), '');
+  });
+})();
+</script>
+
+<script src="scripts/core.js?v=guild-116"></script>
+<script src="scripts/progression.js?v=guild-116"></script>
+<script src="scripts/quests.js?v=guild-116"></script>
+<script src="scripts/timer.js?v=guild-116"></script>
+<script src="scripts/settings-genre.js?v=guild-116"></script>
+<script src="scripts/calendar-review.js?v=guild-116"></script>
+<script src="scripts/features.js?v=guild-116"></script>
+<script src="scripts/boot.js?v=guild-116"></script>
+<script src="scripts/otomon.js?v=guild-116"></script>
 
 <script>
 // ── Service Worker 登録 ────────────────────────────────

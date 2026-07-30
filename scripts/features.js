@@ -5,7 +5,11 @@
 // スキルは時間ではなく「世界樹の妖精への答え」で実る方式に変更。
 // 旧・時間自動解放は廃止（互換のため空の結果を返す）。
 // IIFE外に残す: settings-genre.js / boot.js が avatarType 自体を再代入するため。
-let avatarType = localStorage.getItem('gq_av_type') || 'A';
+// ファイル先頭なので、ここで例外が飛ぶと features.js が丸ごと評価されず
+// boot.js が倒れる（保存領域が使えない環境で実際に起きた）
+let avatarType = (function () {
+  try { return localStorage.getItem('gq_av_type') || 'A'; } catch (e) { return 'A'; }
+})();
 
 (function () {
 function checkSkillUnlocks() {

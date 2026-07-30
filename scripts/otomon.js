@@ -582,7 +582,12 @@
   function loadWakeItems() { try { return JSON.parse(localStorage.getItem('gq_wake_items') || 'null'); } catch { return null; } }
   function saveWakeItems() { localStorage.setItem('gq_wake_items', JSON.stringify(wakeItems)); notifyChange(); }
   let wakeItems = loadWakeItems();
-  if (!wakeItems || typeof wakeItems !== 'object') { wakeItems = { ...STARTER_WAKE }; saveWakeItems(); }
+  if (!wakeItems || typeof wakeItems !== 'object') {
+    wakeItems = { ...STARTER_WAKE };
+    // 保存側(setItem)は例外を想定していない。ここで飛ぶと otomon.js が
+    // 途中で止まるので、初期化だけは失敗しても続行できるようにする
+    try { saveWakeItems(); } catch (e) { console.warn('[GQ] 目覚めアイテムの初期保存に失敗', e && e.name); }
+  }
 
   function getWakeCount(id)     { return wakeItems[id] || 0; }
   function grantWakeItem(id, n) { if (!WAKE_BY_ID[id]) return false; wakeItems[id] = getWakeCount(id) + (n || 1); saveWakeItems(); return true; }
