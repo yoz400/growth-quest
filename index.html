@@ -40,7 +40,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles/app.css?v=guild-120">
+<link rel="stylesheet" href="styles/app.css?v=guild-121">
 </head>
 <body>
 
@@ -443,9 +443,10 @@
         <div id="board-next-rewards"></div>
       </div>
 
-      <!-- ② 世界地図（折りたたみ） -->
+      <!-- ② 100マス盤面（折りたたみ）＋大陸図 -->
       <div id="board-map-section">
-        <button id="board-map-toggle">🗺 世界地図を見る ▾</button>
+        <button id="wm-open-btn">🗺 大陸図をひらく</button>
+        <button id="board-map-toggle">🎲 マス目を見る ▾</button>
         <div id="board-map-content">
           <div id="board-svg-wrapper">
             <div id="sg-walker"></div>
@@ -467,6 +468,23 @@
       <!-- ④ アイテム図鑑 -->
       <button id="board-dex-btn" onclick="openItemDex()">📖 アイテム図鑑を見る</button>
     </div>
+  </div>
+</div>
+
+<!-- 🗺 大陸図（旅の全体が見える地図。雲が晴れると進んだことが分かる） -->
+<div id="world-map-overlay">
+  <div id="wm-panel">
+    <div class="wm-head">
+      <div>
+        <div class="wm-title">🗺 大陸図</div>
+        <div class="wm-sub" id="wm-sub">習慣の大陸</div>
+      </div>
+      <button class="icon-btn" id="wm-close-btn" aria-label="閉じる">✕</button>
+    </div>
+    <div class="wm-body">
+      <svg id="wm-svg" viewBox="0 0 680 460" role="img" aria-label="大陸図"></svg>
+    </div>
+    <div class="wm-foot" id="wm-foot"></div>
   </div>
 </div>
 
@@ -1073,16 +1091,16 @@
 })();
 </script>
 
-<script src="scripts/areas.js?v=guild-120"></script>
-<script src="scripts/core.js?v=guild-120"></script>
-<script src="scripts/progression.js?v=guild-120"></script>
-<script src="scripts/quests.js?v=guild-120"></script>
-<script src="scripts/timer.js?v=guild-120"></script>
-<script src="scripts/settings-genre.js?v=guild-120"></script>
-<script src="scripts/calendar-review.js?v=guild-120"></script>
-<script src="scripts/features.js?v=guild-120"></script>
-<script src="scripts/boot.js?v=guild-120"></script>
-<script src="scripts/otomon.js?v=guild-120"></script>
+<script src="scripts/areas.js?v=guild-121"></script>
+<script src="scripts/core.js?v=guild-121"></script>
+<script src="scripts/progression.js?v=guild-121"></script>
+<script src="scripts/quests.js?v=guild-121"></script>
+<script src="scripts/timer.js?v=guild-121"></script>
+<script src="scripts/settings-genre.js?v=guild-121"></script>
+<script src="scripts/calendar-review.js?v=guild-121"></script>
+<script src="scripts/features.js?v=guild-121"></script>
+<script src="scripts/boot.js?v=guild-121"></script>
+<script src="scripts/otomon.js?v=guild-121"></script>
 
 <script>
 // ── Service Worker 登録 ────────────────────────────────

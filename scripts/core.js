@@ -41,6 +41,7 @@ const Overlay = (() => {
     'equipment-overlay':      { openClass: 'open', dismissible: true },
     'equipment-get-overlay':  { openClass: 'open', dismissible: true },
     'board-overlay':          { openClass: 'open', dismissible: true },
+    'world-map-overlay':      { openClass: 'open', dismissible: true },
     'skill-overlay':          { openClass: 'open', dismissible: true },
     'review-overlay':         { openClass: 'open', dismissible: true },
     'avatar-overlay':         { openClass: 'open', dismissible: true },
@@ -2022,6 +2023,119 @@ function buildAreaView() {
   }, 60);
 }
 
+// ── 🗺 大陸図（Phase 3）──────────────────────────────
+// 情報源は areas.js。ここは描画だけを担当する。
+
+const WM_REVEAL_MS = 900;      // 雲が晴れるアニメの長さ
+let _wmTimer = null;
+
+// 大陸図が使う「到達マス」。
+// ⚠️ sgGetCellNum は100で折り返すので、そのまま使うとステージ2で雲が全部戻る。
+//    ステージ1をクリア済みなら100で頭打ちにして、単調増加を保証する。
+function worldMaxCell() {
+  const pos = sugorokuData.pos;
+  if (pos <= 0) return 0;
+  return sgGetStage(pos) > 1 ? 100 : sgGetCellNum(pos);
+}
+
+function cancelWorldMapReveal() {
+  if (_wmTimer) { clearTimeout(_wmTimer); _wmTimer = null; }
+}
+
+function openWorldMap() {
+  buildWorldMap();
+  Overlay.open('world-map-overlay', { onClose: cancelWorldMapReveal });
+}
+function closeWorldMap() {
+  // アニメ途中で閉じられたら markSeen は呼ばない（次に開いたときにもう一度晴れる）
+  cancelWorldMapReveal();
+  Overlay.close('world-map-overlay');
+}
+
+function buildWorldMap() {
+  const A = window.Areas;
+  const svg = document.getElementById('wm-svg');
+  if (!A || !svg) return;
+
+  const areas = A.getStage('stage1').areas;
+  const to    = worldMaxCell();
+  const from  = A.revealDiff(to).from;   // 前回この画面を見たときの到達マス
+  const animate = to > from;             // 進んでいるときだけアニメを出す
+
+  // ① 道：10エリアを map 座標の順につなぐ。通った区間だけ明るい線を重ねる
+  const all    = areas.map(a => `${a.map.x},${a.map.y}`).join(' ');
+  const walked = areas.filter(a => to >= a.range[0])
+                      .map(a => `${a.map.x},${a.map.y}`).join(' ');
+
+  // ② エリアごとのノード
+  //    data-op = アニメ後の最終opacity。style.opacity = アニメ前の値。
+  //    この2つを次フレームで入れ替えることで CSS transition が走る。
+  const nodes = areas.map(a => {
+    const cloudFrom = animate ? A.cloudOpacity(a, from) : A.cloudOpacity(a, to);
+    const cloudTo   = A.cloudOpacity(a, to);
+    const here = to > 0 && to >= a.range[0] && to <= a.range[1];
+    const badge = a.goal ? '🏆' : a.review ? '🪞' : '';
+    return `
+      <g class="wm-area">
+        <circle cx="${a.map.x}" cy="${a.map.y}" r="26"
+                fill="${a.palette.base}" stroke="${a.accent}" stroke-width="2"/>
+        <text class="wm-emoji" x="${a.map.x}" y="${a.map.y + 8}">${a.emoji}</text>
+        <g class="wm-label" data-op="${1 - cloudTo}" style="opacity:${1 - cloudFrom}">
+          <text class="wm-name" x="${a.map.x}" y="${a.map.y + 48}"
+                style="fill:${a.accent}">${a.name}</text>
+          <text class="wm-mark" x="${a.map.x}" y="${a.map.y + 64}">${badge} ${a.landmark.name}</text>
+        </g>
+        ${here ? `<text class="wm-here" x="${a.map.x}" y="${a.map.y - 36}">▲</text>` : ''}
+        <ellipse class="wm-cloud" cx="${a.map.x}" cy="${a.map.y}" rx="52" ry="40"
+                 data-op="${cloudTo}" style="opacity:${cloudFrom}"/>
+      </g>`;
+  }).join('');
+
+  svg.innerHTML = `
+    <defs>
+      <radialGradient id="wm-cloud-grad">
+        <stop offset="0%"   stop-color="#e9edf6" stop-opacity=".95"/>
+        <stop offset="70%"  stop-color="#c7cfe0" stop-opacity=".75"/>
+        <stop offset="100%" stop-color="#aab4c8" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <polyline class="wm-road" points="${all}"/>
+    ${walked.split(' ').length > 1 ? `<polyline class="wm-road-walked" points="${walked}"/>` : ''}
+    ${nodes}`;
+
+  // ③ 見出しと足元の情報
+  const sub = document.getElementById('wm-sub');
+  if (sub) sub.textContent = `習慣の大陸 ・ マス ${to} / 100`;
+
+  const foot = document.getElementById('wm-foot');
+  if (foot) {
+    const cur = to > 0 ? A.areaOf(to) : null;
+    if (!cur) {
+      foot.innerHTML = `<div class="wm-foot-next">サイコロを振ると、地図が広がっていきます。</div>`;
+    } else {
+      const p    = A.progressInArea(to, cur);
+      const rest = cur.range[1] - to;
+      foot.innerHTML = `
+        <div class="wm-foot-area" style="color:${cur.accent}">
+          ${cur.emoji} ${cur.name}<span class="wm-foot-prog">${p.done} / ${p.span}</span>
+        </div>
+        <div class="wm-foot-next">${rest > 0
+          ? `次のランドマーク　${cur.landmark.name}（あと ${rest} マス）`
+          : `${cur.landmark.name} に到達！`}</div>`;
+    }
+  }
+
+  // ④ 差分アニメ。次フレームで最終値に入れ替えると transition が走る
+  if (animate) {
+    requestAnimationFrame(() => {
+      svg.querySelectorAll('[data-op]').forEach(el => { el.style.opacity = el.dataset.op; });
+    });
+    _wmTimer = setTimeout(() => { A.markSeen(to); _wmTimer = null; }, WM_REVEAL_MS + 120);
+  } else {
+    A.markSeen(to);
+  }
+}
+
 // ── 次の報酬プレビューチップ ──
 function buildNextRewards() {
   const el = document.getElementById('board-next-rewards');
@@ -2061,11 +2175,11 @@ function toggleBoardMap() {
   if (isExp) {
     content.classList.remove('expanded');
     toggle.classList.remove('expanded');
-    toggle.textContent = '🗺 世界地図を見る ▾';
+    toggle.textContent = '🎲 マス目を見る ▾';
   } else {
     content.classList.add('expanded');
     toggle.classList.add('expanded');
-    toggle.textContent = '🗺 世界地図を閉じる ▴';
+    toggle.textContent = '🎲 マス目を閉じる ▴';
     // SVGを描画（初回または再開時）
     const wrapper = document.getElementById('board-svg-wrapper');
     wrapper.querySelectorAll(':scope > svg').forEach(el => el.remove());
@@ -2524,6 +2638,9 @@ window.openItemDex = openItemDex;
 window.closeItemDex = closeItemDex;
 window.pickFixedDice = pickFixedDice;
 window.buildAreaView = buildAreaView;
+window.openWorldMap = openWorldMap;
+window.closeWorldMap = closeWorldMap;
+window.buildWorldMap = buildWorldMap;
 window.buildNextRewards = buildNextRewards;
 window.toggleBoardMap = toggleBoardMap;
 window.renderActiveBuffs = renderActiveBuffs;

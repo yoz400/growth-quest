@@ -1922,8 +1922,22 @@ header {
 .bnr-chip.tp-checkpoint { background:rgba(251,146,60,.07);   border-color:rgba(251,146,60,.3);   color:#fb923c; }
 .bnr-chip.tp-goal       { background:rgba(251,191,36,.1);    border-color:#fbbf24;               color:#fbbf24; }
 
-/* ── 世界地図トグル ─────────────────────────── */
+/* ── 大陸図入口＋100マス盤面トグル ─────────── */
 #board-map-section { margin-bottom: 12px; }
+#wm-open-btn {
+  width: 100%; padding: 11px 14px; margin-bottom: 8px;
+  background: linear-gradient(135deg, rgba(6,182,212,.14), rgba(167,139,250,.10));
+  border: 1px solid rgba(6,182,212,.28); border-radius: 12px;
+  color: var(--cyan); font-size: .8rem; font-weight: 700;
+  text-align: left; cursor: pointer;
+  transition: background .2s, border-color .2s, transform .15s;
+}
+#wm-open-btn:hover {
+  background: linear-gradient(135deg, rgba(6,182,212,.22), rgba(167,139,250,.16));
+  border-color: rgba(6,182,212,.48);
+}
+#wm-open-btn:active { transform: scale(.985); }
+
 #board-map-toggle {
   width: 100%; padding: 9px 14px;
   background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.09);
@@ -1939,6 +1953,64 @@ header {
   transition: max-height .38s ease;
 }
 #board-map-content.expanded { max-height: 520px; }
+
+/* ═══ 🗺 大陸図 ═══ */
+#world-map-overlay {
+  position: fixed; inset: 0; z-index: 94;   /* board-overlay(93) の上に重ねる */
+  background: rgba(0,0,0,.86); backdrop-filter: blur(12px);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity .3s;
+}
+#world-map-overlay.open { opacity: 1; pointer-events: auto; }
+
+#wm-panel {
+  width: min(560px, calc(100vw - 20px));
+  background: #0e0e1c; border: 1px solid rgba(6,182,212,.22);
+  border-radius: 24px; max-height: 92vh; overflow: hidden;
+  display: flex; flex-direction: column;
+  box-shadow: 0 24px 80px rgba(0,0,0,.9);
+}
+.wm-head {
+  padding: 16px 22px 14px; flex-shrink: 0;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.wm-title { font-size: .98rem; font-weight: 700; }
+.wm-sub   { font-size: .68rem; color: var(--text-dim); margin-top: 2px; }
+
+.wm-body { flex: 1; overflow: auto; padding: 12px; }
+#wm-svg  { width: 100%; height: auto; display: block; }   /* 375px幅でもはみ出さない */
+
+.wm-road {
+  fill: none; stroke: rgba(255,255,255,.10); stroke-width: 3;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.wm-road-walked {
+  fill: none; stroke: rgba(6,182,212,.55); stroke-width: 3;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+
+.wm-emoji { font-size: 24px; text-anchor: middle; }
+.wm-name  { font-size: 15px; font-weight: 700; text-anchor: middle; }
+.wm-mark  { font-size: 11px; text-anchor: middle; fill: var(--text-dim); }
+.wm-here  { font-size: 18px; text-anchor: middle; fill: #fbbf24; }
+
+.wm-cloud { fill: url(#wm-cloud-grad); }
+
+/* 雲とラベルは同じ長さでフェードさせる。
+   prefers-reduced-motion では app.css 末尾の全体ルールが 0.01ms に潰すので個別対応は不要 */
+.wm-cloud, .wm-label { transition: opacity .9s ease; }
+
+.wm-foot {
+  flex-shrink: 0; padding: 12px 18px 16px;
+  border-top: 1px solid rgba(255,255,255,.06);
+}
+.wm-foot-area {
+  font-size: .92rem; font-weight: 700; display: flex;
+  align-items: center; gap: 8px;
+}
+.wm-foot-prog { font-size: .72rem; color: var(--text-dim); font-weight: 400; }
+.wm-foot-next { font-size: .72rem; color: var(--text-dim); margin-top: 4px; }
 
 #board-legend {
   display: flex; flex-wrap: wrap; gap: 7px 12px; justify-content: center;
@@ -5233,7 +5305,7 @@ body.eq-mood-galaxy    .anim-wrap::after {
    visibility は同じ時間で遅延切替（フェードアウトが切れない）。
 ═══════════════════════════════════════ */
 #login-bonus-overlay, #koku-overlay, #genre-overlay, #badges-overlay,
-#equipment-overlay, #equipment-get-overlay, #board-overlay, #skill-overlay,
+#equipment-overlay, #equipment-get-overlay, #board-overlay, #world-map-overlay, #skill-overlay,
 #review-overlay, #avatar-overlay, #words-overlay, #settings-overlay,
 #praise-overlay, #guide-tutorial-overlay, #guild-overlay,
 #vow-blessing-overlay, #fairy-overlay, #fairy-guide-overlay,
@@ -5244,7 +5316,7 @@ body.eq-mood-galaxy    .anim-wrap::after {
 }
 #login-bonus-overlay.open, #koku-overlay.active, #genre-overlay.open,
 #badges-overlay.open, #equipment-overlay.open, #equipment-get-overlay.open,
-#board-overlay.open, #skill-overlay.open, #review-overlay.open,
+#board-overlay.open, #world-map-overlay.open, #skill-overlay.open, #review-overlay.open,
 #avatar-overlay.open, #words-overlay.open, #settings-overlay.open,
 #praise-overlay.open, #guide-tutorial-overlay.open, #guild-overlay.open,
 #vow-blessing-overlay.open, #fairy-overlay.open, #fairy-guide-overlay.open,

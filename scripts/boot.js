@@ -25,6 +25,11 @@ document.getElementById('board-overlay').addEventListener('click', e => {
   if (e.target === document.getElementById('board-overlay')) closeBoardModal();
 });
 document.getElementById('board-map-toggle').addEventListener('click', toggleBoardMap);
+document.getElementById('wm-open-btn')?.addEventListener('click', () => openWorldMap());
+document.getElementById('wm-close-btn')?.addEventListener('click', () => closeWorldMap());
+document.getElementById('world-map-overlay')?.addEventListener('click', e => {
+  if (e.target === document.getElementById('world-map-overlay')) closeWorldMap();
+});
 
 // ═══════════════════════════════════════════════════════
 //  SKILL TREE — EVENT LISTENERS
