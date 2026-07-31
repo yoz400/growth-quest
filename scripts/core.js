@@ -1495,28 +1495,28 @@ const SG_ZONES = (window.Areas?.getStage('stage1').areas || []).map(a => ({
 const SPOT_ICONS = {
   grassland: { normal:'🌸', item:'🗺', event:'👤', rare:'⛩', checkpoint:'🏕', goal:'🌳' },
   forest:    { normal:'🍄', item:'🎁', event:'🌲', rare:'🌺', checkpoint:'🔥', goal:'🌳' },
-  cave:      { normal:'🪨', item:'💎', event:'🌊', rare:'✨', checkpoint:'🏮', goal:'🌳' },
+  marsh:     { normal:'🌫', item:'🏺', event:'🐸', rare:'🪷', checkpoint:'⛺', goal:'🌳' },
   ruins:     { normal:'🏛', item:'📜', event:'🪆', rare:'🗝', checkpoint:'⚔', goal:'🌳' },
   desert:    { normal:'🌵', item:'🏺', event:'🐍', rare:'💰', checkpoint:'⛺', goal:'🌳' },
-  ocean:     { normal:'🌊', item:'🐚', event:'🐋', rare:'🏴', checkpoint:'⛵', goal:'🌳' },
+  lake:      { normal:'💧', item:'🐚', event:'🦢', rare:'🪞', checkpoint:'⛵', goal:'🌳' },
   snow:      { normal:'❄', item:'🧊', event:'🐺', rare:'💫', checkpoint:'🏔', goal:'🌳' },
-  sky:       { normal:'☁', item:'🎀', event:'🦅', rare:'🌈', checkpoint:'🏰', goal:'🌳' },
-  volcano:   { normal:'🌋', item:'🔱', event:'🔥', rare:'💀', checkpoint:'🏯', goal:'🌳' },
-  dragon:    { normal:'🐲', item:'💎', event:'⚡', rare:'👑', checkpoint:'🏯', goal:'🏆' },
+  storm:     { normal:'⛰', item:'🎁', event:'⚡', rare:'🌩', checkpoint:'🏕', goal:'🌳' },
+  ember:     { normal:'🪨', item:'🔥', event:'🌋', rare:'💠', checkpoint:'🏯', goal:'🌳' },
+  summit:    { normal:'☁', item:'🎀', event:'🦅', rare:'🌅', checkpoint:'🏔', goal:'🏆' },
 };
 
 // ── ゾーンパーティクル絵文字 ──
 const ZONE_PARTICLES = {
   grassland: ['🌸','🍃','🌼','🌸','🍃'],
   forest:    ['🍂','🍃','🌿','🍂','🍃'],
-  cave:      ['✨','💎','✦','✨','💫'],
+  marsh:     ['🌫','💧','🌫','🍃','💧'],
   ruins:     ['✦','·','✦','·','✦'],
   desert:    ['·','·','·','·','·'],
-  ocean:     ['🌊','💧','🫧','🌊','💧'],
+  lake:      ['💧','✦','💧','🍃','✦'],
   snow:      ['❄','❄','✦','❄','❄'],
-  sky:       ['☁','☁','✨','☁','✦'],
-  volcano:   ['🔥','✦','🔥','✦','✦'],
-  dragon:    ['⚡','✦','⚡','✦','🔥'],
+  storm:     ['⚡','✦','⚡','💨','✦'],
+  ember:     ['🔥','✦','·','🔥','✦'],
+  summit:    ['✦','☁','✦','·','☁'],
 };
 
 function buildBoardSVG() {

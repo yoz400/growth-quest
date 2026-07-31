@@ -1771,14 +1771,14 @@ header {
 }
 #ba-zone-header.zt-grassland { background:linear-gradient(135deg,rgba(134,239,172,.12),rgba(74,222,128,.03)); border-color:rgba(134,239,172,.28); }
 #ba-zone-header.zt-forest    { background:linear-gradient(135deg,rgba(74,222,128,.12),rgba(20,83,45,.08));    border-color:rgba(74,222,128,.28); }
-#ba-zone-header.zt-cave      { background:linear-gradient(135deg,rgba(167,139,250,.12),rgba(88,28,135,.07));  border-color:rgba(167,139,250,.28); }
+#ba-zone-header.zt-marsh     { background:linear-gradient(135deg,rgba(167,139,250,.12),rgba(88,28,135,.07));  border-color:rgba(167,139,250,.28); }
 #ba-zone-header.zt-ruins     { background:linear-gradient(135deg,rgba(251,146,60,.12),rgba(120,53,15,.07));   border-color:rgba(251,146,60,.28); }
 #ba-zone-header.zt-desert    { background:linear-gradient(135deg,rgba(251,191,36,.12),rgba(180,83,9,.07));    border-color:rgba(251,191,36,.28); }
-#ba-zone-header.zt-ocean     { background:linear-gradient(135deg,rgba(56,189,248,.12),rgba(8,47,73,.07));     border-color:rgba(56,189,248,.28); }
+#ba-zone-header.zt-lake      { background:linear-gradient(135deg,rgba(56,189,248,.12),rgba(8,47,73,.07));     border-color:rgba(56,189,248,.28); }
 #ba-zone-header.zt-snow      { background:linear-gradient(135deg,rgba(186,230,253,.12),rgba(51,65,85,.07));   border-color:rgba(186,230,253,.28); }
-#ba-zone-header.zt-sky       { background:linear-gradient(135deg,rgba(196,181,253,.12),rgba(76,29,149,.07));  border-color:rgba(196,181,253,.28); }
-#ba-zone-header.zt-volcano   { background:linear-gradient(135deg,rgba(248,113,113,.12),rgba(127,29,29,.07));  border-color:rgba(248,113,113,.28); }
-#ba-zone-header.zt-dragon    { background:linear-gradient(135deg,rgba(220,38,38,.12),rgba(127,29,29,.07));    border-color:rgba(220,38,38,.28); }
+#ba-zone-header.zt-storm     { background:linear-gradient(135deg,rgba(196,181,253,.12),rgba(76,29,149,.07));  border-color:rgba(196,181,253,.28); }
+#ba-zone-header.zt-ember     { background:linear-gradient(135deg,rgba(248,113,113,.12),rgba(127,29,29,.07));  border-color:rgba(248,113,113,.28); }
+#ba-zone-header.zt-summit    { background:linear-gradient(135deg,rgba(220,38,38,.12),rgba(127,29,29,.07));    border-color:rgba(220,38,38,.28); }
 
 .ba-zone-info { display:flex; align-items:center; gap:9px; position:relative; z-index:1; }
 #ba-zone-icon  { font-size:1.3rem; }

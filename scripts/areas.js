@@ -13,7 +13,7 @@
  * @property {number} no          ステージ内の通し番号（1始まり）
  * @property {[number,number]} range  マス範囲 [開始, 終了]（両端含む）
  *
- * -- 表示情報（Phase 1 では既存 SG_ZONES と同値。Phase 2 で差し替える）--
+ * -- 表示情報（Phase 2 で新しい世界名へ差し替え済み）--
  * @property {string} name        表示名
  * @property {string} terrain     地形タイプ。CSS(.zt-*)・SPOT_ICONS・ZONE_PARTICLES の鍵
  * @property {string} emoji       ゾーン絵文字
@@ -38,7 +38,7 @@ const STAGES = [
     areas: [
       {
         id: 'sougen', no: 1, range: [1, 10],
-        name: '草　原', terrain: 'grassland',
+        name: 'はじまりの草原', terrain: 'grassland',
         emoji: '🌿', accent: '#86efac', rgb: '134,239,172',
         theme: '踏み出す',
         palette: { base: '#2c5b3c', accent: '#3f8a55', sky: '#1b3a2c' },
@@ -49,7 +49,7 @@ const STAGES = [
       },
       {
         id: 'mori', no: 2, range: [11, 20],
-        name: '深い森', terrain: 'forest',
+        name: 'ささやきの森', terrain: 'forest',
         emoji: '🌲', accent: '#4ade80', rgb: '74,222,128',
         theme: '続かない不安',
         palette: { base: '#20452f', accent: '#2f7a45', sky: '#16301f' },
@@ -60,8 +60,8 @@ const STAGES = [
       },
       {
         id: 'shitsugen', no: 3, range: [21, 30],
-        name: '洞　窟', terrain: 'cave',
-        emoji: '💎', accent: '#a78bfa', rgb: '167,139,250',
+        name: '霧雨の湿原', terrain: 'marsh',
+        emoji: '🌫', accent: '#a78bfa', rgb: '167,139,250',
         theme: '重い時期',
         palette: { base: '#3a4f52', accent: '#6b8f92', sky: '#2a3a3d' },
         otomonAttr: 'mist',
@@ -71,7 +71,7 @@ const STAGES = [
       },
       {
         id: 'iseki', no: 4, range: [31, 40],
-        name: '古代遺跡', terrain: 'ruins',
+        name: '忘れられた遺跡', terrain: 'ruins',
         emoji: '🏛', accent: '#fb923c', rgb: '251,146,60',
         theme: '先人を知る',
         palette: { base: '#4a4433', accent: '#8c7f5e', sky: '#332f24' },
@@ -82,7 +82,7 @@ const STAGES = [
       },
       {
         id: 'sunahara', no: 5, range: [41, 50],
-        name: '砂　漠', terrain: 'desert',
+        name: '灼けた砂原', terrain: 'desert',
         emoji: '🌵', accent: '#fbbf24', rgb: '251,191,36',
         theme: '単調さ',
         palette: { base: '#6b5a34', accent: '#b8973f', sky: '#4a3f24' },
@@ -93,8 +93,8 @@ const STAGES = [
       },
       {
         id: 'mizuumi', no: 6, range: [51, 60],
-        name: '大海原', terrain: 'ocean',
-        emoji: '🌊', accent: '#38bdf8', rgb: '56,189,248',
+        name: '鏡面の湖', terrain: 'lake',
+        emoji: '💧', accent: '#38bdf8', rgb: '56,189,248',
         theme: '振り返り',
         palette: { base: '#22485f', accent: '#3f86ad', sky: '#16303f' },
         otomonAttr: 'aqua',
@@ -119,8 +119,8 @@ const STAGES = [
       },
       {
         id: 'touge', no: 8, range: [71, 80],
-        name: '天空の城', terrain: 'sky',
-        emoji: '☁️', accent: '#c4b5fd', rgb: '196,181,253',
+        name: '雷鳴の峠', terrain: 'storm',
+        emoji: '⚡', accent: '#c4b5fd', rgb: '196,181,253',
         theme: '最大の試練',
         palette: { base: '#3c4a5e', accent: '#8fa3c0', sky: '#252f3d' },
         otomonAttr: 'thunder',
@@ -130,7 +130,7 @@ const STAGES = [
       },
       {
         id: 'okibi', no: 9, range: [81, 90],
-        name: '火　山', terrain: 'volcano',
+        name: '熾火の谷', terrain: 'ember',
         emoji: '🔥', accent: '#f87171', rgb: '248,113,113',
         theme: '静かに燃え続ける',
         palette: { base: '#2a221e', accent: '#c25a34', sky: '#1a1512' },
@@ -141,8 +141,8 @@ const STAGES = [
       },
       {
         id: 'itadaki', no: 10, range: [91, 100],
-        name: '龍の城', terrain: 'dragon',
-        emoji: '🐉', accent: '#fbbf24', rgb: '220,38,38',
+        name: '暁の頂', terrain: 'summit',
+        emoji: '🌅', accent: '#fbbf24', rgb: '220,38,38',
         theme: '到達',
         palette: { base: '#4a5a72', accent: '#e0c86a', sky: '#5a6b85' },
         otomonAttr: 'light',
