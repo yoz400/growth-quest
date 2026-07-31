@@ -2028,6 +2028,7 @@ function buildAreaView() {
 
 const WM_REVEAL_MS = 900;      // 雲が晴れるアニメの長さ
 let _wmTimer = null;
+let _wmRevealing = false;      // 雲を晴らす演出が進行中か
 
 // 大陸図が使う「到達マス」。
 // ⚠️ sgGetCellNum は100で折り返すので、そのまま使うとステージ2で雲が全部戻る。
@@ -2039,6 +2040,7 @@ function worldMaxCell() {
 }
 
 function cancelWorldMapReveal() {
+  _wmRevealing = false;        // まだ動いていない予約も無効にする
   if (_wmTimer) { clearTimeout(_wmTimer); _wmTimer = null; }
 }
 
@@ -2127,10 +2129,18 @@ function buildWorldMap() {
 
   // ④ 差分アニメ。次フレームで最終値に入れ替えると transition が走る
   if (animate) {
+    _wmRevealing = true;
     requestAnimationFrame(() => {
+      if (!_wmRevealing) return;            // rAF が回る前に閉じられていた
       svg.querySelectorAll('[data-op]').forEach(el => { el.style.opacity = el.dataset.op; });
+      // markSeen の予約は「雲が実際に動きはじめた後」に置く。
+      // requestAnimationFrame はページが裏に回ると止まるが setTimeout は動くため、
+      // 外に置くと「雲は動いていないのに見たことにされる」＝演出を永久に取り逃がす。
+      _wmTimer = setTimeout(() => {
+        if (_wmRevealing) A.markSeen(to);
+        _wmTimer = null; _wmRevealing = false;
+      }, WM_REVEAL_MS + 120);
     });
-    _wmTimer = setTimeout(() => { A.markSeen(to); _wmTimer = null; }, WM_REVEAL_MS + 120);
   } else {
     A.markSeen(to);
   }
