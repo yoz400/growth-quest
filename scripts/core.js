@@ -2030,6 +2030,104 @@ const WM_REVEAL_MS = 900;      // 雲が晴れるアニメの長さ
 let _wmTimer = null;
 let _wmRevealing = false;      // 雲を晴らす演出が進行中か
 
+// ── 大陸の地形を描く小道具 ──────────────────────────
+// 山・木・砂丘・葦・遺跡・火口。RPGの地図らしさは、この手描きの記号で出る。
+// 置き場所は座標から決まる固定の擬似乱数。開くたびに山が動くと地図に見えないので、
+// Math.random() は使わない。
+function wmRnd(seed) {
+  const v = Math.sin(seed * 127.1) * 43758.5453;
+  return v - Math.floor(v);
+}
+function wmMountain(x, y, s, cap) {
+  let g = `<path class="wm-mtn" d="M ${x - s} ${y} L ${x} ${y - s * 1.3} L ${x + s} ${y} Z"/>`;
+  g += `<path class="wm-mtn-ridge" d="M ${x} ${y - s * 1.3} L ${x + s * .34} ${y}"/>`;
+  if (cap) g += `<path class="wm-cap" d="M ${x - s * .38} ${y - s * .8} L ${x} ${y - s * 1.3} `
+              + `L ${x + s * .38} ${y - s * .8} q ${-s * .38} ${s * .2} ${-s * .76} 0 Z"/>`;
+  return g;
+}
+function wmVolcano(x, y, s) {
+  return `<path class="wm-mtn" d="M ${x - s} ${y} L ${x - s * .32} ${y - s} L ${x + s * .32} ${y - s} L ${x + s} ${y} Z"/>`
+       + `<path class="wm-crater" d="M ${x - s * .32} ${y - s} q ${s * .32} ${s * .34} ${s * .64} 0"/>`;
+}
+function wmTree(x, y, s) {
+  return `<path class="wm-tree" d="M ${x} ${y - s * 1.6} L ${x + s * .62} ${y - s * .55} `
+       + `L ${x + s * .3} ${y - s * .55} L ${x + s * .5} ${y} L ${x - s * .5} ${y} `
+       + `L ${x - s * .3} ${y - s * .55} L ${x - s * .62} ${y - s * .55} Z"/>`;
+}
+function wmDune(x, y, s) {
+  return `<path class="wm-dune" d="M ${x - s} ${y} q ${s * .5} ${-s * .62} ${s} 0 q ${s * .5} ${-s * .45} ${s} 0"/>`;
+}
+function wmReed(x, y, s) {
+  return `<path class="wm-reed" d="M ${x - s} ${y} h ${s * 2} M ${x - s * .4} ${y + s * .55} h ${s * 1.2}"/>`;
+}
+function wmRuin(x, y, s) {
+  return `<path class="wm-ruin" d="M ${x - s * .6} ${y} V ${y - s} M ${x + s * .6} ${y} V ${y - s * .7} `
+       + `M ${x - s * .9} ${y - s} h ${s * 1.8}"/>`;
+}
+function wmTuft(x, y, s) {
+  return `<path class="wm-tuft" d="M ${x - s} ${y} q ${s * .5} ${-s} ${s * .4} ${-s * 1.1} `
+       + `M ${x} ${y} q ${s * .1} ${-s * .9} ${s * .5} ${-s * 1.2}"/>`;
+}
+function wmRipple(x, y, s) {
+  return `<path class="wm-ripple" d="M ${x - s} ${y} q ${s * .5} ${-s * .4} ${s} 0 t ${s} 0"/>`;
+}
+
+// 地形ごとに、何をいくつ、どのくらいの大きさで置くか
+const WM_DECOR = {
+  grassland: { n: 14, base: 3,  vary: 3, make: wmTuft },
+  forest:    { n: 18, base: 5,  vary: 4, make: wmTree },
+  marsh:     { n: 14, base: 4,  vary: 3, make: wmReed },
+  ruins:     { n: 10, base: 6,  vary: 3, make: wmRuin },
+  desert:    { n: 14, base: 7,  vary: 5, make: wmDune },
+  lake:      { n: 10, base: 7,  vary: 5, make: wmRipple },
+  snow:      { n: 13, base: 9,  vary: 7, make: (x, y, s) => wmMountain(x, y, s, true) },
+  storm:     { n: 12, base: 11, vary: 8, make: (x, y, s) => wmMountain(x, y, s, false) },
+  ember:     { n: 8,  base: 9,  vary: 6, make: wmVolcano },
+  summit:    { n: 11, base: 12, vary: 8, make: (x, y, s) => wmMountain(x, y, s, true) },
+};
+
+// エリアの座標のまわりに地形を散らす
+function wmDecorations(areas) {
+  let out = '';
+  areas.forEach((a, ai) => {
+    const d = WM_DECOR[a.terrain];
+    if (!d) return;
+    for (let i = 0; i < d.n; i++) {
+      const ang = wmRnd(ai * 31 + i * 7 + 1) * Math.PI * 2;
+      // 内陸まで届かせる。半径を伸ばすと大陸の真ん中の空白が埋まり、広さが出る
+      const rad = 44 + wmRnd(ai * 17 + i * 13 + 5) * 96;
+      const x = a.map.x + Math.cos(ang) * rad;
+      const y = a.map.y + Math.sin(ang) * rad * .72;
+      // 名前とランドマークを置く帯（ノードの真下）は空けておく。文字と重なると読めない
+      if (Math.abs(x - a.map.x) < 58 && y - a.map.y > 26 && y - a.map.y < 76) continue;
+      out += d.make(x, y, d.base + wmRnd(ai * 41 + i * 3 + 9) * d.vary);
+    }
+  });
+  return out;
+}
+
+// 内海と、そこへ注ぐ川。大陸に「広さ」を出すのはこの2つ
+// 内海は緑の内陸に置く。火山地帯（赤い一帯）に湖があると地形として嘘になる
+const WM_LAKE = 'M 272 232 c 30 -6 52 7 50 28 c -2 21 -22 35 -47 37 '
+              + 'c -27 2 -48 -10 -50 -28 c -2 -21 17 -31 47 -37 Z';
+const WM_RIVERS = [
+  'M 248 190 C 254 206, 262 218, 270 230',                              // 暁の頂 → 内海
+  'M 258 298 C 252 340, 248 388, 243 430',                              // 内海 → 南の海
+  'M 604 238 C 556 258, 512 276, 476 302 C 452 340, 440 386, 431 434',  // 雪山 → 南の海（大陸を横切る）
+];
+// 沖の小島。地図の端に何かあるだけで世界は広く見える
+const WM_ISLES = [
+  'M 96 420 q 16 -9 27 0 q 8 8 -7 12 q -21 5 -20 -12 Z',
+  'M 640 344 q 17 -8 27 2 q 7 9 -8 12 q -21 3 -19 -14 Z',
+];
+function wmCompass(x, y, s) {
+  return `<g class="wm-compass">
+    <circle cx="${x}" cy="${y}" r="${s}"/>
+    <path d="M ${x} ${y - s * 1.3} L ${x + s * .3} ${y} L ${x} ${y + s * 1.3} L ${x - s * .3} ${y} Z"/>
+    <path d="M ${x - s * 1.3} ${y} L ${x} ${y - s * .3} L ${x + s * 1.3} ${y} L ${x} ${y + s * .3} Z"/>
+  </g>`;
+}
+
 // 「習慣の大陸」の海岸線。areas.js の map 座標（x43〜652 / y115〜443）を
 // ぐるりと囲む一枚の陸地。エリアの座標を動かしたら、この形も描き直すこと。
 // 湾や岬をわざと不揃いにしてある（きれいな楕円だと地図に見えない）。
@@ -2130,7 +2228,7 @@ function buildWorldMap() {
       <clipPath id="wm-land-clip"><path d="${WM_LAND_PATH}"/></clipPath>
       <!-- 地形の色を溶け合わせる。境界線が出ると「10個の丸」に見えてしまう -->
       <filter id="wm-soften" x="-25%" y="-25%" width="150%" height="150%">
-        <feGaussianBlur stdDeviation="38"/>
+        <feGaussianBlur stdDeviation="26"/>
       </filter>
       <!-- 雲は「隠す」ためではなく「かすませる」ためのもの。
            大陸の形（土地の輪郭・地形の絵文字・道すじ）は透けて見えてほしい。
@@ -2154,9 +2252,20 @@ function buildWorldMap() {
     <path class="wm-shore" d="${WM_LAND_PATH}"/>
     <path class="wm-land"  d="${WM_LAND_PATH}"/>
     <g clip-path="url(#wm-land-clip)" filter="url(#wm-soften)">${tintBase}</g>
-    <g clip-path="url(#wm-land-clip)" filter="url(#wm-soften)" opacity=".5">${tintAccent}</g>
+    <g clip-path="url(#wm-land-clip)" filter="url(#wm-soften)" opacity=".55">${tintAccent}</g>
+
+    <!-- 陸の中身。すべて陸の形で切り抜くので、海にはみ出さない -->
+    <g clip-path="url(#wm-land-clip)">
+      ${WM_RIVERS.map(d => `<path class="wm-river" d="${d}"/>`).join('')}
+      <path class="wm-lake" d="${WM_LAKE}"/>
+      <path class="wm-lake-edge" d="${WM_LAKE}"/>
+      <g class="wm-terrain">${wmDecorations(areas)}</g>
+    </g>
+
     <path class="wm-coast" d="${WM_LAND_PATH}"/>
     <path class="wm-coast-inner" d="${WM_LAND_PATH}"/>
+    ${WM_ISLES.map(d => `<path class="wm-isle" d="${d}"/>`).join('')}
+    ${wmCompass(612, 122, 15)}
 
     <polyline class="wm-road" points="${all}"/>
     ${walked.split(' ').length > 1 ? `<polyline class="wm-road-walked" points="${walked}"/>` : ''}
