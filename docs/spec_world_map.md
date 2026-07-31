@@ -209,66 +209,173 @@ Phase 1 が本番で1日以上安定してから着手する。
 
 ## 6. Phase 3：大陸図（雲が晴れる地図）
 
-### 6.1 名前の衝突に注意
+> 📌 **Phase 3 は「新しい画面を1枚つくる」仕事**。Phase 1・2 のような値の差し替えではない。
+> 実装の骨組み（HTML・CSS・JS）は **[§13 付録B](#13-付録bphase-3-の実装骨組み)** に全部載せてある。
+> Codexは付録Bを土台にすればよく、SVGの座標や関数の形を考える必要はない。
 
-「🗺 世界地図を見る」というボタンが**すでにある**（[core.js:2064](../scripts/core.js:2064) `toggleBoardMap`）。
-これは盤面SVGの開閉であり、別物。新画面は **「大陸図」**と呼び、既存ボタンの文言は変えない。
+### 6.0 何を作るのか（画面の姿）
 
-### 6.2 進捗は保存を増やさず `pos` から出す
-
-原案の `gq_world_max_cell` は**追加しない**。到達マスは `gq_sugoroku.pos` が既に持っており、
-2か所に分けると「片方だけ更新される日」が必ず来る（掟5）。
+すごろくは「いま自分がいる10マス」しか見えない。**旅全体のどこまで来たか**が分かる画面が無い。
+大陸図は、10エリアを1枚の地図に並べ、**まだ行っていない場所を雲で隠す**。
+進むと雲が晴れる ＝ 進んだことが「地図が広がる」という形で見える。
 
 ```text
-gq_sugoroku.pos = 137      ← 本物。サイコロで進む。ステージをまたぐと100を超え続ける
-      ↓ sgGetCellNum()     ← 必ずこれを通す。areas.js は 1〜100 前提
-盤面のマス = 37
-      ↓ Areas.areaOf(37)
-忘れられた遺跡
+┌─ 🗺 大陸図 ──────────────────────── ✕ ┐
+│  習慣の大陸 ・ マス 37 / 100            │
+│                                          │
+│   ☁️      ☁️           ☁️              │  ← 未到達は雲
+│  暁の頂  熾火の谷    雷鳴の峠  ☁️       │
+│                              凍る雪山    │
+│  🌿───🌲───🌫───🏛───🌵───💧          │
+│ はじまり ささやき 霧雨 忘れられた 灼けた 鏡面 │
+│  の草原  の森   の湿原  遺跡   砂原  の湖  │
+│  ✓      ✓      ✓     ▲ここ   ☁️   ☁️  │
+│                                          │
+│  忘れられた遺跡  4 / 10                  │
+│  次のランドマーク  🏛 遺跡の門           │
+└──────────────────────────────────────────┘
 ```
 
-そのため原案の `commitMaxCell()` は**削除**し、`KEYS` は `seenCell` だけ残す。
+- **道**: 10エリアを `map` 座標の順につなぐ線。通った区間だけ明るい
+- **雲**: `cloudOpacity()` の値でエリアを覆う。エリアに入ると薄くなり、最終マスで晴れる
+- **ランドマーク**: 晴れたエリアにだけ、そのエリアの `landmark.name` を出す
+- **現在地**: いまいるエリアに `▲` を置く
 
-```javascript
-const KEYS = {
-  // 大陸図を最後に開いたときの到達マス。雲が晴れる差分アニメだけに使う。
-  seenCell: 'gq_world_seen_cell',
-};
+### 6.1 入口をどこに置くか（🗺 が2つになる問題）
+
+すごろくの中に **「🗺 世界地図を見る」** というボタンが既にある
+（[core.js:2064](../scripts/core.js:2064) `toggleBoardMap`、[index.html:448](../index.html:448)）。
+中身は**100マスの盤面グリッド**で、大陸図とは別物。ここに 🗺 をもう1つ足すと確実に混乱する。
+
+**推奨（ヨージの確認を取ること）**: 既存ボタンを実態に合わせて改名し、🗺 は大陸図に譲る。
+
+```text
+【今】🗺 世界地図を見る ▾   → 中身は100マスの盤面グリッド（名前と中身がズレている）
+
+【推奨】
+  🎲 マス目を見る ▾        ← 既存トグル。中身どおりの名前にする
+  🗺 大陸図をひらく        ← 新規。旅全体の地図（新しいオーバーレイ）
 ```
 
-`cloudOpacity` / `revealDiff` / `markSeen` は原案のロジックで正しい。ただし
-`revealDiff` は `localStorage` から `maxCell` を読む形になっているので、
-**引数で受け取る形に変える**（areas.js が他ファイルに依存しないため）。
+> ⚠️ これは**ヨージが決めた画面の文言を変える提案**なので、勝手に変えないこと。
+> **却下された場合の代替**: 既存ボタンはそのまま、新規ボタンを **「🌍 旅の全体を見る」** にする
+> （🗺 の重複を避けられればよい）。どちらでも実装の中身は変わらない。
+
+### 6.2 到達マスの出し方（⚠️ ここに罠がある）
+
+`gq_world_max_cell` は**追加しない**。到達マスは `gq_sugoroku.pos` が既に持っており、
+2か所に分けると「片方だけ更新される日」が必ず来る（掟5）。
+
+> 🚨 **この仕様書の初版（§6.2）の記述は不十分だった。訂正する。**
+> 初版は「`sgGetCellNum(pos)` を通せばよい」と書いたが、**それだけでは大陸図が壊れる**。
+> `sgGetCellNum` は100で折り返すので、ステージ2に入った瞬間に**晴れた雲が全部戻る**。
+
+```text
+ステージ1をクリアして先へ進んだとき
+
+  pos = 103
+    ↓ sgGetCellNum(103) = 3        ← 盤面の表示としては正しい（3マス目にいる）
+    ↓ 大陸図がこれを使うと…
+  到達マス = 3  →  はじまりの草原しか晴れていない状態に逆戻り 🚨
+```
+
+**必ずこの関数を経由すること**（`sgGetStage` は [core.js:1044](../scripts/core.js:1044) に既存）:
 
 ```javascript
-function revealDiff(maxCell, stageId = 'stage1') {
-  const from = Number(lsGet(KEYS.seenCell) ?? 0);
-  const to   = maxCell;
-  …
+// 大陸図が使う「到達マス」。ステージ1をクリア済みなら 100 で頭打ちにする。
+// （大陸図はステージ1の地図なので、2周目に入っても晴れた雲は戻さない）
+function worldMaxCell() {
+  const pos = sugorokuData.pos;
+  if (pos <= 0) return 0;
+  return sgGetStage(pos) > 1 ? 100 : sgGetCellNum(pos);
 }
-// 呼ぶ側（core.js）
-Areas.revealDiff(sgGetCellNum(sugorokuData.pos));
 ```
 
-### 6.3 保存キーの手続き（掟4）
+これで **`worldMaxCell()` は単調増加**になり、「一度晴れた雲は戻らない」が構造的に守られる。
+
+### 6.3 雲と差分アニメの動き
+
+`areas.js` の `cloudOpacity` / `revealDiff` / `markSeen` は Phase 1 で実装済み。呼ぶだけでよい。
+
+```text
+大陸図をひらく
+   ↓
+ to   = worldMaxCell()              いまの到達マス
+ from = gq_world_seen_cell（前回）   ※初回は 0
+   ↓
+ まず from の状態で雲を描く         ← いきなり晴れた状態にしない
+   ↓
+ 1フレーム後に to の opacity へ transition（900ms）
+   ↓  ＝ 前回から進んだぶんだけ、雲がすうっと晴れる
+ アニメ終了後 markSeen(to)          ← 次に開いたときはもう晴れている
+```
+
+- **進んでいないとき**（`from === to`）はアニメを出さない。最初から `to` の状態で描く
+- `prefers-reduced-motion` は [app.css:5271](../styles/app.css:5271) の全体ルールで
+  transition が 0.01ms になるため、**個別対応は不要**（結果だけ即座に表示される）
+- `markSeen` は**アニメの完了後**に呼ぶ。途中で閉じられた場合は呼ばない
+  （次に開いたときにもう一度晴れるほうが、見逃すより良い）
+
+### 6.4 保存キーの手続き（掟4）
+
+増やすキーは **`gq_world_seen_cell` の1つだけ**（`KEYS.seenCell`、Phase 1 で定義済み）。
 
 - [ ] `docs/architecture_review.md` §6 の台帳「すごろく/装備」の行に `gq_world_seen_cell` を追記
 - [ ] `exportAllData()` は **追記不要**。`gq_` で始まるキーを自動で拾う作り
       （[settings-genre.js:106](../scripts/settings-genre.js:106)）。ここは確認だけして触らない
 
-### 6.4 `checkpoint` の意味がぶつかっている
+### 6.5 モーダルは OverlayManager に登録する（掟3）
+
+新しい画面は **`world-map-overlay`** という独立したオーバーレイにする。
+すごろくの上に重なって開くので、Phase C（オトモン）と同じスタック挙動になる。
+**3か所とも**必要。1つでも漏れると ESC が効かない・背景が操作できてしまう。
+
+1. `DEFS` に登録（[core.js:34](../scripts/core.js:34) 付近）
+   `'world-map-overlay': { openClass: 'open', dismissible: true },`
+2. `styles/app.css` の**共通 visibility セレクタ2本**に id を追加
+   （[app.css:5236](../styles/app.css:5236) の非表示側と [5247](../styles/app.css:5247) の `.open` 側）
+3. 開閉は `Overlay.open('world-map-overlay')` / `Overlay.close(...)` のみ。
+   `classList.add('open')` を直接書かない
+
+### 6.6 `checkpoint` の意味がぶつかっている（対応済み）
 
 `BOARD_CELL_TYPES` は **10・20・30…90 の全部**を `checkpoint`（休憩マス）にしている
 （[core.js:413](../scripts/core.js:413)）。原案は60番だけに `checkpoint: true`（中間の振り返り）
-を置いている。同じ言葉で別物なので、areas.js 側は **`review: true` に改名**する。
+を置いていた。同じ言葉で別物なので、areas.js 側は **`review: true` に改名済み**（Phase 1 で対応）。
+大陸図では、`review: true` のエリア（鏡面の湖）に**中間地点の印**を出す。
 
-### 6.5 受け入れ基準
+### 6.7 受け入れ基準
 
-- [ ] 大陸図を開くと、到達済みエリアの雲が晴れ、未到達エリアは雲で隠れている
-- [ ] 前回見たときより進んでいる場合だけ、差分のエリアで雲が晴れるアニメが再生される
-- [ ] アニメ後に `gq_world_seen_cell` が更新され、閉じて開き直すとアニメは再生されない
-- [ ] `localStorage.clear()` → リロード（新規ユーザー）で、全エリアが雲に覆われた状態から始まる
-- [ ] 保存領域が使えない環境（Safari file://）でも起動でき、大陸図が開ける（雲は毎回アニメでよい）
+- [ ] 入口ボタンから大陸図が開き、✕・ESC・背景タップで閉じる（OverlayManager 経由）
+- [ ] 開いている間、下のすごろく画面は操作できない（`inert`）。閉じるとフォーカスが戻る
+- [ ] 到達済みエリアの雲が晴れ、未到達エリアは雲で隠れている
+- [ ] 前回見たときより進んでいる場合**だけ**、差分のエリアで雲が晴れるアニメが再生される
+- [ ] アニメ後に `gq_world_seen_cell` が更新され、**閉じて開き直すとアニメは再生されない**
+- [ ] 現在地の `▲` が正しいエリアにあり、下部に「エリア名 4 / 10」と次のランドマーク名が出る
+- [ ] `localStorage.clear()` → リロード（新規ユーザー）で、**全エリアが雲に覆われた状態**から始まる
+- [ ] **ステージ2に入っても（`pos` が100を超えても）晴れた雲が戻らない**（§6.2 の罠）
+- [ ] 保存領域が使えない環境（Safari file://）でも起動でき、大陸図が開ける
+      （`gq_world_seen_cell` を保存できないので毎回アニメになるが、それでよい）
+- [ ] 375px 幅（iPhone SE 級）で地図が横にはみ出さない
+- [ ] コンソールエラーゼロ／`bash tools/bump_version.sh` 実行済み
+
+### 6.8 テスト手順の追加分（§8 に加えて）
+
+`pos` をコンソールで書き換えて、次の4状態を必ず通ること。**確認後は必ず元の値に戻す**。
+
+| `pos` | 期待される見え方 |
+|---|---|
+| `0` | 全エリアが雲。現在地なし |
+| `37` | 草原〜遺跡が晴れ、遺跡は途中まで薄い雲。現在地＝忘れられた遺跡 |
+| `100` | 全エリアが晴れる。暁の頂に🏆 |
+| `103` | **100と同じ見え方**（雲が戻らないこと。§6.2 の罠の確認） |
+
+差分アニメは、`gq_world_seen_cell` を小さい値に手で書き換えてから開くと再現できる。
+
+```javascript
+localStorage.setItem('gq_world_seen_cell', '15');  // 15マスまで見た状態にする
+// → 大陸図を開くと、16マス目以降のエリアで雲が晴れるアニメが出る
+```
 
 ---
 
@@ -724,3 +831,279 @@ Codexではなくクロが直接実装した（データ値の差し替えが中
 | 暁の頂 | 龍の城の赤背景＋金文字 | 🟡 暁なら金〜橙に寄せたい |
 | 雷鳴の峠 | 天空の城の淡紫 `#c4b5fd` | 🟢 雷雲と読めるので許容 |
 | 鏡面の湖 / 熾火の谷 | 水色 / 赤 | 🟢 そのままで合う |
+
+---
+
+## 13. 付録B：Phase 3 の実装骨組み
+
+Codexはこれを土台にする。**SVGの座標や関数の形を考える必要はない。**
+色・サイズ・文言の微調整は自由だが、**§6.2 の `worldMaxCell()` と §6.5 の
+OverlayManager 3点セットだけは形を変えないこと**（ここが壊れると仕様を満たせない）。
+
+> ✅ **B-2 のロジックは動作確認済み**（2026-07-31 クロ、jsc で実行）。
+> DOMとすごろく側を差し替えて、実際の `scripts/areas.js` と組み合わせて9項目を検証した。
+> **書きっぱなしの疑似コードではない。**
+>
+> 1. `worldMaxCell()` が pos=103/250 でも 100 を返す（雲が戻らない）
+> 2. 新規ユーザー（pos=0）で全10エリアが雲
+> 3. pos=37 で雲が `[0,0,0,0.3,1,1,1,1,1,1]`・現在地=忘れられた遺跡・あと3マス
+> 4. 現在地マーカー ▲ がちょうど1つ
+> 5. 前回15→今回37 で、森が 0.5→0・湿原が 1→0 に動き、完了後に `gq_world_seen_cell=37`
+> 6. 同じ位置で開き直すとアニメが走らない
+> 7. アニメ途中で閉じると `markSeen` されない
+> 8. pos=100 で全エリアが晴れ、🏆（暁の頂）と🪞（鏡面の湖）が出る
+> 9. pos=103 の見え方が pos=100 と完全に一致
+>
+> ⚠️ 検証されたのは**ロジックだけ**。見た目（SVGの座標バランス・雲の質感・
+> 375px幅での収まり）は**Codexが実機で確認すること**。
+
+### B-1 `index.html` — オーバーレイ本体
+
+他のオーバーレイと並ぶ位置（`board-overlay` の直後あたり）に置く。
+
+```html
+<!-- 🗺 大陸図（旅の全体が見える地図。雲が晴れると進んだことが分かる） -->
+<div id="world-map-overlay">
+  <div id="wm-panel">
+    <div class="wm-head">
+      <div>
+        <div class="wm-title">🗺 大陸図</div>
+        <div class="wm-sub" id="wm-sub">習慣の大陸</div>
+      </div>
+      <button class="icon-btn" id="wm-close-btn" aria-label="閉じる">✕</button>
+    </div>
+    <div class="wm-body">
+      <svg id="wm-svg" viewBox="0 0 680 460" role="img" aria-label="大陸図"></svg>
+    </div>
+    <div class="wm-foot" id="wm-foot"></div>
+  </div>
+</div>
+```
+
+すごろく内の入口ボタン（§6.1 でヨージの確認を取った文言にする）:
+
+```html
+<!-- index.html:447 付近、board-map-section の中 -->
+<button id="wm-open-btn">🗺 大陸図をひらく</button>
+```
+
+### B-2 `scripts/core.js` — 描画ロジック
+
+`buildAreaView` の近く（すごろく描画のかたまりの中）に置く。
+
+```javascript
+// ── 🗺 大陸図（Phase 3）──────────────────────────────
+// 情報源は areas.js。ここは描画だけを担当する。
+
+const WM_REVEAL_MS = 900;      // 雲が晴れるアニメの長さ
+let _wmTimer = null;
+
+// 大陸図が使う「到達マス」。
+// ⚠️ sgGetCellNum は100で折り返すので、そのまま使うとステージ2で雲が全部戻る。
+//    ステージ1をクリア済みなら100で頭打ちにして、単調増加を保証する。
+function worldMaxCell() {
+  const pos = sugorokuData.pos;
+  if (pos <= 0) return 0;
+  return sgGetStage(pos) > 1 ? 100 : sgGetCellNum(pos);
+}
+
+function openWorldMap() {
+  buildWorldMap();
+  Overlay.open('world-map-overlay');
+}
+function closeWorldMap() {
+  // アニメ途中で閉じられたら markSeen は呼ばない（次に開いたときにもう一度晴れる）
+  if (_wmTimer) { clearTimeout(_wmTimer); _wmTimer = null; }
+  Overlay.close('world-map-overlay');
+}
+
+function buildWorldMap() {
+  const A = window.Areas;
+  const svg = document.getElementById('wm-svg');
+  if (!A || !svg) return;
+
+  const areas = A.getStage('stage1').areas;
+  const to    = worldMaxCell();
+  const from  = A.revealDiff(to).from;   // 前回この画面を見たときの到達マス
+  const animate = to > from;             // 進んでいるときだけアニメを出す
+
+  // ① 道：10エリアを map 座標の順につなぐ。通った区間だけ明るい線を重ねる
+  const all    = areas.map(a => `${a.map.x},${a.map.y}`).join(' ');
+  const walked = areas.filter(a => to >= a.range[0])
+                      .map(a => `${a.map.x},${a.map.y}`).join(' ');
+
+  // ② エリアごとのノード
+  //    data-op = アニメ後の最終opacity。style.opacity = アニメ前の値。
+  //    この2つを次フレームで入れ替えることで CSS transition が走る。
+  const nodes = areas.map(a => {
+    const cloudFrom = animate ? A.cloudOpacity(a, from) : A.cloudOpacity(a, to);
+    const cloudTo   = A.cloudOpacity(a, to);
+    const here = to > 0 && to >= a.range[0] && to <= a.range[1];
+    const badge = a.goal ? '🏆' : a.review ? '🪞' : '';
+    return `
+      <g class="wm-area">
+        <circle cx="${a.map.x}" cy="${a.map.y}" r="26"
+                fill="${a.palette.base}" stroke="${a.accent}" stroke-width="2"/>
+        <text class="wm-emoji" x="${a.map.x}" y="${a.map.y + 8}">${a.emoji}</text>
+        <g class="wm-label" data-op="${1 - cloudTo}" style="opacity:${1 - cloudFrom}">
+          <text class="wm-name" x="${a.map.x}" y="${a.map.y + 48}"
+                style="fill:${a.accent}">${a.name}</text>
+          <text class="wm-mark" x="${a.map.x}" y="${a.map.y + 64}">${badge} ${a.landmark.name}</text>
+        </g>
+        ${here ? `<text class="wm-here" x="${a.map.x}" y="${a.map.y - 36}">▲</text>` : ''}
+        <ellipse class="wm-cloud" cx="${a.map.x}" cy="${a.map.y}" rx="52" ry="40"
+                 data-op="${cloudTo}" style="opacity:${cloudFrom}"/>
+      </g>`;
+  }).join('');
+
+  svg.innerHTML = `
+    <defs>
+      <radialGradient id="wm-cloud-grad">
+        <stop offset="0%"   stop-color="#e9edf6" stop-opacity=".95"/>
+        <stop offset="70%"  stop-color="#c7cfe0" stop-opacity=".75"/>
+        <stop offset="100%" stop-color="#aab4c8" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <polyline class="wm-road" points="${all}"/>
+    ${walked.split(' ').length > 1 ? `<polyline class="wm-road-walked" points="${walked}"/>` : ''}
+    ${nodes}`;
+
+  // ③ 見出しと足元の情報
+  const sub = document.getElementById('wm-sub');
+  if (sub) sub.textContent = `習慣の大陸 ・ マス ${to} / 100`;
+
+  const foot = document.getElementById('wm-foot');
+  if (foot) {
+    const cur = to > 0 ? A.areaOf(to) : null;
+    if (!cur) {
+      foot.innerHTML = `<div class="wm-foot-next">サイコロを振ると、地図が広がっていきます。</div>`;
+    } else {
+      const p    = A.progressInArea(to, cur);
+      const rest = cur.range[1] - to;
+      foot.innerHTML = `
+        <div class="wm-foot-area" style="color:${cur.accent}">
+          ${cur.emoji} ${cur.name}<span class="wm-foot-prog">${p.done} / ${p.span}</span>
+        </div>
+        <div class="wm-foot-next">${rest > 0
+          ? `次のランドマーク　${cur.landmark.name}（あと ${rest} マス）`
+          : `${cur.landmark.name} に到達！`}</div>`;
+    }
+  }
+
+  // ④ 差分アニメ。次フレームで最終値に入れ替えると transition が走る
+  if (animate) {
+    requestAnimationFrame(() => {
+      svg.querySelectorAll('[data-op]').forEach(el => { el.style.opacity = el.dataset.op; });
+    });
+    _wmTimer = setTimeout(() => { A.markSeen(to); _wmTimer = null; }, WM_REVEAL_MS + 120);
+  } else {
+    A.markSeen(to);
+  }
+}
+```
+
+ファイル末尾の公開窓口に**必ず追加**する（IIFE化済みなので、書かないと boot.js から呼べない）:
+
+```javascript
+window.openWorldMap  = openWorldMap;
+window.closeWorldMap = closeWorldMap;
+window.buildWorldMap = buildWorldMap;
+```
+
+### B-3 `scripts/boot.js` — 配線
+
+すごろくのイベント登録のかたまり（boot.js の先頭付近、`board-map-toggle` の隣）に置く。
+
+```javascript
+document.getElementById('wm-open-btn')?.addEventListener('click', () => openWorldMap());
+document.getElementById('wm-close-btn')?.addEventListener('click', () => closeWorldMap());
+document.getElementById('world-map-overlay')?.addEventListener('click', e => {
+  if (e.target === document.getElementById('world-map-overlay')) closeWorldMap();
+});
+```
+
+> ⚠️ **掟2**: `addEventListener('click', openWorldMap)` と裸で渡さず、
+> 必ず `() => openWorldMap()` で包むこと。core.js と boot.js はファイルが違うため、
+> 読み込み時に関数の実体を掴みにいくと過去2回の起動フリーズと同じ形になる。
+
+### B-4 `styles/app.css`
+
+```css
+/* ═══ 🗺 大陸図 ═══ */
+#world-map-overlay {
+  position: fixed; inset: 0; z-index: 94;   /* board-overlay(93) の上に重ねる */
+  background: rgba(0,0,0,.86); backdrop-filter: blur(12px);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity .3s;
+}
+#world-map-overlay.open { opacity: 1; pointer-events: auto; }
+
+#wm-panel {
+  width: min(560px, calc(100vw - 20px));
+  background: #0e0e1c; border: 1px solid rgba(6,182,212,.22);
+  border-radius: 24px; max-height: 92vh; overflow: hidden;
+  display: flex; flex-direction: column;
+  box-shadow: 0 24px 80px rgba(0,0,0,.9);
+}
+.wm-head {
+  padding: 16px 22px 14px; flex-shrink: 0;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.wm-title { font-size: .98rem; font-weight: 700; }
+.wm-sub   { font-size: .68rem; color: var(--text-dim); margin-top: 2px; }
+
+.wm-body { flex: 1; overflow: auto; padding: 12px; }
+#wm-svg  { width: 100%; height: auto; display: block; }   /* 375px幅でもはみ出さない */
+
+.wm-road        { fill: none; stroke: rgba(255,255,255,.10); stroke-width: 3;
+                  stroke-linecap: round; stroke-linejoin: round; }
+.wm-road-walked { fill: none; stroke: rgba(6,182,212,.55);   stroke-width: 3;
+                  stroke-linecap: round; stroke-linejoin: round; }
+
+.wm-emoji { font-size: 24px; text-anchor: middle; }
+.wm-name  { font-size: 15px; font-weight: 700; text-anchor: middle; }
+.wm-mark  { font-size: 11px; text-anchor: middle; fill: var(--text-dim); }
+.wm-here  { font-size: 18px; text-anchor: middle; fill: #fbbf24; }
+
+.wm-cloud { fill: url(#wm-cloud-grad); }
+
+/* 雲とラベルは同じ長さでフェードさせる。
+   prefers-reduced-motion では app.css 末尾の全体ルールが 0.01ms に潰すので個別対応は不要 */
+.wm-cloud, .wm-label { transition: opacity .9s ease; }
+
+.wm-foot {
+  flex-shrink: 0; padding: 12px 18px 16px;
+  border-top: 1px solid rgba(255,255,255,.06);
+}
+.wm-foot-area { font-size: .92rem; font-weight: 700; display: flex;
+                align-items: center; gap: 8px; }
+.wm-foot-prog { font-size: .72rem; color: var(--text-dim); font-weight: 400; }
+.wm-foot-next { font-size: .72rem; color: var(--text-dim); margin-top: 4px; }
+```
+
+**忘れずに**: [app.css:5236](../styles/app.css:5236) と [5247](../styles/app.css:5247) の
+共通 visibility セレクタ2本に `#world-map-overlay` / `#world-map-overlay.open` を追加する（§6.5）。
+
+---
+
+## 14. Codexへの依頼文（Phase 3・ヨージがコピペする）
+
+```text
+docs/spec_world_map.md の Phase 3（大陸図）を実装してください。
+
+§13 付録B に HTML・JS・CSS の骨組みが全部あります。これを土台にしてください。
+色やサイズの微調整は自由ですが、次の2つだけは形を変えないでください:
+  - §6.2 の worldMaxCell()（ステージ2で雲が全部戻る罠を防ぐ要）
+  - §6.5 の OverlayManager 3点セット（DEFS登録・CSS共通セレクタ2本・open/close）
+
+§6.1 の入口ボタンの文言は、ヨージがどちらを選んだかを確認してから書いてください。
+未確認なら、そこで止まって聞いてください。
+
+§6.4 のとおり architecture_review.md §6 の台帳に gq_world_seen_cell を追記します
+（exportAllData は自動で拾うので触らないでください）。
+
+§6.7 の受け入れ基準を全部満たしてから、§8 と §6.8 のテスト手順で検証し、
+bash tools/bump_version.sh を実行して、日本語のコミットメッセージでコミットしてください。
+§9 に当たったら、進めずに報告してください。
+```
