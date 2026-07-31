@@ -1981,8 +1981,9 @@ header {
 .wm-body { flex: 1; overflow: auto; padding: 12px; }
 #wm-svg  { width: 100%; height: auto; display: block; }   /* 375px幅でもはみ出さない */
 
+/* 未踏区間の道。大陸の姿を読ませたいので、雲の下でも見える濃さにする */
 .wm-road {
-  fill: none; stroke: rgba(255,255,255,.10); stroke-width: 3;
+  fill: none; stroke: rgba(255,255,255,.20); stroke-width: 3;
   stroke-linecap: round; stroke-linejoin: round;
 }
 .wm-road-walked {

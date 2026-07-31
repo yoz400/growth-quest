@@ -2095,9 +2095,13 @@ function buildWorldMap() {
 
   svg.innerHTML = `
     <defs>
+      <!-- 雲は「隠す」ためではなく「かすませる」ためのもの。
+           大陸の形（土地の輪郭・地形の絵文字・道すじ）は透けて見えてほしい。
+           隠すのは名前とランドマークだけ（.wm-label 側で制御している）。
+           中心の濃さを上げすぎると土地そのものが消えて、地図に見えなくなる。 -->
       <radialGradient id="wm-cloud-grad">
-        <stop offset="0%"   stop-color="#e9edf6" stop-opacity=".95"/>
-        <stop offset="70%"  stop-color="#c7cfe0" stop-opacity=".75"/>
+        <stop offset="0%"   stop-color="#e9edf6" stop-opacity=".46"/>
+        <stop offset="65%"  stop-color="#c7cfe0" stop-opacity=".32"/>
         <stop offset="100%" stop-color="#aab4c8" stop-opacity="0"/>
       </radialGradient>
     </defs>

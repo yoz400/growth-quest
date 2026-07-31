@@ -40,7 +40,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles/app.css?v=guild-122">
+<link rel="stylesheet" href="styles/app.css?v=guild-123">
 </head>
 <body>
 
@@ -482,7 +482,9 @@
       <button class="icon-btn" id="wm-close-btn" aria-label="閉じる">✕</button>
     </div>
     <div class="wm-body">
-      <svg id="wm-svg" viewBox="0 0 680 460" role="img" aria-label="大陸図"></svg>
+      <!-- viewBox は中身の実寸に合わせてある（getBBox で x43-652 / y115-443 を実測）。
+           0 0 680 460 だと上に115ぶんの空白ができて地図が小さく見える -->
+      <svg id="wm-svg" viewBox="28 103 639 352" role="img" aria-label="大陸図"></svg>
     </div>
     <div class="wm-foot" id="wm-foot"></div>
   </div>
@@ -1091,16 +1093,16 @@
 })();
 </script>
 
-<script src="scripts/areas.js?v=guild-122"></script>
-<script src="scripts/core.js?v=guild-122"></script>
-<script src="scripts/progression.js?v=guild-122"></script>
-<script src="scripts/quests.js?v=guild-122"></script>
-<script src="scripts/timer.js?v=guild-122"></script>
-<script src="scripts/settings-genre.js?v=guild-122"></script>
-<script src="scripts/calendar-review.js?v=guild-122"></script>
-<script src="scripts/features.js?v=guild-122"></script>
-<script src="scripts/boot.js?v=guild-122"></script>
-<script src="scripts/otomon.js?v=guild-122"></script>
+<script src="scripts/areas.js?v=guild-123"></script>
+<script src="scripts/core.js?v=guild-123"></script>
+<script src="scripts/progression.js?v=guild-123"></script>
+<script src="scripts/quests.js?v=guild-123"></script>
+<script src="scripts/timer.js?v=guild-123"></script>
+<script src="scripts/settings-genre.js?v=guild-123"></script>
+<script src="scripts/calendar-review.js?v=guild-123"></script>
+<script src="scripts/features.js?v=guild-123"></script>
+<script src="scripts/boot.js?v=guild-123"></script>
+<script src="scripts/otomon.js?v=guild-123"></script>
 
 <script>
 // ── Service Worker 登録 ────────────────────────────────
