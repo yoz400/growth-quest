@@ -1981,10 +1981,30 @@ header {
 .wm-body { flex: 1; overflow: auto; padding: 12px; }
 #wm-svg  { width: 100%; height: auto; display: block; }   /* 375px幅でもはみ出さない */
 
+/* ── 大陸そのもの（海・陸・海岸線）─────────────
+   ここが無いと、ただの黒地にアイコンが浮いているだけで地図に見えない */
+.wm-shore {                                  /* 浅瀬。陸のまわりのにじみ */
+  fill: none; stroke: rgba(126,196,224,.20); stroke-width: 16;
+}
+.wm-land {                                   /* 陸の地肌。この上に地形の色をのせる */
+  fill: #222b21;
+}
+.wm-coast {                                  /* 海岸線。強くしすぎると風船の輪郭に見える */
+  fill: none; stroke: rgba(226,232,240,.22); stroke-width: 2;
+}
+.wm-coast-inner {                            /* 渚。地図らしさはこの二重線で出る */
+  fill: none; stroke: rgba(126,196,224,.22); stroke-width: 1;
+  transform: scale(.985); transform-origin: center; transform-box: fill-box;
+}
+.wm-waves path {                             /* 海の波。RPGの地図の雰囲気づけ */
+  fill: none; stroke: rgba(126,196,224,.16); stroke-width: 2; stroke-linecap: round;
+}
+
 /* 未踏区間の道。大陸の姿を読ませたいので、雲の下でも見える濃さにする */
 .wm-road {
-  fill: none; stroke: rgba(255,255,255,.20); stroke-width: 3;
+  fill: none; stroke: rgba(255,255,255,.26); stroke-width: 3;
   stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 7 6;                     /* 未踏は破線。踏んだ道と見分ける */
 }
 .wm-road-walked {
   fill: none; stroke: rgba(6,182,212,.55); stroke-width: 3;
@@ -1992,9 +2012,16 @@ header {
 }
 
 .wm-emoji { font-size: 24px; text-anchor: middle; }
+/* 地形の色は明るいところも暗いところもあるので、文字は必ず縁取りする。
+   これが無いと砂原や雪山の上で名前が読めなくなる */
+.wm-name, .wm-mark {
+  paint-order: stroke fill;
+  stroke: rgba(6,10,18,.72); stroke-width: 3.5px; stroke-linejoin: round;
+}
 .wm-name  { font-size: 15px; font-weight: 700; text-anchor: middle; }
-.wm-mark  { font-size: 11px; text-anchor: middle; fill: var(--text-dim); }
-.wm-here  { font-size: 18px; text-anchor: middle; fill: #fbbf24; }
+.wm-mark  { font-size: 11px; text-anchor: middle; fill: #c3cad8; }
+.wm-here  { font-size: 18px; text-anchor: middle; fill: #fbbf24;
+            paint-order: stroke fill; stroke: rgba(6,10,18,.6); stroke-width: 3px; }
 
 .wm-cloud { fill: url(#wm-cloud-grad); }
 

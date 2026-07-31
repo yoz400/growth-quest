@@ -2030,6 +2030,25 @@ const WM_REVEAL_MS = 900;      // 雲が晴れるアニメの長さ
 let _wmTimer = null;
 let _wmRevealing = false;      // 雲を晴らす演出が進行中か
 
+// 「習慣の大陸」の海岸線。areas.js の map 座標（x43〜652 / y115〜443）を
+// ぐるりと囲む一枚の陸地。エリアの座標を動かしたら、この形も描き直すこと。
+// 湾や岬をわざと不揃いにしてある（きれいな楕円だと地図に見えない）。
+const WM_LAND_PATH = [
+  'M 150 100',
+  'C 240 80, 350 88, 420 112',
+  'C 480 132, 522 124, 566 154',
+  'C 614 188, 636 226, 626 266',
+  'C 617 302, 632 328, 610 358',
+  'C 588 390, 572 418, 528 428',
+  'C 470 440, 440 448, 388 444',
+  'C 326 439, 290 432, 238 434',
+  'C 182 436, 138 428, 102 402',
+  'C 64 374, 50 340, 57 298',
+  'C 64 254, 54 218, 80 180',
+  'C 106 142, 114 112, 150 100',
+  'Z',
+].join(' ');
+
 // 大陸図が使う「到達マス」。
 // ⚠️ sgGetCellNum は100で折り返すので、そのまま使うとステージ2で雲が全部戻る。
 //    ステージ1をクリア済みなら100で頭打ちにして、単調増加を保証する。
@@ -2093,18 +2112,52 @@ function buildWorldMap() {
       </g>`;
   }).join('');
 
+  // ③ 大陸そのものを描く。10エリアの map 座標を囲む一枚の陸地。
+  //    地形の色は areas.js の palette.base を各エリアの座標に置いてぼかしたもの＝
+  //    「草原は緑・砂原は黄土・雪山は青白い」が地図の地肌に出る。座標を動かせば色も追従する。
+  // palette.base は暗すぎて灰色の塊になるので、地肌に base、その上に accent をのせて色を出す
+  const tintBase = areas.map(a =>
+    `<circle cx="${a.map.x}" cy="${a.map.y}" r="140" fill="${a.palette.base}"/>`).join('');
+  const tintAccent = areas.map(a =>
+    `<circle cx="${a.map.x}" cy="${a.map.y}" r="104" fill="${a.palette.accent}"/>`).join('');
+
   svg.innerHTML = `
     <defs>
+      <linearGradient id="wm-sea" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%"   stop-color="#0d1f36"/>
+        <stop offset="100%" stop-color="#06101d"/>
+      </linearGradient>
+      <clipPath id="wm-land-clip"><path d="${WM_LAND_PATH}"/></clipPath>
+      <!-- 地形の色を溶け合わせる。境界線が出ると「10個の丸」に見えてしまう -->
+      <filter id="wm-soften" x="-25%" y="-25%" width="150%" height="150%">
+        <feGaussianBlur stdDeviation="38"/>
+      </filter>
       <!-- 雲は「隠す」ためではなく「かすませる」ためのもの。
            大陸の形（土地の輪郭・地形の絵文字・道すじ）は透けて見えてほしい。
            隠すのは名前とランドマークだけ（.wm-label 側で制御している）。
            中心の濃さを上げすぎると土地そのものが消えて、地図に見えなくなる。 -->
       <radialGradient id="wm-cloud-grad">
-        <stop offset="0%"   stop-color="#e9edf6" stop-opacity=".46"/>
-        <stop offset="65%"  stop-color="#c7cfe0" stop-opacity=".32"/>
-        <stop offset="100%" stop-color="#aab4c8" stop-opacity="0"/>
+        <stop offset="0%"   stop-color="#cfd9ea" stop-opacity=".40"/>
+        <stop offset="65%"  stop-color="#aab8cf" stop-opacity=".27"/>
+        <stop offset="100%" stop-color="#8f9bb2" stop-opacity="0"/>
       </radialGradient>
     </defs>
+
+    <rect class="wm-sea" x="-40" y="20" width="760" height="500" fill="url(#wm-sea)"/>
+    <g class="wm-waves">
+      <path d="M 70 452 q 14 -7 28 0 t 28 0"/>
+      <path d="M 556 118 q 14 -7 28 0 t 28 0"/>
+      <path d="M 96 158 q 14 -7 28 0 t 28 0"/>
+      <path d="M 590 452 q 14 -7 28 0 t 28 0"/>
+    </g>
+
+    <path class="wm-shore" d="${WM_LAND_PATH}"/>
+    <path class="wm-land"  d="${WM_LAND_PATH}"/>
+    <g clip-path="url(#wm-land-clip)" filter="url(#wm-soften)">${tintBase}</g>
+    <g clip-path="url(#wm-land-clip)" filter="url(#wm-soften)" opacity=".5">${tintAccent}</g>
+    <path class="wm-coast" d="${WM_LAND_PATH}"/>
+    <path class="wm-coast-inner" d="${WM_LAND_PATH}"/>
+
     <polyline class="wm-road" points="${all}"/>
     ${walked.split(' ').length > 1 ? `<polyline class="wm-road-walked" points="${walked}"/>` : ''}
     ${nodes}`;
