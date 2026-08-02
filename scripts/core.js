@@ -42,6 +42,7 @@ const Overlay = (() => {
     'equipment-get-overlay':  { openClass: 'open', dismissible: true },
     'board-overlay':          { openClass: 'open', dismissible: true },
     'world-map-overlay':      { openClass: 'open', dismissible: true },
+    'item-dex-overlay':       { openClass: 'open', dismissible: true },
     'skill-overlay':          { openClass: 'open', dismissible: true },
     'review-overlay':         { openClass: 'open', dismissible: true },
     'avatar-overlay':         { openClass: 'open', dismissible: true },
@@ -1847,9 +1848,8 @@ function closeDicePicker() {
   if (e) e.remove();
 }
 
-// 📖 アイテム図鑑モーダル
+// 📖 アイテム図鑑モーダル（DOMは index.html に常設。中身だけ描き替えて Overlay で開閉）
 function openItemDex() {
-  closeItemDex();
   const all = SUGOROKU_ITEMS.filter(it => it.id !== 'wake_gift');
   const usedCount = all.filter(it => (itemDex[it.id] || {}).count > 0).length;
   const cards = all.map(it => {
@@ -1869,22 +1869,14 @@ function openItemDex() {
       <div class="dex-eff">まだ使っていない</div>
     </div>`;
   }).join('');
-  const ov = document.createElement('div');
-  ov.id = 'item-dex-overlay';
-  ov.innerHTML = `<div class="dex-wrap">
-    <div class="dex-head">
-      <div class="dex-title">📖 アイテム図鑑</div>
-      <button class="dex-close" onclick="closeItemDex()" aria-label="閉じる">✕</button>
-    </div>
-    <div class="dex-prog">コンプ率 <b>${usedCount} / ${all.length}</b> 種</div>
-    <div class="dex-grid">${cards}</div>
-  </div>`;
-  ov.addEventListener('click', e => { if (e.target === ov) closeItemDex(); });
-  document.body.appendChild(ov);
+  const prog = document.getElementById('dex-prog');
+  const grid = document.getElementById('dex-grid');
+  if (prog) prog.innerHTML = `コンプ率 <b>${usedCount} / ${all.length}</b> 種`;
+  if (grid) grid.innerHTML = cards;
+  Overlay.open('item-dex-overlay');
 }
 function closeItemDex() {
-  const e = document.getElementById('item-dex-overlay');
-  if (e) e.remove();
+  Overlay.close('item-dex-overlay');
 }
 function pickFixedDice(n) {
   itemBuffs.fixedDice = n; saveItemBuffs();

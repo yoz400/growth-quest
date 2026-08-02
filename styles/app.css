@@ -2166,8 +2166,9 @@ header {
   position: fixed; inset: 0; z-index: 9998;
   background: rgba(8,10,18,.74); backdrop-filter: blur(3px);
   display: flex; align-items: center; justify-content: center; padding: 18px;
-  animation: dpkFade .18s ease;
+  opacity: 0; pointer-events: none; transition: opacity .18s ease;
 }
+#item-dex-overlay.open { opacity: 1; pointer-events: auto; }
 .dex-wrap {
   background: #161a27; border: 1px solid rgba(125,150,255,.28);
   border-radius: 18px; padding: 18px; width: min(92vw, 460px);
@@ -5328,7 +5329,7 @@ body.eq-mood-galaxy    .anim-wrap::after {
 #praise-overlay, #guide-tutorial-overlay, #guild-overlay,
 #vow-blessing-overlay, #fairy-overlay, #fairy-guide-overlay,
 #tutorial-overlay, #summon-overlay, #otomon-overlay,
-#otomon-birth-overlay, #otomon-bondup-overlay {
+#otomon-birth-overlay, #otomon-bondup-overlay, #item-dex-overlay {
   visibility: hidden;
   transition-property: opacity, visibility;
 }
@@ -5339,7 +5340,7 @@ body.eq-mood-galaxy    .anim-wrap::after {
 #praise-overlay.open, #guide-tutorial-overlay.open, #guild-overlay.open,
 #vow-blessing-overlay.open, #fairy-overlay.open, #fairy-guide-overlay.open,
 #tutorial-overlay.open, #summon-overlay.open, #otomon-overlay.open,
-#otomon-birth-overlay.open, #otomon-bondup-overlay.open {
+#otomon-birth-overlay.open, #otomon-bondup-overlay.open, #item-dex-overlay.open {
   visibility: visible;
 }
 

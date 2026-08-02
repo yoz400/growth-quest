@@ -30,6 +30,10 @@ document.getElementById('wm-close-btn')?.addEventListener('click', () => closeWo
 document.getElementById('world-map-overlay')?.addEventListener('click', e => {
   if (e.target === document.getElementById('world-map-overlay')) closeWorldMap();
 });
+// 📖 アイテム図鑑：背景タップで閉じる（すごろくの上に重なって開く）
+document.getElementById('item-dex-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('item-dex-overlay')) closeItemDex();
+});
 
 // ═══════════════════════════════════════════════════════
 //  SKILL TREE — EVENT LISTENERS
