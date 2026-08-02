@@ -40,7 +40,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles/app.css?v=guild-129">
+<link rel="stylesheet" href="styles/app.css?v=guild-131">
 </head>
 <body>
 
@@ -482,9 +482,9 @@
       <button class="icon-btn" id="wm-close-btn" aria-label="閉じる">✕</button>
     </div>
     <div class="wm-body">
-      <!-- viewBox は大陸（WM_LAND_PATH：x50〜636 / y92〜440）のまわりに
-           海の余白を取った範囲。陸に切り詰めると海が見えず、島に見えなくなる -->
-      <svg id="wm-svg" viewBox="0 58 680 412" role="img" aria-label="大陸図"></svg>
+      <!-- viewBox は assets/worldmap.webp（1600x900）と同じ比率。
+           絵を差し替えるときは、この比率と areas.js の map 座標も合わせること -->
+      <svg id="wm-svg" viewBox="0 0 680 383" role="img" aria-label="大陸図"></svg>
     </div>
     <div class="wm-foot" id="wm-foot"></div>
   </div>
@@ -1093,16 +1093,16 @@
 })();
 </script>
 
-<script src="scripts/areas.js?v=guild-129"></script>
-<script src="scripts/core.js?v=guild-129"></script>
-<script src="scripts/progression.js?v=guild-129"></script>
-<script src="scripts/quests.js?v=guild-129"></script>
-<script src="scripts/timer.js?v=guild-129"></script>
-<script src="scripts/settings-genre.js?v=guild-129"></script>
-<script src="scripts/calendar-review.js?v=guild-129"></script>
-<script src="scripts/features.js?v=guild-129"></script>
-<script src="scripts/boot.js?v=guild-129"></script>
-<script src="scripts/otomon.js?v=guild-129"></script>
+<script src="scripts/areas.js?v=guild-131"></script>
+<script src="scripts/core.js?v=guild-131"></script>
+<script src="scripts/progression.js?v=guild-131"></script>
+<script src="scripts/quests.js?v=guild-131"></script>
+<script src="scripts/timer.js?v=guild-131"></script>
+<script src="scripts/settings-genre.js?v=guild-131"></script>
+<script src="scripts/calendar-review.js?v=guild-131"></script>
+<script src="scripts/features.js?v=guild-131"></script>
+<script src="scripts/boot.js?v=guild-131"></script>
+<script src="scripts/otomon.js?v=guild-131"></script>
 
 <script>
 // ── Service Worker 登録 ────────────────────────────────

@@ -2,15 +2,17 @@
 //  Growth Quest — Service Worker
 //  バージョンを上げると古いキャッシュが自動削除されます
 // ═══════════════════════════════════════════════════════
-const CACHE_NAME = 'gq-cache-v13';
+const CACHE_NAME = 'gq-cache-v14';
 
 // インストール時に事前キャッシュするファイル一覧
 const PRECACHE_URLS = [
   './',
   './index.html',
   './styles/app.css',
-  // scripts/ は9本に分割済み（旧 scripts/app.js は存在しない）。
+  // scripts/ は10本（旧 scripts/app.js は存在しない）。
   // index.html の <script> と同じ並び・同じ依存順で列挙する。
+  // areas.js は core.js より前に読む土台。ここに無いとオフラインで起動しない。
+  './scripts/areas.js',
   './scripts/core.js',
   './scripts/progression.js',
   './scripts/quests.js',
@@ -21,6 +23,8 @@ const PRECACHE_URLS = [
   './scripts/boot.js',
   './scripts/otomon.js',
   './manifest.json',
+  // 大陸図の背景
+  './assets/worldmap.webp',
   // アイコン類
   './assets/icons/favicon.ico',
   './assets/icons/icon-16.png',

@@ -1981,61 +1981,14 @@ header {
 .wm-body { flex: 1; overflow: auto; padding: 12px; }
 #wm-svg  { width: 100%; height: auto; display: block; }   /* 375px幅でもはみ出さない */
 
-/* ── 大陸そのもの（海・陸・海岸線）─────────────
-   ここが無いと、ただの黒地にアイコンが浮いているだけで地図に見えない */
-.wm-shore {                                  /* 浅瀬。陸のまわりのにじみ */
-  fill: none; stroke: rgba(126,196,224,.20); stroke-width: 16;
+/* ── 大陸そのもの（1枚の絵）─────────────────
+   以前はSVGで海・陸・山・川を手描きしていたが、assets/worldmap.webp に置き換えた。
+   絵と areas.js の map 座標は対で管理する（絵を替えたら座標も置き直す） */
+.wm-sea  { fill: #06101d; }                  /* 絵が読めない間の下地。真っ黒だと崩れて見える */
+.wm-art  { }                                 /* 大陸の絵。位置とサイズはSVG側の属性で指定 */
+.wm-veil {                                   /* 絵の上の薄い暗幕。文字を読みやすくする */
+  fill: rgba(6,12,22,.30); pointer-events: none;
 }
-.wm-land {                                   /* 陸の地肌。この上に地形の色をのせる */
-  fill: #222b21;
-}
-.wm-coast {                                  /* 海岸線。強くしすぎると風船の輪郭に見える */
-  fill: none; stroke: rgba(226,232,240,.22); stroke-width: 2;
-}
-.wm-coast-inner {                            /* 渚。地図らしさはこの二重線で出る */
-  fill: none; stroke: rgba(126,196,224,.22); stroke-width: 1;
-  transform: scale(.985); transform-origin: center; transform-box: fill-box;
-}
-.wm-waves path {                             /* 海の波。RPGの地図の雰囲気づけ */
-  fill: none; stroke: rgba(126,196,224,.16); stroke-width: 2; stroke-linecap: round;
-}
-.wm-isle {                                   /* 沖の小島。端に何かあるだけで世界は広く見える */
-  fill: #2a3328; stroke: rgba(226,232,240,.20); stroke-width: 1;
-}
-.wm-compass circle {
-  fill: none; stroke: rgba(190,214,236,.24); stroke-width: 1;
-}
-.wm-compass path {
-  fill: rgba(190,214,236,.22); stroke: rgba(190,214,236,.30); stroke-width: .6;
-}
-
-/* ── 陸の中身（川・湖・地形）───────────────────
-   「一目で世界の広さを感じる」のはこの層。山脈と川が無いと、ただの色の塊になる */
-.wm-river {
-  fill: none; stroke: rgba(126,200,232,.72); stroke-width: 2.8;
-  stroke-linecap: round; stroke-linejoin: round;
-}
-.wm-lake      { fill: #1d5578; }             /* 暗くしすぎると穴に見える。水と分かる明るさで */
-.wm-lake-edge { fill: none; stroke: rgba(150,214,238,.55); stroke-width: 1.6; }
-
-.wm-terrain     { pointer-events: none; }
-.wm-mtn         { fill: #4a5163; stroke: rgba(12,16,24,.55); stroke-width: 1;
-                  stroke-linejoin: round; }
-.wm-mtn-ridge   { fill: none; stroke: rgba(12,16,24,.42); stroke-width: 1; }
-.wm-cap         { fill: #e6edf6; stroke: none; }
-.wm-crater      { fill: none; stroke: #d4693f; stroke-width: 1.6; stroke-linecap: round; }
-.wm-tree        { fill: #2f5c39; stroke: rgba(10,20,14,.5); stroke-width: .8;
-                  stroke-linejoin: round; }
-.wm-dune        { fill: none; stroke: rgba(214,178,104,.5); stroke-width: 1.5;
-                  stroke-linecap: round; }
-.wm-reed        { fill: none; stroke: rgba(150,186,178,.45); stroke-width: 1.4;
-                  stroke-linecap: round; }
-.wm-ruin        { fill: none; stroke: rgba(200,178,132,.5); stroke-width: 1.5;
-                  stroke-linecap: round; }
-.wm-tuft        { fill: none; stroke: rgba(126,196,140,.4); stroke-width: 1.2;
-                  stroke-linecap: round; }
-.wm-ripple      { fill: none; stroke: rgba(126,196,224,.34); stroke-width: 1.3;
-                  stroke-linecap: round; }
 
 /* 未踏区間の道。大陸の姿を読ませたいので、雲の下でも見える濃さにする */
 .wm-road {

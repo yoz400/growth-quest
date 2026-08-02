@@ -26,7 +26,9 @@
  * @property {string} otomonAttr  ⚠️ 保留中。§7 の決着まで、どのコードからも読まないこと
  * @property {Object} landmark    境界ランドマーク（そのエリアの最終マスに置く）
  * @property {number} intensity   演出強度 1〜5。5がクライマックス
- * @property {Object} map         大陸図上の座標（viewBox 680x460 基準）
+ * @property {Object} map         大陸図上の座標（viewBox 680x383 基準）。
+ *                                assets/worldmap.webp の地形に合わせて手で置いてある。
+ *                                絵を差し替えたら、この10個も置き直すこと。
  */
 
 const STAGES = [
@@ -45,7 +47,7 @@ const STAGES = [
         otomonAttr: 'beast',
         landmark: { id: 'ishibashi', name: '石橋' },
         intensity: 2,
-        map: { x: 95, y: 350 },
+        map: { x: 128, y: 187 },
       },
       {
         id: 'mori', no: 2, range: [11, 20],
@@ -56,7 +58,7 @@ const STAGES = [
         otomonAttr: 'plant',
         landmark: { id: 'michishirube', name: '苔むした道標' },
         intensity: 2,
-        map: { x: 185, y: 375 },
+        map: { x: 115, y: 128 },
       },
       {
         id: 'shitsugen', no: 3, range: [21, 30],
@@ -67,7 +69,7 @@ const STAGES = [
         otomonAttr: 'mist',
         landmark: { id: 'sandou', name: '朽ちた桟道' },
         intensity: 2,
-        map: { x: 280, y: 345 },
+        map: { x: 191, y: 89 },
       },
       {
         id: 'iseki', no: 4, range: [31, 40],
@@ -78,7 +80,7 @@ const STAGES = [
         otomonAttr: 'ancient',
         landmark: { id: 'mon', name: '遺跡の門' },
         intensity: 3,
-        map: { x: 370, y: 375 },
+        map: { x: 312, y: 121 },
       },
       {
         id: 'sunahara', no: 5, range: [41, 50],
@@ -89,7 +91,7 @@ const STAGES = [
         otomonAttr: 'mineral',
         landmark: { id: 'kareido', name: '涸れた井戸' },
         intensity: 2,
-        map: { x: 465, y: 345 },
+        map: { x: 298, y: 220 },
       },
       {
         id: 'mizuumi', no: 6, range: [51, 60],
@@ -100,7 +102,7 @@ const STAGES = [
         otomonAttr: 'aqua',
         landmark: { id: 'sanbashi', name: '桟橋' },
         intensity: 3,
-        map: { x: 555, y: 375 },
+        map: { x: 450, y: 213 },
         // 中間地点。記録の振り返りを出す。
         // ⚠️ 原案の checkpoint から改名（§6.4）。BOARD_CELL_TYPES の
         //    checkpoint（10刻みの休憩マス）とは別物のため。
@@ -115,7 +117,7 @@ const STAGES = [
         otomonAttr: 'ice',
         landmark: { id: 'sekisho', name: '雪の関所' },
         intensity: 3,
-        map: { x: 600, y: 265 },
+        map: { x: 565, y: 220 },
       },
       {
         id: 'touge', no: 8, range: [71, 80],
@@ -126,7 +128,7 @@ const STAGES = [
         otomonAttr: 'thunder',
         landmark: { id: 'tsuribashi', name: '吊り橋' },
         intensity: 5, // ステージ1のクライマックス。演出はここに寄せる
-        map: { x: 505, y: 205 },
+        map: { x: 588, y: 120 },
       },
       {
         id: 'okibi', no: 9, range: [81, 90],
@@ -137,7 +139,7 @@ const STAGES = [
         otomonAttr: 'ember',
         landmark: { id: 'haiwatari', name: '灰の渡り' },
         intensity: 1, // 抑えるほど効く。峠の直後の静けさ
-        map: { x: 370, y: 175 },
+        map: { x: 520, y: 45 },
       },
       {
         id: 'itadaki', no: 10, range: [91, 100],
@@ -148,7 +150,7 @@ const STAGES = [
         otomonAttr: 'light',
         landmark: { id: 'unkai', name: '雲海の階段' },
         intensity: 4,
-        map: { x: 230, y: 155 },
+        map: { x: 430, y: 78 },
         goal: true,
       },
     ],
