@@ -2030,13 +2030,28 @@ const WM_REVEAL_MS = 900;      // 雲が晴れるアニメの長さ
 let _wmTimer = null;
 let _wmRevealing = false;      // 雲を晴らす演出が進行中か
 
-// 大陸図が使う「到達マス」。
+// 大陸図には「どこまで行ったか」と「いまどこにいるか」の2つが要る。
+// この2つは2周目に入ると食い違うので、必ず別々に出すこと。
+//
+//   ステージ2・pos=155 のとき
+//     到達済み  = 100（1周終えたので雲は全部晴れている）
+//     現在地    = 55 （2周目の55マス目＝鏡面の湖）
+//
+// 以前これを1つの値で兼ねていて、「鏡面の湖にいるのに暁の頂に到達と出る」バグになった。
+
+// 雲の晴れ具合だけに使う。単調増加でなければならない。
 // ⚠️ sgGetCellNum は100で折り返すので、そのまま使うとステージ2で雲が全部戻る。
-//    ステージ1をクリア済みなら100で頭打ちにして、単調増加を保証する。
+//    ステージ1をクリア済みなら100で頭打ちにする。
 function worldMaxCell() {
   const pos = sugorokuData.pos;
   if (pos <= 0) return 0;
   return sgGetStage(pos) > 1 ? 100 : sgGetCellNum(pos);
+}
+
+// ▲の位置と足元の表示に使う。すごろく画面のマス番号と必ず一致させる。
+function worldCurrentCell() {
+  const pos = sugorokuData.pos;
+  return pos <= 0 ? 0 : sgGetCellNum(pos);
 }
 
 function cancelWorldMapReveal() {
@@ -2060,7 +2075,8 @@ function buildWorldMap() {
   if (!A || !svg) return;
 
   const areas = A.getStage('stage1').areas;
-  const to    = worldMaxCell();
+  const to    = worldMaxCell();          // 雲用。到達済みの最大マス（2周目は100で頭打ち）
+  const at    = worldCurrentCell();      // 表示用。いまいるマス（すごろく画面と同じ数字）
   const from  = A.revealDiff(to).from;   // 前回この画面を見たときの到達マス
   const animate = to > from;             // 進んでいるときだけアニメを出す
 
@@ -2075,7 +2091,7 @@ function buildWorldMap() {
   const nodes = areas.map(a => {
     const cloudFrom = animate ? A.cloudOpacity(a, from) : A.cloudOpacity(a, to);
     const cloudTo   = A.cloudOpacity(a, to);
-    const here = to > 0 && to >= a.range[0] && to <= a.range[1];
+    const here = at > 0 && at >= a.range[0] && at <= a.range[1];   // ▲は「いまいる場所」
     const badge = a.goal ? '🏆' : a.review ? '🪞' : '';
     return `
       <g class="wm-area">
@@ -2117,18 +2133,23 @@ function buildWorldMap() {
     ${walked.split(' ').length > 1 ? `<polyline class="wm-road-walked" points="${walked}"/>` : ''}
     ${nodes}`;
 
-  // ③ 見出しと足元の情報
+  // ③ 見出しと足元の情報。ここは全部「いまいる場所」で書く。
+  //    すごろく画面のマス番号と食い違わせないこと。
+  const lap = sgGetStage(sugorokuData.pos);
   const sub = document.getElementById('wm-sub');
-  if (sub) sub.textContent = `習慣の大陸 ・ マス ${to} / 100`;
+  if (sub) {
+    sub.textContent = `習慣の大陸 ・ マス ${at} / 100`
+                    + (lap > 1 ? ` ・ ${lap}周目` : '');
+  }
 
   const foot = document.getElementById('wm-foot');
   if (foot) {
-    const cur = to > 0 ? A.areaOf(to) : null;
+    const cur = at > 0 ? A.areaOf(at) : null;
     if (!cur) {
       foot.innerHTML = `<div class="wm-foot-next">サイコロを振ると、地図が広がっていきます。</div>`;
     } else {
-      const p    = A.progressInArea(to, cur);
-      const rest = cur.range[1] - to;
+      const p    = A.progressInArea(at, cur);
+      const rest = cur.range[1] - at;
       foot.innerHTML = `
         <div class="wm-foot-area" style="color:${cur.accent}">
           ${cur.emoji} ${cur.name}<span class="wm-foot-prog">${p.done} / ${p.span}</span>
