@@ -124,7 +124,14 @@ const Overlay = (() => {
     overlay.classList.add(def(id).openClass);
     overlay.setAttribute('aria-hidden', 'false');
     syncInert();
-    setTimeout(() => focusFirst(id), 0);
+    // フォーカスは「1フレーム描画したあと」に当てる。
+    // openClass を付けた直後はまだ visibility:hidden（overlay共通のフェード演出）で、
+    // 見えない要素は focus() が黙って失敗する（エラーも出ないので気づけない）。
+    // setTimeout 0 では早すぎたため rAF 2回で描画後まで待つ。
+    // 待つ間に閉じられたり別のoverlayが上に乗ることがあるので、最前面のときだけ当てる。
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      if (topId() === id) focusFirst(id);
+    }));
   }
 
   function close(id) {
