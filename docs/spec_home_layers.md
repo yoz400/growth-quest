@@ -196,7 +196,36 @@ H-1・H-2 を出したあと、**1〜2週間ふつうに使ってから**決め�
    ```
    `はじめの一歩` と `今日の予定` は非表示のことが多いので、
    `style.display=''` で強制表示してから位置を測ること（隠れていると症状が出ない）
-3. **ヘッダーの検証**（H-2）: 375px と 320px の両方。コントラストは計算して数値で示す
+3. **ヘッダーの検証**（H-2）: 375px と 320px の両方。
+   **コントラストは下のコードで測り、出た数値をそのまま報告すること。**
+   目分量や「薄くしたので大丈夫」では合否が判定できない。
+
+   ```javascript
+   // ロック中ナビのコントラスト比を測る（修正前は 2.16、目標は 4.5 以上）
+   (() => {
+     const parse = c => c.match(/[\d.]+/g).map(Number);
+     const over = (fg, bg) => { const a = fg[3] ?? 1; return [0,1,2].map(i => fg[i]*a + bg[i]*(1-a)); };
+     const lum = c => { const s = c.map(v => { v/=255; return v<=.03928 ? v/12.92 : ((v+.055)/1.055)**2.4; });
+                        return .2126*s[0] + .7152*s[1] + .0722*s[2]; };
+     const ratio = (a,b) => { const [x,y] = [lum(a),lum(b)].sort((p,q)=>q-p); return (x+.05)/(y+.05); };
+     const page   = parse(getComputedStyle(document.body).backgroundColor).slice(0,3);
+     const header = over(parse(getComputedStyle(document.querySelector('header')).backgroundColor), page);
+     const locked = document.querySelector('.header-right .feat-locked');
+     const label  = locked.querySelector('.icon-btn-label');
+     const btnOp  = Number(getComputedStyle(locked).opacity);      // ボタン側の薄さも掛ける
+     const raw    = parse(getComputedStyle(label).color);
+     const eff    = over([raw[0],raw[1],raw[2], (raw[3] ?? 1) * btnOp], header);
+     const r = locked.getBoundingClientRect();
+     return {
+       コントラスト: ratio(eff, header).toFixed(2) + ' : 1',
+       文字サイズ: getComputedStyle(label).fontSize,
+       タップ領域: Math.round(r.width) + ' x ' + Math.round(r.height) + ' px',
+     };
+   })()
+   ```
+
+   ⚠️ **ボタン側の `opacity` を掛け忘れないこと**。ラベル色だけを見ると
+   「4.5 を超えた」と誤判定する。二重に薄くなっているのが今回の原因そのもの。
 4. **新規ユーザー**: `localStorage.clear()` → リロードで起動と初期並び
 5. コンソールエラーがゼロであること
 6. `bash tools/bump_version.sh` → push後 `curl -s https://yoz400.github.io/growth-quest/ | grep v=guild-`
@@ -214,7 +243,45 @@ H-1・H-2 を出したあと、**1〜2週間ふつうに使ってから**決め�
 
 ---
 
-## 6. Codexへの依頼文（H-1・ヨージがコピペする）
+## 6-2. Codexへの依頼文（H-2・ヨージがコピペする）
+
+```text
+docs/spec_home_layers.md の H-2（ヘッダーの操作性）を実装してください。
+
+H-1 は完了済みです（?v=guild-135）。触らないでください。
+H-3（三層化）はヨージの判断待ちなので、着手しないでください。
+
+直すのは §2 の3点です。現状の実測値は次のとおりで、これが出発点です。
+  ロック中ラベルのコントラスト  2.16 : 1   → 4.5 : 1 以上へ
+  ロック中の文字サイズ          7.68px     → 10px 以上へ
+  ボタンのタップ領域            34 x 40px  → 44 x 44px 以上へ
+
+対象は styles/app.css の .header-right .feat-locked まわり（4177行目付近）です。
+ロック中が読めない原因は「二重に薄くしている」ことです。ボタン全体の
+opacity: .5 と、ラベルの rgba(255,255,255,.48) が掛かって実効 0.24 に
+なっています。opacity を外し、ラベルの色だけで濃さを決めてください。
+
+⚠️ ここがこの作業の肝です。
+ロック中を「読めるようにする」のであって「解放済みと同じに見せる」のでは
+ありません。まだ使えないことは一目で分かる必要があります。濃さで差を
+付けると読めなくなるので、差はグレースケール（彩度を落とす）で付けてください。
+絵文字側の filter: grayscale(1) は残す方向で考えてください。
+
+検証は §4 の手順3にあるコードで測り、出た数値をそのまま報告してください。
+「薄くしたので大丈夫」ではなく数値が要ります。ボタン側の opacity を
+掛け忘れると誤判定します（それが今回の原因そのものです）。
+375px と 320px の両方で、ヘッダーが横スクロールしないことも確認してください。
+
+§2 の受け入れ基準を全部満たしたら、bash tools/bump_version.sh を実行し、
+日本語のコミットメッセージでコミットしてください。
+§5 に当たったら、進めずに報告してください。特に
+「4.5:1 にしたら解放済みとの区別が付かなくなった」は起こりやすいので、
+無理に基準を満たそうとせず、そこで一度止めてください。
+```
+
+---
+
+## 6. Codexへの依頼文（H-1・完了済み。記録として残す）
 
 ```text
 docs/spec_home_layers.md の H-1（並べ替えがカードを置き去りにする問題）を実装してください。
