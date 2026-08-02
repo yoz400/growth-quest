@@ -1270,20 +1270,67 @@ document.getElementById('equipment-get-overlay').addEventListener('click', e => 
       orderedIds.splice(insertAt, 0, id);
     });
 
-    // DOM を orderedIds の順に並べ直す
-    for (const id of orderedIds) {
-      const el = document.getElementById(id);
-      if (el) app.appendChild(el); // 末尾に移動するとリスト順になる
-    }
+    applyOrder(orderedIds);
+  }
+
+  /**
+   * 並べ替え対象（.widget）が今いる「席」だけを入れ替える。
+   *
+   * ⚠️ 以前は `app.appendChild(el)` で既知ウィジェットを末尾へ送り直していたが、
+   *    それだと .widget を持たないカード（はじめの一歩・今日の予定・オトモン3枚）が
+   *    その場に取り残され、結果として全部の上へ浮き上がっていた。
+   *    ユーザーがタイマーを先頭にしても3番目になり、
+   *    ロードマップ フェーズ1-1「STARTを画面内へ」を打ち消していた。
+   *
+   *    席（.widget の出現位置）だけを使えば、対象外カードの位置は動かない。
+   */
+  function applyOrder(orderedIds) {
+    const slots = getWidgets();
+    const cards = orderedIds.map(id => document.getElementById(id)).filter(Boolean);
+    // 席とカードの数が合わないときは何もしない。
+    // 中途半端に動かすほうが、並びが崩れて見える。
+    if (slots.length !== cards.length) return;
+
+    // 席にいったん目印（コメントノード）を置いてから入れ替える。
+    // ⚠️ 目印を使わず insertBefore(cards[i], slots[i]) で回すと壊れる。
+    //    動かした要素がそれ以降の席の位置をずらすため。
+    //    例: A B C を C A B にしたい場合、素朴な方法だと B C A になる。
+    const marks = slots.map(slot => {
+      const m = document.createComment('widget-slot');
+      slot.parentNode.insertBefore(m, slot);
+      return m;
+    });
+    cards.forEach((card, i) => marks[i].parentNode.insertBefore(card, marks[i]));
+    marks.forEach(m => m.remove());
+    reattachFollowers();
+  }
+
+  /**
+   * 特定のカードの直後に居たいカードを、アンカーの後ろへ戻す。
+   * data-follows="アンカーのid" を持つ要素が対象（オトモンの卵・お供・クエスト）。
+   *
+   * 席の入れ替えだけだと、アンカー自身が別の席へ動いたときに置いていかれる。
+   * オトモンの3枚は「今日のクエストと並べて見せる」設計なので、離すと意味が変わる。
+   */
+  function reattachFollowers() {
+    const byAnchor = new Map();
+    app.querySelectorAll('[data-follows]').forEach(el => {
+      const key = el.dataset.follows;
+      if (!byAnchor.has(key)) byAnchor.set(key, []);
+      byAnchor.get(key).push(el);   // DOM順で拾うので、元の並び順は保たれる
+    });
+    byAnchor.forEach((list, anchorId) => {
+      const anchor = document.getElementById(anchorId);
+      if (!anchor) return;
+      let cursor = anchor;
+      list.forEach(el => { cursor.insertAdjacentElement('afterend', el); cursor = el; });
+    });
   }
 
   // リセットボタン：保存を消してデフォルト順に戻す
   function resetWidgetOrder() {
     localStorage.removeItem(STORAGE_KEY);
-    for (const id of KNOWN_IDS) {
-      const el = document.getElementById(id);
-      if (el) app.appendChild(el);
-    }
+    applyOrder(KNOWN_IDS);
   }
 
   // ページ読み込み時に復元
@@ -1353,7 +1400,8 @@ document.getElementById('equipment-get-overlay').addEventListener('click', e => 
     // FLIPアニメ用のtransitionを残さずクリーン
     getWidgets().forEach(w => { w.style.transition = ''; w.style.transform = ''; });
     dragEl = null;
-    saveWidgetOrder(); // ドラッグ完了時に順番を保存
+    reattachFollowers(); // クエストを動かしたらオトモン3枚も一緒に連れていく
+    saveWidgetOrder();   // ドラッグ完了時に順番を保存
     document.removeEventListener('pointermove', onPointerMove);
     document.removeEventListener('pointerup', endDrag);
     document.removeEventListener('pointercancel', endDrag);
