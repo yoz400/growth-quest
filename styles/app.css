@@ -162,9 +162,11 @@ header {
 .icon-btn-emoji { display: block; line-height: 1; }
 .icon-btn-label {
   display: block;
-  font-size: .5rem; font-weight: 700;
+  font-size: max(10px, .5rem); font-weight: 700;
   color: var(--text-dim); letter-spacing: 0;
-  white-space: nowrap;
+  /* 1行固定をやめて2行に折り返す。横幅を広げずに文字を大きくするため。
+     日本語は既定でどこでも折り返せるので word-break は不要 */
+  white-space: normal; line-height: 1.05;
 }
 
 /* ═══════════════════════════════════════
@@ -2511,21 +2513,19 @@ header {
   header { padding: 11px 14px; }
   .header-right { gap: 7px; }
   .icon-btn { padding: 6px 8px; font-size: .9rem; }
-  .header-right .icon-btn { min-width: 39px; min-height: 40px; }
+  .header-right .icon-btn { min-width: 39px; min-height: 48px; }
 }
 @media (max-width: 420px) {
   .header-right { gap: 6px; }
   .icon-btn { padding: 6px 7px; font-size: .86rem; }
   .header-right .icon-btn { min-width: 37px; }
-  .icon-btn-label { font-size: .48rem; }
   .logo-mark { width: 20px; height: 20px; }
   .launch-logo-mark { width: 56px; height: 56px; }
 }
 @media (max-width: 360px) {
   .header-right { gap: 4px; }
   .icon-btn { padding: 5px 6px; font-size: .82rem; border-radius: 8px; }
-  .header-right .icon-btn { min-width: 34px; min-height: 38px; }
-  .icon-btn-label { font-size: .45rem; }
+  .header-right .icon-btn { min-width: 34px; min-height: 48px; }
   .logo { font-size: .95rem; }
   #avatar-btn { width: 34px; height: 34px; }
   /* 狭い画面でも余白は詰めるが、セーフエリア分は必ず確保する（上の #app と同じ意図） */
@@ -2545,8 +2545,7 @@ header {
 @media (max-width: 320px) {
   .icon-btn { padding: 3px 2px; font-size: .74rem; }
   .header-right { gap: 2px; }
-  .header-right .icon-btn { min-width: 27px; min-height: 35px; }
-  .icon-btn-label { font-size: .35rem; }
+  .header-right .icon-btn { min-width: 27px; min-height: 48px; }
   .logo { font-size: .88rem; }
 }
 
@@ -4176,13 +4175,17 @@ header.glass { flex-wrap: wrap; row-gap: 8px; }
 /* 段階解放：未解放の機能ボタンはシルエットで見せる／解放時に光る */
 .header-right .feat-locked {
   display: inline-flex !important;
-  opacity: .5;
+  /* ⚠️ opacity で薄くしない。ラベル色にも掛かって実効0.24になり、
+     コントラスト2.16:1（AA基準4.5）になっていた。差は彩度で付ける */
 }
 .header-right .feat-locked .icon-btn-emoji {
   filter: grayscale(1) brightness(.45);
 }
 .header-right .feat-locked .icon-btn-label {
-  color: rgba(255,255,255,.48);
+  /* 解放済みと同じ濃さにする。ここで差を付けようとすると、
+     読める濃さ(4.5:1以上)と見分けが付く濃さが両立しない。
+     ロック中であることは「？？？」という文言と、絵文字のグレースケールで伝える */
+  color: var(--text-dim);
 }
 @keyframes featUnlock {
   0%   { transform: scale(.6); opacity: 0; }
@@ -5356,7 +5359,7 @@ body.eq-mood-galaxy    .anim-wrap::after {
     padding-left: 2px;
     padding-right: 2px;
   }
-  .icon-btn-label { max-width: 100%; overflow: hidden; }
+  .icon-btn-label { max-width: 100%; }
 }
 
 @media (prefers-reduced-motion: reduce) {
