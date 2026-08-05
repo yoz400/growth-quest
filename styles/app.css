@@ -57,36 +57,9 @@ body::before {
   border-radius: var(--radius);
 }
 
-/* ── ウィジェット ドラッグ並べ替え ──────────────────── */
-.widget { position: relative; }
-#app .widget { padding-top: 30px; }   /* つまみ帯のスペースを確保 */
-.widget-grip {
-  position: absolute; top: 5px; right: 7px;
-  width: 30px; height: 22px;
-  display: flex; align-items: center; justify-content: center;
-  color: var(--text-dim); font-size: 1.05rem; line-height: 1;
-  border-radius: 7px; cursor: grab;
-  z-index: 6; touch-action: none;
-  user-select: none; -webkit-user-select: none;
-  transition: background .15s, color .15s;
-}
-.widget-grip:hover { color: var(--text); background: rgba(255,255,255,.08); }
-.widget-grip:active { cursor: grabbing; }
-.widget {
-  transition: margin-top 220ms ease-out;
-}
-.widget.dragging {
-  opacity: .92;
-  transform: scale(1.02);
-  box-shadow:
-    0 16px 40px rgba(0,0,0,.6),
-    0 0 0 1px rgba(6,182,212,.4);
-  z-index: 100;
-  transition: none; /* ドラッグ中は即座に追従 */
-}
-.widget.drop-hint {
-  margin-top: 80px;
-}
+/* ウィジェットのドラッグ並べ替えは廃止（2026-08-05 / 三層化 L-1）。
+   つまみ帯用の .widget / .widget-grip / .dragging / .drop-hint をここから削除した。
+   仕様: docs/spec_home_three_layers.md §3 */
 
 /* ═══════════════════════════════════════
    LAYOUT
@@ -4513,8 +4486,9 @@ body.eq-mood-galaxy    .anim-wrap::after {
 /* ── ホームカードの余白（使命・打刻） ──
    この2枚だけ専用CSSが無く、.glass も余白を持たないため、
    中身が枠線に貼り付いていた。他のカードと同じ余白に揃える。
-   ※上端は #app .widget の padding-top:30px（つまみ帯の場所）が
-     優先されるので、ここでは触らない。 */
+   ※以前は #app .widget の padding-top:30px（つまみ帯の場所）が上端を上書き
+     していたが、並べ替えの廃止（2026-08-05）でその指定ごと消えたので、
+     いまはこの padding がそのまま効く。 */
 #mission-card, #punch-card { padding: 14px 16px; }
 
 /* ── タイムログ：打刻（いまからボタン） ── */

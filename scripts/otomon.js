@@ -1226,8 +1226,7 @@
     if (document.getElementById('otomon-egg-card')) return;
     const card = document.createElement('div');
     card.className = 'glass';
-    // 並べ替えても「今日のクエスト」の直後に居続ける（boot.js の reattachFollowers が見る）
-    card.dataset.follows = 'daily-quest-card';
+    // 「今日のクエスト」の直後に注入する（クエストと並べて見せる設計）
     card.id = 'otomon-egg-card';
     card.style.display = 'none';
     card.innerHTML = '<div class="quest-header">🥚 オトモンの卵</div><div id="otomon-egg-card-body"></div>';
@@ -1466,8 +1465,7 @@
     if (document.getElementById('otomon-buddy-card')) return;
     const card = document.createElement('div');
     card.className = 'glass';
-    // 並べ替えても「今日のクエスト」の直後に居続ける（boot.js の reattachFollowers が見る）
-    card.dataset.follows = 'daily-quest-card';
+    // 「今日のクエスト」の直後に注入する（クエストと並べて見せる設計）
     card.id = 'otomon-buddy-card';
     card.style.display = 'none';
     card.innerHTML = '<div class="quest-header">🤝 お供オトモン</div><div id="otomon-buddy-card-body"></div>';
@@ -1535,8 +1533,7 @@
     if (document.getElementById('otomon-quest-card')) return;
     const card = document.createElement('div');
     card.className = 'glass';
-    // 並べ替えても「今日のクエスト」の直後に居続ける（boot.js の reattachFollowers が見る）
-    card.dataset.follows = 'daily-quest-card';
+    // 「今日のクエスト」の直後に注入する（クエストと並べて見せる設計）
     card.id = 'otomon-quest-card';
     card.style.display = 'none';
     card.innerHTML = '<div class="quest-header">⚡ オトモンクエスト</div><div id="otomon-quest-body"></div>';
