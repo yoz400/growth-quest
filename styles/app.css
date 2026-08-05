@@ -156,12 +156,18 @@ header {
 .header-right .icon-btn {
   display: inline-flex; flex-direction: column;
   align-items: center; justify-content: center;
+  /* ⚠️ 8個を必ず枠内に収める。これが無いとボタンが自然幅のまま並び、
+     ヘッダーの枠から右へはみ出す（H-2でラベルを10pxにした際に発生）。
+     ページ全体の横スクロールは起きないので、scrollWidth の確認では気づけない。
+     ⚠️ ブレークポイント側で min-width を付け直さないこと。縮めなくなって同じ事故になる。
+     高さ（min-height）だけをブレークポイントで指定する */
+  flex: 1 1 0; min-width: 0;
   gap: 2px; line-height: 1;
-  min-width: 42px; min-height: 42px;
+  min-height: 42px;
 }
 .icon-btn-emoji { display: block; line-height: 1; }
 .icon-btn-label {
-  display: block;
+  display: block; max-width: 100%;
   font-size: max(10px, .5rem); font-weight: 700;
   color: var(--text-dim); letter-spacing: 0;
   /* 1行固定をやめて2行に折り返す。横幅を広げずに文字を大きくするため。
@@ -2513,19 +2519,19 @@ header {
   header { padding: 11px 14px; }
   .header-right { gap: 7px; }
   .icon-btn { padding: 6px 8px; font-size: .9rem; }
-  .header-right .icon-btn { min-width: 39px; min-height: 48px; }
+  .header-right .icon-btn { min-height: 48px; }   /* min-width は付けない（下の注記） */
 }
 @media (max-width: 420px) {
   .header-right { gap: 6px; }
   .icon-btn { padding: 6px 7px; font-size: .86rem; }
-  .header-right .icon-btn { min-width: 37px; }
+  /* min-width は付けない。8個が枠内に収まらなくなる */
   .logo-mark { width: 20px; height: 20px; }
   .launch-logo-mark { width: 56px; height: 56px; }
 }
 @media (max-width: 360px) {
   .header-right { gap: 4px; }
   .icon-btn { padding: 5px 6px; font-size: .82rem; border-radius: 8px; }
-  .header-right .icon-btn { min-width: 34px; min-height: 48px; }
+  .header-right .icon-btn { min-height: 48px; }
   .logo { font-size: .95rem; }
   #avatar-btn { width: 34px; height: 34px; }
   /* 狭い画面でも余白は詰めるが、セーフエリア分は必ず確保する（上の #app と同じ意図） */
@@ -2545,7 +2551,7 @@ header {
 @media (max-width: 320px) {
   .icon-btn { padding: 3px 2px; font-size: .74rem; }
   .header-right { gap: 2px; }
-  .header-right .icon-btn { min-width: 27px; min-height: 48px; }
+  .header-right .icon-btn { min-height: 48px; }
   .logo { font-size: .88rem; }
 }
 
@@ -5386,12 +5392,9 @@ body.eq-mood-galaxy    .anim-wrap::after {
 ═══════════════════════════════════════ */
 @media (max-width: 520px) {
   .header-right .icon-btn {
-    flex: 1 1 0;
-    min-width: 0;
     padding-left: 2px;
     padding-right: 2px;
   }
-  .icon-btn-label { max-width: 100%; }
 }
 
 @media (prefers-reduced-motion: reduce) {
