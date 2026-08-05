@@ -60,10 +60,13 @@ GQ.on('session:complete', () => completeQuest('complete_session'));
 let questDoneCollapsed = true;   // 達成した依頼はデフォルト折りたたみ
 
 function questItemHTML(q, isDone) {
+  const missionLabel = (window.missionQuestLabel && window.missionQuestLabel(q.id)) || '';
+  const label = missionLabel || q.label;
+  const missionBadge = missionLabel ? '<span class="quest-mission-badge">⚔使命</span>' : '';
   return `<div class="quest-item${isDone ? ' done' : ''}">
       <div class="quest-check">${isDone ? '✓' : '○'}</div>
       <div class="quest-body">
-        <div class="quest-title">${q.label}</div>
+        <div class="quest-title">${label}${missionBadge}</div>
         <div class="quest-desc">${q.desc}</div>
         <div class="quest-reward">${isDone ? '達成！' : '報酬'}：XP +${q.xp} / 自信 +${q.confidence}</div>
       </div>
@@ -504,6 +507,7 @@ function isShieldProtected(dateStr) {
 }
 
 window.completeQuest = completeQuest;
+window.renderDailyQuests = renderDailyQuests;
 window.renderStats = renderStats;
 window.renderStreak = renderStreak;
 window.updateStreak = updateStreak;

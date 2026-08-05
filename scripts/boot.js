@@ -1895,6 +1895,19 @@ function missionWeekProgress(kpi) {
   return { days, target: kpi.daysPerWeek, done: days >= kpi.daysPerWeek };
 }
 
+// quests.js は boot.js より先に読むため、表示時にだけ window 経由で参照される。
+function missionQuestLabel(questId) {
+  if (questId !== 'complete_session') return '';
+  for (const item of mission.build || []) {
+    const kpi = validMissionKpi(item.kpi);
+    if (!kpi || missionWeekProgress(kpi).done) continue;
+    const genre = genres.find(g => g.id === kpi.genreId);
+    return `${escHtml(genre?.name || '設定したジャンル')}で1セッションを終える`;
+  }
+  return '';
+}
+window.missionQuestLabel = missionQuestLabel;
+
 function missionKpiEditorHTML() {
   const draft = missionKpiDraft;
   if (!draft) return '';
@@ -2007,6 +2020,7 @@ document.getElementById('mission-card')?.addEventListener('click', e => {
     missionKpiEditIndex = null;
     missionKpiDraft = null;
     saveMission(); renderMissionCard();
+    if (typeof window.renderDailyQuests === 'function') window.renderDailyQuests();
     return;
   }
   const kpiOpen = e.target.closest('[data-mc-kpi-open]');
@@ -2064,6 +2078,7 @@ document.getElementById('mission-card')?.addEventListener('click', e => {
     if (item) {
       item.kpi = { genreId: missionKpiDraft.genreId, daysPerWeek, minsPerDay };
       saveMission();
+      if (typeof window.renderDailyQuests === 'function') window.renderDailyQuests();
     }
     missionKpiEditIndex = null;
     missionKpiDraft = null;
@@ -2114,6 +2129,7 @@ resetDailyMissionChecks();
 if (localStorage.getItem('gq_summoned') === '1' || (mission.build && mission.build.length) || (mission.quit && mission.quit.length)) {
   renderMissionCard();
 }
+if (typeof window.renderDailyQuests === 'function') window.renderDailyQuests();
 
 // アプリを開きっぱなしで日付をまたいだ場合に備え、再表示時にもリセット判定
 document.addEventListener('visibilitychange', () => {

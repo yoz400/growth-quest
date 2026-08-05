@@ -3466,6 +3466,13 @@ header {
   margin-bottom: 2px;
   letter-spacing: .02em;
 }
+.quest-mission-badge {
+  display: inline-block; margin-left: 7px; padding: 1px 5px;
+  border: 1px solid rgba(251,191,36,.38); border-radius: 999px;
+  background: rgba(251,191,36,.1); color: #fbbf24;
+  font-size: .6rem; line-height: 1.4; vertical-align: .08em;
+  letter-spacing: .03em; white-space: nowrap;
+}
 .quest-item.done .quest-title {
   color: var(--text-dim);
   text-decoration: line-through;
