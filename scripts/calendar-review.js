@@ -203,6 +203,7 @@ function renderHomePlanner() {
   if (!list.length) {
     card.style.display = 'none';
     listEl.innerHTML = '';
+    window.HomeTabs?.refresh();
     return;
   }
 
@@ -224,6 +225,7 @@ function renderHomePlanner() {
       renderCalendar();
     });
   });
+  window.HomeTabs?.refresh();
 }
 
 function setPlannerKind(kind) {

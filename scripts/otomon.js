@@ -1226,12 +1226,14 @@
     if (document.getElementById('otomon-egg-card')) return;
     const card = document.createElement('div');
     card.className = 'glass';
-    // 「今日のクエスト」の直後に注入する（クエストと並べて見せる設計）
+    // 「きょう」層の常設枠へ注入する（どのタブでも見える設計）
     card.id = 'otomon-egg-card';
     card.style.display = 'none';
     card.innerHTML = '<div class="quest-header">🥚 オトモンの卵</div><div id="otomon-egg-card-body"></div>';
+    const holder = document.getElementById('layer-today-always');
     const anchor = document.getElementById('daily-quest-card');
-    if (anchor) anchor.insertAdjacentElement('afterend', card);
+    if (holder) holder.prepend(card);
+    else if (anchor) anchor.insertAdjacentElement('afterend', card);
     else (document.querySelector('main') || document.body).appendChild(card);
   }
 
@@ -1460,17 +1462,19 @@
   }
   function doComplete() { O.completeActiveQuest(); }   // 誕生は setOnHatch(showBirth) が処理
 
-  // ── ホームのお供カードを注入（最上段：クエストカードの後に注入＝アンカー直後に来る）──
+  // ── ホームのお供カードを注入（常設枠の最上段）──
   function injectBuddyCard() {
     if (document.getElementById('otomon-buddy-card')) return;
     const card = document.createElement('div');
     card.className = 'glass';
-    // 「今日のクエスト」の直後に注入する（クエストと並べて見せる設計）
+    // 「きょう」層の常設枠へ注入する（どのタブでも見える設計）
     card.id = 'otomon-buddy-card';
     card.style.display = 'none';
     card.innerHTML = '<div class="quest-header">🤝 お供オトモン</div><div id="otomon-buddy-card-body"></div>';
+    const holder = document.getElementById('layer-today-always');
     const anchor = document.getElementById('daily-quest-card');
-    if (anchor) anchor.insertAdjacentElement('afterend', card);
+    if (holder) holder.prepend(card);
+    else if (anchor) anchor.insertAdjacentElement('afterend', card);
     else (document.querySelector('main') || document.body).appendChild(card);
   }
 
@@ -1528,17 +1532,19 @@
     if (btn) btn.addEventListener('click', () => { O.touchActiveOtomon(); renderHomeBuddyCard(); });
   }
 
-  // ── ホームのクエストカードを注入（卵カードの上に並ぶ）──
+  // ── ホームのクエストカードを注入（常設枠で卵カードの上に並ぶ）──
   function injectQuestCard() {
     if (document.getElementById('otomon-quest-card')) return;
     const card = document.createElement('div');
     card.className = 'glass';
-    // 「今日のクエスト」の直後に注入する（クエストと並べて見せる設計）
+    // 「きょう」層の常設枠へ注入する（どのタブでも見える設計）
     card.id = 'otomon-quest-card';
     card.style.display = 'none';
     card.innerHTML = '<div class="quest-header">⚡ オトモンクエスト</div><div id="otomon-quest-body"></div>';
+    const holder = document.getElementById('layer-today-always');
     const anchor = document.getElementById('daily-quest-card');
-    if (anchor) anchor.insertAdjacentElement('afterend', card);
+    if (holder) holder.prepend(card);
+    else if (anchor) anchor.insertAdjacentElement('afterend', card);
     else (document.querySelector('main') || document.body).appendChild(card);
   }
 
@@ -1623,7 +1629,13 @@
   function openPanel()  { injectAll(); _pickEggUid = null; _pickMsg = ''; renderPanel(); Overlay.open('otomon-overlay'); }
   function closePanel() { _pickEggUid = null; _pickMsg = ''; Overlay.close('otomon-overlay'); }
 
-  function refreshHome() { renderHomeBuddyCard(); renderHomeEggCard(); renderQuestCard(); }
+  function refreshHome() {
+    renderHomeBuddyCard(); renderHomeEggCard(); renderQuestCard();
+    const holder = document.getElementById('layer-today-always');
+    if (holder) {
+      holder.hidden = !Array.from(holder.children).some(card => card.style.display !== 'none');
+    }
+  }
 
   // ── お供オトモンのナッジ（応援トースト）──
   function injectNudge() {

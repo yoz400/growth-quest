@@ -734,6 +734,7 @@ function renderPunchBar() {
   // タイムログ機能が解放されるまではカードごと隠す（段階的開放と歩調を合わせる）
   if (typeof featUnlocks !== 'undefined' && !featUnlocks.has('timelog')) {
     card.style.display = 'none';
+    window.HomeTabs?.refresh();
     return;
   }
   card.style.display = '';
@@ -752,6 +753,7 @@ function renderPunchBar() {
   } else {
     status.textContent = '⏱ いまから何する？ タップした瞬間から記録が始まるよ';
   }
+  window.HomeTabs?.refresh();
 }
 
 // ── C. ルーチン：毎日くり返す予定は一度だけ設定 ──────────

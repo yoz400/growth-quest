@@ -40,7 +40,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles/app.css?v=guild-147">
+<link rel="stylesheet" href="styles/app.css?v=guild-150">
 </head>
 <body>
 
@@ -189,15 +189,21 @@
   <section class="home-layer" id="layer-today">
   <h2 class="layer-title">📋 きょう</h2>
 
+  <div class="layer-tabs" id="today-tabs" role="tablist" aria-label="きょう" hidden>
+    <button class="layer-tab" id="today-tab-quest" role="tab" data-tab="quest" aria-selected="true" aria-controls="daily-quest-card">📜 クエスト</button>
+    <button class="layer-tab" id="today-tab-plan" role="tab" data-tab="plan" aria-selected="false" aria-controls="today-plan-card">🗒 予定</button>
+    <button class="layer-tab" id="today-tab-punch" role="tab" data-tab="punch" aria-selected="false" aria-controls="punch-card">⏱ 打刻</button>
+  </div>
+
   <!-- DAILY QUEST（基本クエスト＋選択肢クエストを1枚に統合） -->
-  <div class="glass" id="daily-quest-card" data-guide="daily-quests">
+  <div class="glass" id="daily-quest-card" data-guide="daily-quests" role="tabpanel" aria-labelledby="today-tab-quest">
     <div class="quest-header">📜 今日のクエスト</div>
     <div class="quest-list" id="quest-list"></div>
     <div id="nudge-body"></div>
   </div>
 
   <!-- 今日の予定（固定カード。widget並べ替えには入れない） -->
-  <div class="glass" id="today-plan-card" style="display:none">
+  <div class="glass" id="today-plan-card" style="display:none" role="tabpanel" aria-labelledby="today-tab-plan" hidden>
     <div class="today-plan-head">
       <div class="quest-header">📅 今日の予定</div>
       <button id="today-plan-add" class="today-plan-add" title="今日の予定を追加">＋</button>
@@ -206,11 +212,13 @@
   </div>
 
   <!-- ⏱ いまから何する？（打刻：タップした瞬間からタイムログに記録） -->
-  <div class="glass" id="punch-card" style="display:none">
+  <div class="glass" id="punch-card" style="display:none" role="tabpanel" aria-labelledby="today-tab-punch" hidden>
     <div class="quest-header">⏱ いまから何する？</div>
     <div class="tl-punch-status" id="tl-punch-status"></div>
     <div id="tl-punch-chips"></div>
   </div>
+
+  <div id="layer-today-always"></div>
 
   </section>
 
@@ -1097,16 +1105,17 @@
 })();
 </script>
 
-<script src="scripts/areas.js?v=guild-147"></script>
-<script src="scripts/core.js?v=guild-147"></script>
-<script src="scripts/progression.js?v=guild-147"></script>
-<script src="scripts/quests.js?v=guild-147"></script>
-<script src="scripts/timer.js?v=guild-147"></script>
-<script src="scripts/settings-genre.js?v=guild-147"></script>
-<script src="scripts/calendar-review.js?v=guild-147"></script>
-<script src="scripts/features.js?v=guild-147"></script>
-<script src="scripts/boot.js?v=guild-147"></script>
-<script src="scripts/otomon.js?v=guild-147"></script>
+<script src="scripts/areas.js?v=guild-150"></script>
+<script src="scripts/core.js?v=guild-150"></script>
+<script src="scripts/home-layers.js?v=guild-150"></script>
+<script src="scripts/progression.js?v=guild-150"></script>
+<script src="scripts/quests.js?v=guild-150"></script>
+<script src="scripts/timer.js?v=guild-150"></script>
+<script src="scripts/settings-genre.js?v=guild-150"></script>
+<script src="scripts/calendar-review.js?v=guild-150"></script>
+<script src="scripts/features.js?v=guild-150"></script>
+<script src="scripts/boot.js?v=guild-150"></script>
+<script src="scripts/otomon.js?v=guild-150"></script>
 
 <script>
 // ── Service Worker 登録 ────────────────────────────────

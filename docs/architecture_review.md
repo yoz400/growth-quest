@@ -116,7 +116,7 @@
 | 手帳/タイムログ | gq_planner, gq_planner_fired, gq_day_log, gq_day_templates, gq_tl_punch, gq_tl_routine, gq_tl_routine_days |
 | レビュー | gq_reviews, gq_rv_status |
 | ログイン演出 | gq_login_last, gq_login_streak, gq_loginbonus_seen |
-| その他 | gq_badges, gq_confidence_rewards, gq_cloud_url, gq_header_luxe |
+| その他 | gq_badges, gq_confidence_rewards, gq_cloud_url, gq_header_luxe, gq_home_tab |
 
 **廃止したキー**: `gq_widget_order`（ウィジェットのドラッグ並べ替え。2026-08-05 に機能ごと廃止。
 起動時に一度だけ `removeItem` している → [spec_home_three_layers.md](spec_home_three_layers.md) §3）
