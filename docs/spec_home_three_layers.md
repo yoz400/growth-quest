@@ -1,6 +1,7 @@
 # 仕様書：ホームの三層化（H-3 / ロードマップ フェーズ4の本題）
 
-作成: 2026-08-05 ／ 設計: クロ（Opus 5）／ 実装担当: 未定（Codex or クロ）
+作成: 2026-08-05 ／ 設計: クロ（Opus 5）
+実装担当: L-1 = クロ（完了）／ L-2 以降 = Codex（依頼文は §8-2）
 親: [spec_home_layers.md](spec_home_layers.md) §3 ／ [team/roadmap.md](team/roadmap.md) フェーズ4
 掟: [architecture_review.md](architecture_review.md) §4
 ⚠️ 他のJS作業と同時進行しない。**L-1 → L-2 → L-3 の順**。各段階でコミットを分ける。
@@ -183,19 +184,54 @@ calendar-panel      14px      →  14px
 > ⚠️ **層に `.glass` を付けて「箱の中に箱」にしないこと。** 二重の枠線で圧迫感が出る。
 > 層は「見出し＋余白」だけで区切る。カード自体の見た目は今のまま変えない。
 
-### ⚠️ 罠：カード全体が非表示のときに見出しだけ残る
+### ⚠️ 実在する副作用：`#app > .glass` のホバーが切れる
 
-「きょう」層は、新規ユーザーだと**クエストしか無い**（予定＝手帳OFF、打刻＝未解放）。
-「ふりかえり」層は常に2枚あるので問題ない。
-**層の中に表示中のカードが1枚も無ければ、層ごと隠す**こと（見出しだけが浮くのは事故に見える）。
+[app.css:2373-2374](../styles/app.css:2373) に**直下セレクタ**がある。
+
+```css
+#app > .glass { transition: border-color .25s, box-shadow .25s; }
+#app > .glass:hover { border-color: rgba(255,255,255,.14); }
+```
+
+カードを `<section>` の中へ入れると **`#app` の直下ではなくなり、この2行が当たらなくなる**
+（マウスを載せても枠線が光らない）。セレクタを次のように広げること:
+
+```css
+#app > .glass, #app .home-layer > .glass { transition: border-color .25s, box-shadow .25s; }
+#app > .glass:hover, #app .home-layer > .glass:hover { border-color: rgba(255,255,255,.14); }
+```
+
+> 💡 直下セレクタ（`>`）は「箱で囲む」変更に弱い。**囲む前に `#app >` を全部grepすること。**
+> 他に当たったのは `#app > header`（[boot.js:2670](../scripts/boot.js:2670) と
+> [app.css:5280](../styles/app.css:5280)）だけで、**ヘッダーは層に入れないので影響なし**。
+
+### ✅ 「層が空になったら隠す」は不要（2026-08-05 検算した）
+
+初版では「表示カードが0枚の層は見出しごと隠す」と書いたが、**そのケースは起きない**。
+どの層にも「常に表示されるカード」が最低1枚ある:
+
+```text
+🎯 いま        genre-card ✅常時 / timer-card ✅常時
+📋 きょう      daily-quest-card ✅常時
+📚 ふりかえり  stats-strip ✅常時 / calendar-panel ✅常時
+
+条件付き表示なのは4枚だけ:
+  onboard-card / mission-card / today-plan-card / punch-card
+  （index.html に style="display:none" が付いているのはこの4枚だけ）
+```
+
+**この結果、L-2 は HTML と CSS だけで完結し、JSは1行も書かない。**
 
 ### L-2 の受け入れ基準
 
 - [ ] 3つの見出し「🎯 いま」「📋 きょう」「📚 ふりかえり」が出る
 - [ ] カードの順番が上の表のとおり
+- [ ] **JSファイルを1つも変更していない**（変更が要ると思ったら §7 のとおり止まって報告）
+- [ ] カードにマウスを載せると枠線が光る（`#app > .glass` の修正ができている）
 - [ ] 375px で START が初回表示の画面内（上端 812px 以内）に収まる。**数値を報告すること**
-- [ ] 新規ユーザー（`localStorage.clear()` → リロード）で、中身が空の層の見出しが出ていない
-- [ ] 二重枠線になっていない
+- [ ] 二重枠線になっていない（層に `.glass` を付けていない）
+- [ ] 設定モーダルなどを開いたとき、背後のホームが操作できない
+      （`core.js` の `syncPageInert` が `#app` の子を見ている。層に変わっても効くはずだが、要確認）
 - [ ] コンソールエラーゼロ ／ `check_load_order.py` 通過 ／ `bump_version.sh` 実行済み
 
 ---
@@ -362,7 +398,100 @@ function loadTab() {
 
 ---
 
-## 8. Codexへの依頼文（L-1・ヨージがコピペする）
+## 8-2. Codexへの依頼文（L-2・ヨージがコピペする）
+
+```text
+docs/spec_home_three_layers.md の L-2（三層の骨組み）を実装してください。
+§4 だけです。L-3（タブ化）には着手しないでください。
+
+L-1（並べ替えの廃止）は完了済みです（?v=guild-146）。触らないでください。
+
+■ やること
+index.html の #app の中にあるホームのカードを、3つの <section> で囲みます。
+いまは #app の直下にカードが平らに並んでいます。これを次の3つに分けます。
+（行番号は現在の index.html。囲むだけで、カードの中身・id・class は1文字も変えません）
+
+  <section class="home-layer" id="layer-now">      🎯 いま
+      114行  genre-card
+      120行  timer-card
+      157行  break-banner
+      166行  onboard-card
+      186行  mission-card        ← いまは daily-quest-card の後にあるので、ここへ移動する
+
+  <section class="home-layer" id="layer-today">    📋 きょう
+      179行  daily-quest-card
+      192行  today-plan-card
+      218行  punch-card
+
+  <section class="home-layer" id="layer-review">   📚 ふりかえり
+      201行  stats-strip
+      225行  calendar-panel
+
+各 <section> の先頭に見出しを入れてください。
+
+  <h2 class="layer-title">🎯 いま</h2>
+  <h2 class="layer-title">📋 きょう</h2>
+  <h2 class="layer-title">📚 ふりかえり</h2>
+
+CSS（styles/app.css に追加）は §4 のとおりです。
+
+  .home-layer { margin-bottom: 22px; }
+  .layer-title {
+    font-size: .72rem; font-weight: 700; letter-spacing: .08em;
+    color: var(--text-dim); margin: 0 0 8px 4px;
+  }
+
+■ 注意点（ここが今回の肝です）
+
+1. ヘッダー（<header class="glass">）と #login-bonus-overlay は層に入れません。
+   #app の直下のままにしてください。boot.js と app.css に
+   「#app > header」という直下セレクタがあり、囲むと壊れます。
+
+2. app.css の 2373-2374行に「#app > .glass」の直下セレクタがあります。
+   カードを section の中に入れると、この2行が当たらなくなり
+   マウスを載せても枠線が光らなくなります。次のように広げてください。
+
+     #app > .glass, #app .home-layer > .glass { transition: border-color .25s, box-shadow .25s; }
+     #app > .glass:hover, #app .home-layer > .glass:hover { border-color: rgba(255,255,255,.14); }
+
+3. section に .glass を付けないでください。カードも .glass なので、
+   枠線の中に枠線ができて圧迫感が出ます。層は「見出し＋余白」だけで区切ります。
+
+4. mission-card（使命）は「いま」層の最後に置きます。タイマーより上には
+   絶対に置かないでください（STARTが画面外に沈みます）。
+
+5. この作業で JavaScript は1行も変更しません。JSの変更が要ると思ったら、
+   何かを読み違えている可能性が高いので、進めずに報告してください。
+
+■ 検証（§6 の手順。数値をそのまま報告してください）
+
+  python3 -m http.server 8123 を立て、http://localhost:8123/index.html を開く
+  （preview_start のサーバーはサンドボックス制約で全404になります）
+
+  ・375px と 320px で、START ボタンの上端が画面内（812px / 800px 未満）にあること
+      document.getElementById('start-btn').getBoundingClientRect().top
+  ・localStorage.clear() → リロードで、新規ユーザーとして起動すること
+  ・設定モーダルを開いたとき、背後のホームが操作できないこと
+    （core.js の syncPageInert が #app の子を見ています。層に変わっても
+      効くはずですが、必ず目で確認してください）
+  ・カードにマウスを載せると枠線が光ること
+  ・コンソールエラーがゼロであること
+
+■ 仕上げ
+
+  python3 tools/check_load_order.py を実行（✅が出ること）
+  bash tools/bump_version.sh を実行（?v=guild-N を一括+1。忘れると
+  Service Worker が古いファイルを配り「直したのに直ってない」状態になります）
+  日本語のコミットメッセージでコミットしてください。
+
+§7 に当たったら、進めずに報告してください。特に
+「カードを層へ移したら、そのカードを描く関数が動かなくなった」は
+起こりうるので、無理に直そうとせず、そこで一度止めてください。
+```
+
+---
+
+## 8. Codexへの依頼文（L-1・完了済み。記録として残す）
 
 ```text
 docs/spec_home_three_layers.md の L-1（並べ替えの廃止）を実装してください。
