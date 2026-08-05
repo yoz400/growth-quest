@@ -118,6 +118,9 @@
 | ログイン演出 | gq_login_last, gq_login_streak, gq_loginbonus_seen |
 | その他 | gq_badges, gq_confidence_rewards, gq_cloud_url, gq_header_luxe |
 
+**廃止したキー**: `gq_widget_order`（ウィジェットのドラッグ並べ替え。2026-08-05 に機能ごと廃止。
+起動時に一度だけ `removeItem` している → [spec_home_three_layers.md](spec_home_three_layers.md) §3）
+
 ## 7. 開発環境メモ（MCP・ツール）
 
 - **この構成に追加のMCPは不要**というのが結論。静的アプリ＋GitHub Pages＋

@@ -142,15 +142,15 @@ calendar-panel      14px      →  14px
 
 ### L-1 の受け入れ基準
 
-- [ ] ⠿ のつまみがホームから1つも見えない
-- [ ] 設定モーダルに「ウィジェット並び順」の行が無い
-- [ ] コンソールエラーゼロ（`reset-widget-order-btn` の `addEventListener` が消えていること）
-- [ ] 7枚のカードの中身が枠線に貼り付いていない（上余白がある）
-- [ ] **既に並べ替えて保存している人**が開いても、デフォルト順（index.html の記述順）で表示される
-- [ ] `localStorage.getItem('gq_widget_order')` が `null` になっている
-- [ ] オトモン3枚が「今日のクエスト」の直後にいる（`data-follows` を消しても、
+- [x] ⠿ のつまみがホームから1つも見えない
+- [x] 設定モーダルに「ウィジェット並び順」の行が無い
+- [x] コンソールエラーゼロ（`reset-widget-order-btn` の `addEventListener` が消えていること）
+- [x] 7枚のカードの中身が枠線に貼り付いていない（上余白がある）
+- [x] **既に並べ替えて保存している人**が開いても、デフォルト順（index.html の記述順）で表示される
+- [x] `localStorage.getItem('gq_widget_order')` が `null` になっている
+- [x] オトモン3枚が「今日のクエスト」の直後にいる（`data-follows` を消しても、
       otomon.js は元々アンカーの `afterend` に注入しているので位置は変わらない）
-- [ ] `python3 tools/check_load_order.py` が通る ／ `bash tools/bump_version.sh` 実行済み
+- [x] `python3 tools/check_load_order.py` が通る ／ `bash tools/bump_version.sh` 実行済み
 
 ---
 
@@ -396,4 +396,31 @@ bash tools/bump_version.sh を実行して、日本語のコミットメッセ�
 
 ## 9. 実装記録
 
-（ここに各段階の完了記録を追記する）
+### ✅ L-1 完了（2026-08-05 クロが実装・検証）`?v=guild-146`
+
+削除だけなので、仕様どおりに進んで詰まる所は無かった。**283行減って33行増えた。**
+
+| 消したもの | 場所 |
+|---|---|
+| `initWidgetReorder()` 約200行 | scripts/boot.js |
+| ⠿ グリップ 7枚 ＋ `class="widget"` 7か所 ＋ 設定の「ウィジェット並び順」 | index.html |
+| `.widget` / `.widget-grip` / `.dragging` / `.drop-hint` | styles/app.css |
+| `dataset.follows` 3か所 | scripts/otomon.js |
+
+**測った結果**
+
+| 検証 | 結果 |
+|---|---|
+| 並べ替えを保存済みの人が開く | デフォルト順。`gq_widget_order` は `null` に掃除された |
+| オトモン3枚の位置 | 「今日のクエスト」の直後（`afterend` 注入なので `data-follows` 無しでも変わらない） |
+| カードの上余白 | 12〜28px。枠線に貼り付いたカードは無し |
+| STARTの上端（新規・375px） | **561px → 513px**（つまみ帯の30pxが7枚ぶん消えたため） |
+| 320px | 横スクロールなし・START 508px |
+| コンソールエラー | ゼロ（新規ユーザー・既存ユーザーの両方） |
+| `check_load_order.py` | ✅ 問題なし |
+
+> 💡 **学び: 掟1（bump_version）を踏んだ。**
+> 検証の途中で「`gq_widget_order` が消えない」という結果が出た。原因は
+> **Service Worker が旧 boot.js を配っていた**こと。HTMLは新しいのにJSだけ古い、
+> という混ざった状態だった。`bash tools/bump_version.sh` を先に実行してから
+> 検証すれば起きない。**「直したのに直ってない」は、まずバージョンを疑う。**
