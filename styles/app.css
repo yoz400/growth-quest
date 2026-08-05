@@ -3470,7 +3470,8 @@ header {
   display: inline-block; margin-left: 7px; padding: 1px 5px;
   border: 1px solid rgba(251,191,36,.38); border-radius: 999px;
   background: rgba(251,191,36,.1); color: #fbbf24;
-  font-size: .6rem; line-height: 1.4; vertical-align: .08em;
+  /* H-2 で決めた「文字は10px以上」に合わせる（.6rem だと 9.6px になる） */
+  font-size: max(10px, .6rem); line-height: 1.4; vertical-align: .08em;
   letter-spacing: .03em; white-space: nowrap;
 }
 .quest-item.done .quest-title {
