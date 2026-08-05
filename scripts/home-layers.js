@@ -27,7 +27,7 @@
 
   function saveTab(tab) {
     try {
-      localStorage.setItem('gq_home_tab', JSON.stringify({ date: todayKeyLocal(), tab }));
+      safeSetItem('gq_home_tab', JSON.stringify({ date: todayKeyLocal(), tab }));
     } catch {}
   }
 

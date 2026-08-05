@@ -23,7 +23,7 @@ function dkey(date) {
 function loadPlanner() { try { return JSON.parse(localStorage.getItem('gq_planner') || '[]'); } catch { return []; } }
 let plannerTasks = loadPlanner();
 function savePlanner() {
-  localStorage.setItem('gq_planner', JSON.stringify(plannerTasks));
+  safeSetItem('gq_planner', JSON.stringify(plannerTasks));
   syncPlannerToCloud();
   renderHomePlanner();
 }
@@ -31,7 +31,7 @@ function savePlanner() {
 // ── クラウド通知：GASウェブアプリへ予定を預ける（LINE等へ“閉じてても”送るため）──
 // no-cors の fire&forget。応答は読めないが、GAS側は受け取れる（CORS回避）。
 function loadCloudUrl() { return localStorage.getItem('gq_cloud_url') || ''; }
-function saveCloudUrl(u) { localStorage.setItem('gq_cloud_url', (u || '').trim()); }
+function saveCloudUrl(u) { safeSetItem('gq_cloud_url', (u || '').trim()); }
 function cloudPost(payload) {
   const url = loadCloudUrl(); if (!url) return;
   try {
@@ -314,7 +314,7 @@ let _snoozedKeys = new Set();
   } catch { _firedDate = todayKey(); _firedReminders = new Set(); }
 })();
 function saveFiredReminders() {
-  localStorage.setItem('gq_planner_fired', JSON.stringify({ date: _firedDate, keys: [..._firedReminders] }));
+  safeSetItem('gq_planner_fired', JSON.stringify({ date: _firedDate, keys: [..._firedReminders] }));
 }
 function reminderKey(task, dateKey) {
   return `${task.id}|${dateKey}|${task.time}`;
@@ -688,9 +688,9 @@ function fmtMins(m) {
 
 // ── ストレージ ────────────────────────────────────────────
 function loadReviews()       { try { return JSON.parse(localStorage.getItem('gq_reviews') || '{}');  } catch { return {}; } }
-function saveReviews()       { localStorage.setItem('gq_reviews', JSON.stringify(weeklyReviews)); }
+function saveReviews()       { safeSetItem('gq_reviews', JSON.stringify(weeklyReviews)); }
 function loadReviewStatus()  { try { return JSON.parse(localStorage.getItem('gq_rv_status') || '{"skips":0}'); } catch { return {skips:0}; } }
-function saveReviewStatus()  { localStorage.setItem('gq_rv_status', JSON.stringify(reviewStatus)); }
+function saveReviewStatus()  { safeSetItem('gq_rv_status', JSON.stringify(reviewStatus)); }
 
 weeklyReviews        = loadReviews();
 let reviewStatus     = loadReviewStatus();

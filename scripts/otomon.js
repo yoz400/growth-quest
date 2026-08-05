@@ -556,11 +556,11 @@
 
   // ── localStorage（既存パターンに合わせて load/save 一対）──
   function loadEggs() { try { return JSON.parse(localStorage.getItem('gq_eggs') || '[]') || []; } catch { return []; } }
-  function saveEggs() { localStorage.setItem('gq_eggs', JSON.stringify(eggs)); notifyChange(); }
+  function saveEggs() { safeSetItem('gq_eggs', JSON.stringify(eggs)); notifyChange(); }
   let eggs = loadEggs();
 
   function loadHatchQuest() { try { return JSON.parse(localStorage.getItem('gq_hatch_quest') || 'null'); } catch { return null; } }
-  function saveHatchQuest() { localStorage.setItem('gq_hatch_quest', JSON.stringify(hatchQuest)); notifyChange(); }
+  function saveHatchQuest() { safeSetItem('gq_hatch_quest', JSON.stringify(hatchQuest)); notifyChange(); }
   let hatchQuest = loadHatchQuest();
 
   const DEFAULT_OTOMON = { discovered:{}, active:'', nudgeOn:true };
@@ -568,7 +568,7 @@
     try { return Object.assign({}, DEFAULT_OTOMON, JSON.parse(localStorage.getItem('gq_otomon') || '{}')); }
     catch { return { ...DEFAULT_OTOMON, discovered:{} }; }
   }
-  function saveOtomon() { localStorage.setItem('gq_otomon', JSON.stringify(otomonState)); notifyChange(); }
+  function saveOtomon() { safeSetItem('gq_otomon', JSON.stringify(otomonState)); notifyChange(); }
   let otomonState = loadOtomon();
 
   // ── 目覚めアイテムの在庫（消費型）── localStorage: gq_wake_items = { id: 個数 }
@@ -580,7 +580,7 @@
     starter_seed:3, retry_quill:2,
   };
   function loadWakeItems() { try { return JSON.parse(localStorage.getItem('gq_wake_items') || 'null'); } catch { return null; } }
-  function saveWakeItems() { localStorage.setItem('gq_wake_items', JSON.stringify(wakeItems)); notifyChange(); }
+  function saveWakeItems() { safeSetItem('gq_wake_items', JSON.stringify(wakeItems)); notifyChange(); }
   let wakeItems = loadWakeItems();
   if (!wakeItems || typeof wakeItems !== 'object') {
     wakeItems = { ...STARTER_WAKE };

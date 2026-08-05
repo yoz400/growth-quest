@@ -24,7 +24,7 @@ function loadDailyQuests() {
   } catch { return {}; }
 }
 function saveDailyQuests() {
-  localStorage.setItem('gq_daily_quests', JSON.stringify(dailyQuests));
+  safeSetItem('gq_daily_quests', JSON.stringify(dailyQuests));
 }
 let dailyQuests = loadDailyQuests();
 
@@ -177,7 +177,7 @@ function loadNudgeDone() { try { return JSON.parse(localStorage.getItem('gq_nudg
 function saveNudgeDone() {
   const keys = Object.keys(nudgeDone).sort();
   while (keys.length > 90) delete nudgeDone[keys.shift()];   // 90日より古い記録は掃除
-  localStorage.setItem('gq_nudge_done', JSON.stringify(nudgeDone));
+  safeSetItem('gq_nudge_done', JSON.stringify(nudgeDone));
 }
 let nudgeDone = loadNudgeDone();
 // ここで例外が飛ぶと quests.js の評価が途中で止まり、以降の let が
@@ -271,7 +271,7 @@ function renderNudgeCard() {
       <button class="nudge-off-btn" id="nudge-picker-close">閉じる</button>`;
     body.querySelectorAll('[data-course]').forEach(b => b.addEventListener('click', () => {
       nudgeCourseId = b.dataset.course;
-      localStorage.setItem('gq_nudge_course', nudgeCourseId);
+      safeSetItem('gq_nudge_course', nudgeCourseId);
       _nudgePickerOpen = false;
       renderNudgeCard();
     }));
@@ -381,7 +381,7 @@ function renderNudgeCard() {
     completeNudge('comeback', { choice: b.dataset.ch })));
   document.getElementById('nudge-switch')?.addEventListener('click', () => {
     nudgeCourseId = '';
-    localStorage.setItem('gq_nudge_course', '');
+    safeSetItem('gq_nudge_course', '');
     _nudgePickerOpen = true;
     renderNudgeCard();
   });

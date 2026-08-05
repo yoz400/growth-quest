@@ -283,6 +283,47 @@ const Toast = (() => {
   return { show };
 })();
 
+/* ===== 保存の共通口 =====
+   保存(setItem)は例外を投げることがある。
+     ・容量上限（約5MB）に達した … QuotaExceededError
+     ・保存領域が使えない環境     … SecurityError
+       （Safariの file://・プライベートブラウズ・Cookie全ブロック）
+   裸で呼ぶと、そこで処理が止まって後続の描画まで巻き込む。
+   実際 c5a0b9d では、これが原因でロゴ画面のまま起動しなくなった。
+   保存は必ずここを通す（areas.js は同じ思想の lsSet を自前で持っている）。
+
+   ⚠️ 唯一の例外: 復元処理 importAllData（settings-genre.js）は
+      「失敗を検知して全件巻き戻す」ために例外が必要なので、
+      あそこだけは生の localStorage.setItem を使う。ここを通さないこと。 */
+let _saveFailWarned = false;
+
+function safeSetItem(key, value) {
+  try {
+    localStorage.setItem(key, value);
+    return true;
+  } catch (e) {
+    const name = (e && e.name) || 'Error';
+    console.warn('[GQ] 保存できませんでした:', key, name);
+    // 黙って記録が消えるのがいちばん怖い。1回だけ、はっきり伝える
+    if (!_saveFailWarned) {
+      _saveFailWarned = true;
+      const full = name === 'QuotaExceededError';
+      // 起動中に呼ばれることがあるので、画面が整ってから出す
+      setTimeout(() => {
+        try {
+          Toast.show(
+            (full ? '⚠️ 保存容量がいっぱいです' : '⚠️ 記録を保存できませんでした') +
+            '<br><span style="opacity:.85;font-weight:400">' +
+            (full ? '設定からエクスポートして、バックアップを取ってください。'
+                  : 'このブラウザでは記録が残りません。') + '</span>',
+            { kind: 'multiline', ms: 6000, priority: 100 });
+        } catch (_) { /* トーストすら出せない状況でも黙って続ける */ }
+      }, 800);
+    }
+    return false;
+  }
+}
+
 /* ===== GQ EventBus: 機能同士を疎結合にする通知係 ===== */
 const GQ = (() => {
   const handlers = new Map();
@@ -340,7 +381,7 @@ function loadData() {
   } catch { return { ...DEFAULT_DATA }; }
 }
 function saveData(d, reason = 'saveData') {
-  localStorage.setItem('gq_data', JSON.stringify(d));
+  safeSetItem('gq_data', JSON.stringify(d));
   GQ.emit('data:changed', { reason });
 }
 
@@ -348,7 +389,7 @@ function loadSettings() {
   try { return { ...DEFAULT_SETTINGS, ...JSON.parse(localStorage.getItem('gq_settings') || '{}') }; }
   catch { return { ...DEFAULT_SETTINGS }; }
 }
-function saveSettings(s) { localStorage.setItem('gq_settings', JSON.stringify(s)); }
+function saveSettings(s) { safeSetItem('gq_settings', JSON.stringify(s)); }
 
 const DEFAULT_GENRES = [{ id: 'default', name: '学習', emoji: '📖', color: '#06b6d4', xp: 0, minutes: 0 }];
 function loadGenres() {
@@ -357,7 +398,7 @@ function loadGenres() {
     return g && g.length ? g : [...DEFAULT_GENRES];
   } catch { return [...DEFAULT_GENRES]; }
 }
-function saveGenres() { localStorage.setItem('gq_genres', JSON.stringify(genres)); }
+function saveGenres() { safeSetItem('gq_genres', JSON.stringify(genres)); }
 
 _gqObservedDay = null;
 
@@ -452,7 +493,7 @@ function loadSugorokuData() {
   try { return JSON.parse(localStorage.getItem('gq_sugoroku') || 'null') || { pos:0, stage:1, items:[], initialized:false }; }
   catch { return { pos:0, stage:1, items:[], initialized:false }; }
 }
-function saveSugorokuData() { localStorage.setItem('gq_sugoroku', JSON.stringify(sugorokuData)); }
+function saveSugorokuData() { safeSetItem('gq_sugoroku', JSON.stringify(sugorokuData)); }
 
 // ── アイテム効果（バフ）の保管庫 ────────────────────────────
 // アイテムを「使う」と、ここに一時的な効果（バフ）が積まれる。
@@ -466,7 +507,7 @@ function loadItemBuffs() {
   try { return Object.assign({}, def, JSON.parse(localStorage.getItem('gq_item_buffs') || 'null') || {}); }
   catch { return def; }
 }
-function saveItemBuffs() { localStorage.setItem('gq_item_buffs', JSON.stringify(itemBuffs)); }
+function saveItemBuffs() { safeSetItem('gq_item_buffs', JSON.stringify(itemBuffs)); }
 itemBuffs = loadItemBuffs();
 
 // ── 時限バフ（24時間など、時間で切れる効果）の保管庫 ──────────
@@ -477,7 +518,7 @@ function loadActiveBuffs() {
   try { return JSON.parse(localStorage.getItem('gq_active_buffs') || 'null') || {}; }
   catch { return {}; }
 }
-function saveActiveBuffs() { localStorage.setItem('gq_active_buffs', JSON.stringify(activeBuffs)); }
+function saveActiveBuffs() { safeSetItem('gq_active_buffs', JSON.stringify(activeBuffs)); }
 activeBuffs = loadActiveBuffs();
 
 function getBuffMul(key) {
@@ -500,7 +541,7 @@ function loadItemDex() {
   try { return JSON.parse(localStorage.getItem('gq_item_dex') || 'null') || {}; }
   catch { return {}; }
 }
-function saveItemDex() { localStorage.setItem('gq_item_dex', JSON.stringify(itemDex)); }
+function saveItemDex() { safeSetItem('gq_item_dex', JSON.stringify(itemDex)); }
 itemDex = loadItemDex();
 function recordItemUse(id) {
   if (!id) return;
@@ -725,7 +766,7 @@ function loadInventory() {
   catch { return []; }
 }
 function saveInventory() {
-  localStorage.setItem('gq_inventory', JSON.stringify(inventory));
+  safeSetItem('gq_inventory', JSON.stringify(inventory));
 }
 
 // ── equippedItems（装備中）── localStorage: gq_equipped
@@ -735,7 +776,7 @@ function loadEquipped() {
   catch { return empty; }
 }
 function saveEquipped() {
-  localStorage.setItem('gq_equipped', JSON.stringify(equippedItems));
+  safeSetItem('gq_equipped', JSON.stringify(equippedItems));
 }
 
 inventory     = loadInventory();
@@ -792,7 +833,7 @@ function loadItemMemories() {
 }
 itemMemories = loadItemMemories();
 function saveItemMemories() {
-  localStorage.setItem('gq_item_memories', JSON.stringify(itemMemories));
+  safeSetItem('gq_item_memories', JSON.stringify(itemMemories));
 }
 
 function dayPartLabel() {
@@ -1745,7 +1786,7 @@ const ITEM_EFFECTS = {
       const weekDates = getShieldWeekDates();
       const missedDays = getMissedDaysInWeek(weekDates);
       const today = todayKey();
-      localStorage.setItem('gq_streak_shield_protected', JSON.stringify({
+      safeSetItem('gq_streak_shield_protected', JSON.stringify({
         usedAt: today,
         weekStart: weekDates[0],
         weekEnd: weekDates[6],
@@ -2587,6 +2628,7 @@ function showSugorokuInKoku(result) {
 
 window.Overlay = Overlay;
 window.Toast = Toast;
+window.safeSetItem = safeSetItem;
 window.GQ = GQ;
 window.MODES = MODES;
 window.DEFAULT_DATA = DEFAULT_DATA;

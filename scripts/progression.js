@@ -33,7 +33,7 @@ const SKILL_THRESHOLDS = [
 function loadSkillNotes() {
   try { return JSON.parse(localStorage.getItem('gq_skill_notes') || '{}'); } catch { return {}; }
 }
-function saveSkillNotes() { localStorage.setItem('gq_skill_notes', JSON.stringify(skillNotes)); }
+function saveSkillNotes() { safeSetItem('gq_skill_notes', JSON.stringify(skillNotes)); }
 skillNotes = loadSkillNotes();
 
 // 成長の実をならせる：ノードを解放し、メモを記録する
@@ -54,7 +54,7 @@ function loadSkillData() {
   try { return JSON.parse(localStorage.getItem('gq_skills') || '{}'); }
   catch { return {}; }
 }
-function saveSkillData() { localStorage.setItem('gq_skills', JSON.stringify(skillData)); }
+function saveSkillData() { safeSetItem('gq_skills', JSON.stringify(skillData)); }
 
 skillData = loadSkillData();
 pendingNewSkills = [];
@@ -240,7 +240,7 @@ function loadPraiseLogs() {
   catch { return {}; }
 }
 function savePraiseLogs() {
-  localStorage.setItem('growthPraiseLogs', JSON.stringify(praiseLogs));
+  safeSetItem('growthPraiseLogs', JSON.stringify(praiseLogs));
 }
 praiseLogs = loadPraiseLogs();
 
@@ -256,7 +256,7 @@ function loadConfidenceRewards() {
   }
 }
 function saveConfidenceRewards(rewards) {
-  localStorage.setItem('gq_confidence_rewards', JSON.stringify(rewards));
+  safeSetItem('gq_confidence_rewards', JSON.stringify(rewards));
 }
 // 同じ key × dateKey なら何もしない。新規発火なら addConfidence して true を返す
 function addDailyConfidenceOnce(key, amount, reason, dateKey = todayKey()) {

@@ -147,7 +147,7 @@ const stopBtn = document.getElementById('stop-btn');
 const TIMER_SESSION_KEY = 'gq_timer_session';
 function saveTimerSession() {
   if (timerState === 'idle') { localStorage.removeItem(TIMER_SESSION_KEY); return; }
-  localStorage.setItem(TIMER_SESSION_KEY, JSON.stringify({
+  safeSetItem(TIMER_SESSION_KEY, JSON.stringify({
     state: timerState, mode: currentMode,
     startWall: timerStartWall, pausedSec: timerPausedSec,
     sessionStartHour: sessionStartHour,

@@ -852,15 +852,15 @@ const QUOTES = [
 function loadUserWords() {
   try { return JSON.parse(localStorage.getItem('gq_words') || '[]'); } catch { return []; }
 }
-function saveUserWords() { localStorage.setItem('gq_words', JSON.stringify(userWords)); }
+function saveUserWords() { safeSetItem('gq_words', JSON.stringify(userWords)); }
 function loadFavIds() {
   try { return new Set(JSON.parse(localStorage.getItem('gq_words_favs') || '[]')); } catch { return new Set(); }
 }
-function saveFavIds() { localStorage.setItem('gq_words_favs', JSON.stringify([...favIds])); }
+function saveFavIds() { safeSetItem('gq_words_favs', JSON.stringify([...favIds])); }
 function loadShownHist() {
   try { return JSON.parse(localStorage.getItem('gq_words_hist') || '{}'); } catch { return {}; }
 }
-function saveShownHist() { localStorage.setItem('gq_words_hist', JSON.stringify(shownHist)); }
+function saveShownHist() { safeSetItem('gq_words_hist', JSON.stringify(shownHist)); }
 
 let userWords  = loadUserWords();
 let favIds     = loadFavIds();
@@ -1287,7 +1287,7 @@ const BADGES = [
 function loadBadgeData() {
   try { return JSON.parse(localStorage.getItem('gq_badges') || '{}'); } catch { return {}; }
 }
-function saveBadgeData() { localStorage.setItem('gq_badges', JSON.stringify(earnedBadges)); }
+function saveBadgeData() { safeSetItem('gq_badges', JSON.stringify(earnedBadges)); }
 
 earnedBadges = loadBadgeData();
 sessionStartHour = new Date().getHours();

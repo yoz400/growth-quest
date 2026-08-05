@@ -76,7 +76,7 @@ checkWeeklyReviewTrigger();
 //  使う理由ができたら、その機能ボタンが現れる
 // ═══════════════════════════════════════════════════════
 function loadUnlocks() { try { return new Set(JSON.parse(localStorage.getItem('gq_unlocks') || '[]')); } catch { return new Set(); } }
-function saveUnlocks() { localStorage.setItem('gq_unlocks', JSON.stringify([...featUnlocks])); }
+function saveUnlocks() { safeSetItem('gq_unlocks', JSON.stringify([...featUnlocks])); }
 featUnlocks = loadUnlocks();
 
 const UNLOCK_DEFS = [
@@ -180,7 +180,7 @@ function renderOnboarding() {
   if (hintEl) hintEl.style.display = allDone ? 'none' : '';
   if (allDone) {
     document.getElementById('onboard-sub').textContent = '準備完了！ あとは、あなたのペースで🌱';
-    localStorage.setItem('gq_onboard_done', '1');
+    safeSetItem('gq_onboard_done', '1');
     startBtn?.classList.remove('first-glow');
     setTimeout(() => { card.style.display = 'none'; }, 4000); // 祝ってから静かに消える
   }
@@ -234,7 +234,7 @@ tlAnchor = new Date();
 let _tlEditIdx = null;   // 編集中のブロック（ソート済みindex）／null=新規追加
 
 function loadDayLog() { try { return JSON.parse(localStorage.getItem('gq_day_log') || '{}'); } catch { return {}; } }
-function saveDayLog() { localStorage.setItem('gq_day_log', JSON.stringify(dayLog)); }
+function saveDayLog() { safeSetItem('gq_day_log', JSON.stringify(dayLog)); }
 dayLog = loadDayLog();
 
 // ポモドーロ等のセッション完了時に、学習ブロックをタイムログへ自動追加する
@@ -470,7 +470,7 @@ function startEditBlock(i) {
 
 // ── テンプレート ──────────────────────────────────────
 function loadDayTemplates() { try { return JSON.parse(localStorage.getItem('gq_day_templates') || '[]'); } catch { return []; } }
-function saveDayTemplates() { localStorage.setItem('gq_day_templates', JSON.stringify(dayTemplates)); }
+function saveDayTemplates() { safeSetItem('gq_day_templates', JSON.stringify(dayTemplates)); }
 let dayTemplates = loadDayTemplates();
 
 function renderTemplates() {
@@ -683,7 +683,7 @@ function _tlFindGaps(blocks, minLen) {
 // ── A. 打刻：タップした瞬間から記録。次のタップで自動的に閉じる ──
 let tlPunch = (() => { try { return JSON.parse(localStorage.getItem('gq_tl_punch') || 'null'); } catch { return null; } })();
 function _savePunch() {
-  if (tlPunch) localStorage.setItem('gq_tl_punch', JSON.stringify(tlPunch));
+  if (tlPunch) safeSetItem('gq_tl_punch', JSON.stringify(tlPunch));
   else localStorage.removeItem('gq_tl_punch');
 }
 
@@ -759,11 +759,11 @@ function renderPunchBar() {
 // ── C. ルーチン：毎日くり返す予定は一度だけ設定 ──────────
 let tlRoutine     = (() => { try { return JSON.parse(localStorage.getItem('gq_tl_routine') || '[]'); } catch { return []; } })();
 let tlRoutineDays = (() => { try { return JSON.parse(localStorage.getItem('gq_tl_routine_days') || '{}'); } catch { return {}; } })();
-function _saveRoutine() { localStorage.setItem('gq_tl_routine', JSON.stringify(tlRoutine)); }
+function _saveRoutine() { safeSetItem('gq_tl_routine', JSON.stringify(tlRoutine)); }
 function _saveRoutineDays() {
   const keys = Object.keys(tlRoutineDays).sort();
   while (keys.length > 60) delete tlRoutineDays[keys.shift()];
-  localStorage.setItem('gq_tl_routine_days', JSON.stringify(tlRoutineDays));
+  safeSetItem('gq_tl_routine_days', JSON.stringify(tlRoutineDays));
 }
 
 // 今日の分のルーチンを「まだ何も無い時間帯」にだけ流し込む（1日1回）
@@ -1287,7 +1287,7 @@ function openTutorial() {
 function closeTutorial() {
   Overlay.close('tutorial-overlay');
   // 一度でも閉じたら「見た」扱い → 次回以降は自動表示しない
-  localStorage.setItem('gq_tutorial_seen', '1');
+  safeSetItem('gq_tutorial_seen', '1');
 }
 function tutorialNext() {
   if (tutorialStep < TUTORIAL_STEPS.length - 1) {
@@ -1344,7 +1344,7 @@ if (_showTutBtn) {
 
 // ── 冒険者名 ──
 function loadPlayerName() { return localStorage.getItem('gq_player_name') || ''; }
-function savePlayerName(n) { localStorage.setItem('gq_player_name', n || ''); }
+function savePlayerName(n) { safeSetItem('gq_player_name', n || ''); }
 playerName = loadPlayerName();
 
 // ── 使命データ（育てる build / 断つ quit）──
@@ -1355,7 +1355,7 @@ function loadMission() {
   } catch {}
   return { build: [], quit: [] };
 }
-function saveMission() { localStorage.setItem('gq_mission', JSON.stringify(mission)); }
+function saveMission() { safeSetItem('gq_mission', JSON.stringify(mission)); }
 let mission = loadMission();
 
 // 習慣のチェックは毎日リセット（「できた日に押す」＝1日1回の積み重ね）。
@@ -1368,7 +1368,7 @@ function resetDailyMissionChecks() {
     (mission[kind] || []).forEach(it => { if (it.done) { it.done = false; changed = true; } });
   });
   if (changed) saveMission();
-  localStorage.setItem('gq_mission_reset', today);
+  safeSetItem('gq_mission_reset', today);
   return changed;
 }
 
@@ -1576,8 +1576,8 @@ function finishSummon() {
   saveMission();
   if (typeof renderMissionCard === 'function') renderMissionCard();
   // 完了フラグ（旧チュートリアルも見た扱いにして二重表示を防ぐ）
-  localStorage.setItem('gq_summoned', '1');
-  localStorage.setItem('gq_tutorial_seen', '1');
+  safeSetItem('gq_summoned', '1');
+  safeSetItem('gq_tutorial_seen', '1');
   closeSummon();
   setTimeout(() => { if (typeof maybeStartGuideTutorial === 'function') maybeStartGuideTutorial(); }, 500);
 }
@@ -1588,8 +1588,8 @@ function skipSummon() {
     playerName = (summonDraft.name || '').trim(); savePlayerName(playerName);
     avatarType = summonDraft.avType || avatarType; saveAvatarType(); renderAvatarBtn();
   }
-  localStorage.setItem('gq_summoned', '1');
-  localStorage.setItem('gq_tutorial_seen', '1');
+  safeSetItem('gq_summoned', '1');
+  safeSetItem('gq_tutorial_seen', '1');
   closeSummon();
   setTimeout(() => { if (typeof maybeStartGuideTutorial === 'function') maybeStartGuideTutorial(); }, 500);
 }
@@ -1669,7 +1669,7 @@ if (!localStorage.getItem('gq_summoned')) {
   const isExistingUser = localStorage.getItem('gq_tutorial_seen') === '1'
     || (data.sessions || 0) > 0 || (data.totalMinutes || 0) > 0;
   if (isExistingUser) {
-    localStorage.setItem('gq_summoned', '1');
+    safeSetItem('gq_summoned', '1');
   } else {
     setTimeout(() => openSummon(false), 3200);   // 新規ユーザーのみ：ローンチ後に召喚
   }
@@ -2038,13 +2038,13 @@ function loadGuild() {
     };
   } catch { return { fame:0, completions:{}, daily:{}, weekly:{}, once:{}, contrib:{} }; }
 }
-function saveGuild() { localStorage.setItem('gq_guild', JSON.stringify(guild)); }
+function saveGuild() { safeSetItem('gq_guild', JSON.stringify(guild)); }
 guild = loadGuild();
 let guildFilter = 'all';
 
 // ── ⛩️ 誓いの祠（目標コミット）──
 function loadVows() { try { return JSON.parse(localStorage.getItem('gq_vows') || '[]'); } catch { return []; } }
-function saveVows() { localStorage.setItem('gq_vows', JSON.stringify(vows)); }
+function saveVows() { safeSetItem('gq_vows', JSON.stringify(vows)); }
 let vows = loadVows();
 let vowFormOpen = false;
 
@@ -2672,7 +2672,7 @@ function applyHeaderLuxe(burst) {
   const hdr = document.querySelector('#app > header');
   if (!hdr) return;
   hdr.classList.add('header-luxe');
-  localStorage.setItem('gq_header_luxe', todayKey());
+  safeSetItem('gq_header_luxe', todayKey());
   if (burst) {
     const layer = document.createElement('div');
     layer.className = 'hdr-spark-layer';
@@ -2820,7 +2820,7 @@ function claimLoginBonus() {
   const target  = document.getElementById('fairy-guide-btn');   // ヘッダーの🧚
   // 報酬付与＋本日受け取り済みに
   if (_pendingLoginXP > 0 && typeof addBonusXP === 'function') addBonusXP(_pendingLoginXP);
-  localStorage.setItem('gq_loginbonus_seen', todayKey());
+  safeSetItem('gq_loginbonus_seen', todayKey());
 
   const finish = () => {
     if (target) { target.classList.add('fairy-absorb'); setTimeout(() => target.classList.remove('fairy-absorb'), 1000); }
@@ -2871,7 +2871,7 @@ function maybeShowLoginBonus() {
   Overlay.open('login-bonus-overlay');
   // 背景タップで閉じる（受け取らずに閉じても、その日は再表示しない）
   overlay.onclick = (e) => {
-    if (e.target === overlay) { localStorage.setItem('gq_loginbonus_seen', today); Overlay.close('login-bonus-overlay'); }
+    if (e.target === overlay) { safeSetItem('gq_loginbonus_seen', today); Overlay.close('login-bonus-overlay'); }
   };
 }
 maybeShowLoginBonus();

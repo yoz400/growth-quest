@@ -753,7 +753,7 @@ function closeGuideTutorial(markSeen = true) {
   overlay.classList.remove('is-last');
   Overlay.close('guide-tutorial-overlay');
   clearGuideHighlight();
-  if (markSeen) localStorage.setItem(GUIDE_TUTORIAL_KEY, '1');
+  if (markSeen) safeSetItem(GUIDE_TUTORIAL_KEY, '1');
 }
 
 function nextGuideTutorialStep() {
@@ -1312,7 +1312,7 @@ function loadAvatarData() {
   try { return JSON.parse(localStorage.getItem('gq_avatar') || '{"history":[]}'); }
   catch { return { history: [] }; }
 }
-function saveAvatarData() { localStorage.setItem('gq_avatar', JSON.stringify(avatarData)); }
+function saveAvatarData() { safeSetItem('gq_avatar', JSON.stringify(avatarData)); }
 
 let avatarData = loadAvatarData();
 
@@ -1323,7 +1323,7 @@ const ADVENTURERS = {
   C: { fallback: 'ソラ', title: '旅する吟遊詩人', role: '吟遊詩人', desc: '自由に楽しく続ける自由人' },
 };
 
-function saveAvatarType() { localStorage.setItem('gq_av_type', avatarType); }
+function saveAvatarType() { safeSetItem('gq_av_type', avatarType); }
 
 function adventurerName(type = avatarType) {
   const nm = (playerName || '').trim();
