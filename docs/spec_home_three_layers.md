@@ -290,6 +290,31 @@ areas → core → home-layers ← ここ → progression → quests → timer
 呼ばれる側が先に読まれていないと、掟2（ファイルをまたぐ読み込み時参照の禁止）に触れる。
 起動フリーズ事故3回と同じ形なので、**ここは横着しないこと**。
 
+### 🚨 5-1b. ファイルを1本増やすと sw.js も直す（忘れるとオフラインで起動しない）
+
+[sw.js:8](../sw.js:8) の `PRECACHE_URLS` に**スクリプト10本が名指しで並んでいる**。
+ここに載っていないファイルは事前キャッシュされない。sw.js のコメント自身が
+
+> areas.js は core.js より前に読む土台。**ここに無いとオフラインで起動しない。**
+
+と警告している。**2か所を直すこと。**
+
+```javascript
+const CACHE_NAME = 'gq-cache-v14';   // → 'gq-cache-v15' へ（古いキャッシュを捨てるため）
+
+const PRECACHE_URLS = [
+  ...
+  './scripts/core.js',
+  './scripts/home-layers.js',   // ← 追加（index.html の <script> と同じ並びで）
+  './scripts/progression.js',
+  ...
+];
+```
+
+`index.html` の `<script>` にも、**`?v=guild-N` を付けて**追加する
+（付け忘れると `bump_version.sh` の対象から漏れ、そのファイルだけ永遠に古いまま配られる。
+かつて otomon.js が別系列の `?v=otomon-N` で置き去りになった事故と同じ形）。
+
 公開するのは1つだけ:
 
 ```javascript
@@ -302,7 +327,7 @@ window.HomeTabs = { refresh };   // タブの表示可否を計算し直す
 window.HomeTabs?.refresh();
 ```
 
-### 5-2. タブの出し分け
+### 5-2. タブの出し分け（⚠️ 表示のスイッチを2系統に分ける）
 
 タブは**カードの表示状態に追従**する。カードが `display:none` ならタブも出さない。
 
@@ -314,11 +339,59 @@ window.HomeTabs?.refresh();
 
 **この2つの関数の末尾に `window.HomeTabs?.refresh();` を1行足す。**
 
-判定は「そのカードの `style.display` が `'none'` でないか」で行う。
-`getComputedStyle` は層ごと隠したときに巻き込まれるので使わない。
+**ここが L-3 でいちばん壊しやすい所**: カードの `style.display` は**既存のJSの持ち物**で、
+「そもそもこのカードを出す資格があるか」を表している。タブの切り替えでこれを触ると、
+`renderHomePlanner()` が次に走った瞬間に上書きされ、**タブが勝手に戻る**。
+
+```text
+系統①  style.display   … 既存JSの担当。「出す資格があるか」
+        （手帳OFFなら none、予定が0件でも none、打刻が未解放なら none）
+                ↑ home-layers.js は読むだけ。絶対に書かない
+
+系統②  hidden 属性     … home-layers.js の担当。「いま選ばれているタブか」
+        card.hidden = !(資格あり && そのタブが選択中)
+```
+
+2系統に分けておけば、どちらが後から走っても結果は同じになる。
+判定は `card.style.display !== 'none'` で行う（`getComputedStyle` は
+層ごと隠れたときに巻き込まれるので使わない）。
 
 **タブが1つしか無いときは、タブバーごと出さない**（クエストだけの新規ユーザーで、
 押せないボタンが1個だけ並ぶのは意味がない）。
+
+### 5-2b. オトモン3枚の置き場所（設計判断・2026-08-06 クロが決定）
+
+§1 の決定どおり**タブの外**に置く。ただし L-2 のあと、オトモン3枚は
+`daily-quest-card` の直後（＝クエストタブの位置）に注入されている。このままだと
+「予定」タブを開いたとき **オトモン3枚がタブの中身より上に居座る**。
+
+**入れ物を1つ用意して、そこへ注入先を変える。**
+
+```html
+<!-- #layer-today の最後（打刻カードの後ろ）に置く -->
+<div id="layer-today-always"></div>
+```
+
+```javascript
+// otomon.js の3か所（injectHomeCard / injectQuestCard / injectBuddyCard）
+const holder = document.getElementById('layer-today-always');
+if (holder) holder.prepend(card);            // ← appendChild ではない。理由は下
+else if (anchor) anchor.insertAdjacentElement('afterend', card);   // 既存の退避先
+else (document.querySelector('main') || document.body).appendChild(card);
+```
+
+> ⚠️ **`prepend` でなければ、いまの並びが逆になる。**
+> 注入は 卵 → クエスト → お供 の順に走るが（[otomon.js:1256](../scripts/otomon.js:1256) `injectAll`）、
+> 現在は毎回「クエストカードの直後」に差し込むので、**後から入れたものが上に来る**。
+> 結果、画面上は 🤝お供 → ⚡クエスト → 🥚卵 の順になっている。
+> `prepend` はこれと同じ結果になるが、`appendChild` だと**上下が丸ごと逆になる**。
+
+CSSも要る（層と同じ隙間を中にも作る。空のときは消す）:
+
+```css
+#layer-today-always { display: flex; flex-direction: column; gap: 10px; }
+#layer-today-always:empty { display: none; }   /* 未解放の人に10pxの空白が残らないように */
+```
 
 ### 5-3. 「その日だけ覚える」の作り方
 
@@ -371,7 +444,16 @@ function loadTab() {
 - [ ] 日付をまたぐと**クエストタブに戻る**（検証は §6 の手順4で日付を偽装する）
 - [ ] 昨日見ていたタブが今日は出せない場合、クエストにフォールバックし、**エラーを出さない**
 - [ ] タブのコントラストと文字サイズを**測って数値を報告**（4.5:1 以上 / 10px 以上）
+- [ ] **オトモン3枚がタブの外・「きょう」層の下端**にあり、どのタブを開いても見える
+- [ ] **オトモンの並びが 🤝お供 → ⚡クエスト → 🥚卵 のまま**（逆になっていない）
+- [ ] オトモン未解放の人に、余分な空白が残っていない
+- [ ] **タブを切り替えたあとに予定を1件足しても、開いていたタブが戻らない**
+      （系統①と②の分離ができているか。§5-2 の最頻出バグ）
 - [ ] `gq_home_tab` が台帳に載っている
+- [ ] **`sw.js` の `PRECACHE_URLS` に `home-layers.js` が入り、`CACHE_NAME` が上がっている**
+- [ ] **オフラインで起動する**（DevTools の Network を Offline にしてリロード）
+- [ ] `index.html` の新しい `<script>` に `?v=guild-N` が付いている
+- [ ] STARTの上端を 375px / 320px で測って報告（L-2 は 573px / 567px。**縮むはず**）
 - [ ] `python3 tools/check_load_order.py` 通過（**新ファイルを足すので必ず実行**）
 - [ ] コンソールエラーゼロ ／ `bash tools/bump_version.sh` 実行済み
 
@@ -526,6 +608,184 @@ CSS（styles/app.css に追加）は §4 のとおりです。
 §7 に当たったら、進めずに報告してください。特に
 「カードを層へ移したら、そのカードを描く関数が動かなくなった」は
 起こりうるので、無理に直そうとせず、そこで一度止めてください。
+```
+
+---
+
+## 8-4. Codexへの依頼文（L-3・ヨージがコピペする）
+
+```text
+docs/spec_home_three_layers.md の L-3（「きょう」層のタブ化）を実装してください。
+§5 です。三層化の最終段階で、L-1・L-2 は完了済みです（?v=guild-147）。
+
+これまでの2段階と違い、今回は JavaScript を書きます。新しいファイルを1本足し、
+新しい保存キーを1つ作ります。掟2（読み込み順）に直接触るので、
+下の順番どおりに進めてください。
+
+═══ 1. 新しいファイルを作る（掟2）
+
+  scripts/home-layers.js を新規作成し、index.html で core.js の直後に読み込みます。
+
+    areas → core → home-layers ← ここ → progression → quests → timer
+      → settings-genre → calendar-review → features → boot → otomon
+
+  なぜ core.js の直後かというと、この中の関数を calendar-review.js と boot.js
+  （どちらも後から読まれる）から呼ぶからです。逆順にすると、GQで3回起きている
+  起動フリーズと同じ形になります。
+
+  公開するのは1つだけです。
+
+    window.HomeTabs = { refresh };
+
+  呼ぶ側は必ずオプショナル呼び出しにしてください（未定義でも落ちないように）。
+
+    window.HomeTabs?.refresh();
+
+  ⚠️ index.html の <script> には ?v=guild-N を必ず付けてください。
+     付け忘れると bump_version.sh の対象から漏れ、そのファイルだけ
+     永遠に古いまま配られます（otomon.js で実際に起きた事故です）。
+
+═══ 2. sw.js も直す（忘れるとオフラインで起動しなくなる）
+
+  sw.js の PRECACHE_URLS にスクリプトが名指しで10本並んでいます。
+  ここに無いファイルは事前キャッシュされません。
+
+    const CACHE_NAME = 'gq-cache-v14';   → 'gq-cache-v15' に上げる
+    PRECACHE_URLS の './scripts/core.js' の直後に
+    './scripts/home-layers.js' を追加する
+
+═══ 3. タブを作る
+
+  #layer-today（📋 きょう）の見出しの直後にタブバーを置きます。
+
+    <div class="layer-tabs" id="today-tabs" role="tablist" aria-label="きょう">
+      <button class="layer-tab" role="tab" data-tab="quest">📜 クエスト</button>
+      <button class="layer-tab" role="tab" data-tab="plan">🗒 予定</button>
+      <button class="layer-tab" role="tab" data-tab="punch">⏱ 打刻</button>
+    </div>
+
+  タブと中身の対応は次の3つです。
+    quest → #daily-quest-card
+    plan  → #today-plan-card
+    punch → #punch-card
+
+  見た目は既存の .genre-tabs（app.css の433行目付近）に揃えてください。
+  新しいデザインを発明しないでください。
+  文字は10px以上、コントラスト4.5:1以上、タップ領域24x24px以上です。
+  aria-selected / role="tabpanel" / aria-labelledby も付けてください。
+
+═══ 4. ⚠️ ここが今回いちばん壊しやすい所です
+
+  カードの style.display は既存JSの持ち物で、「そもそもこのカードを出す
+  資格があるか」を表しています（手帳OFF・予定0件・打刻未解放なら none）。
+  タブの切り替えでこれを触ると、renderHomePlanner() が次に走った瞬間に
+  上書きされ、タブが勝手に戻ります。
+
+  スイッチを2系統に分けてください。
+
+    系統① style.display … 既存JSの担当。home-layers.js は読むだけ、書かない
+    系統② hidden 属性   … home-layers.js の担当
+
+    card.hidden = !(資格あり && そのタブが選択中)
+    資格あり = (card.style.display !== 'none')
+
+  getComputedStyle は使わないでください（層ごと隠れたときに巻き込まれます）。
+
+  タブの出し分けも同じ判定です。
+    クエスト … 常に出す
+    予定     … #today-plan-card に資格があるときだけ
+    打刻     … #punch-card に資格があるときだけ
+  出せるタブが1つだけのときは、タブバーごと出さないでください
+  （新規ユーザーに、押せないボタンが1個だけ並ぶのは無意味です）。
+
+  再計算のきっかけとして、次の2か所の末尾に1行ずつ足してください。
+    scripts/calendar-review.js の renderHomePlanner()（196行目付近）
+    scripts/boot.js の renderPunchBar()（729行目付近）
+      → window.HomeTabs?.refresh();
+
+═══ 5. その日だけ覚える
+
+  新しいキー gq_home_tab に {"date":"2026-08-06","tab":"plan"} を保存します。
+  読むときに日付が今日と違えば、クエストタブに戻します。
+
+  ⚠️ 日付は端末ローカルで作ってください。toISOString() はUTCなので、
+     日本時間の朝9時前に前日扱いになります。
+  ⚠️ calendar-review.js の todayKey() は home-layers.js より後に読まれるので、
+     呼ばずに home-layers.js の中で同じ計算を自前で書いてください（掟2）。
+
+  保存されたタブが今日は出せない場合（昨日は打刻を見ていたが今日は未解放など）は、
+  黙ってクエストにフォールバックしてください。エラーにしないでください。
+
+  docs/architecture_review.md §6 の台帳（119行目付近の「その他」の行）に
+  gq_home_tab を追記してください。exportAllData() は gq_ 接頭辞を自動で拾うので、
+  コードの変更は不要です。
+
+═══ 6. オトモン3枚の置き場所
+
+  オトモン3枚はタブの外に置きます（タブの裏に隠すと卵の孵化が忘れられるため、
+  ヨージの決定です）。いまは daily-quest-card の直後＝クエストタブの位置に
+  注入されているので、「予定」タブを開くとオトモンが中身より上に居座ります。
+
+  入れ物を1つ作って、注入先を変えてください。
+
+    index.html … #layer-today の最後（打刻カードの後ろ）に
+                 <div id="layer-today-always"></div>
+
+    otomon.js の3か所（injectHomeCard / injectQuestCard / injectBuddyCard）
+
+      const holder = document.getElementById('layer-today-always');
+      if (holder) holder.prepend(card);
+      else if (anchor) anchor.insertAdjacentElement('afterend', card);
+      else (document.querySelector('main') || document.body).appendChild(card);
+
+  ⚠️ prepend です。appendChild にすると3枚の上下が丸ごと逆になります。
+     注入は 卵 → クエスト → お供 の順に走りますが、現在は毎回
+     「クエストカードの直後」に差し込むため、後から入れたものが上に来ます。
+     画面上は 🤝お供 → ⚡クエスト → 🥚卵 の順です。prepend はこれと
+     同じ結果になります。実装後、この並びを目で確認してください。
+
+    app.css …
+      #layer-today-always { display: flex; flex-direction: column; gap: 10px; }
+      #layer-today-always:empty { display: none; }
+
+  :empty が無いと、オトモン未解放の人に10pxの空白が残ります。
+
+═══ 7. 検証（§6 の手順。数値をそのまま報告してください）
+
+  python3 -m http.server 8123 を立て、http://localhost:8123/index.html を開く
+  （preview_start のサーバーはサンドボックス制約で全404になります）
+
+  ⚠️ 測る前に、必ず ?v= が上がった状態で確認してください。バージョンが
+     古いままだと Service Worker が古いファイルを配り、測定値が
+     合否どちらの証拠にもなりません（L-2 のレビューで実際に起きました）。
+
+  ・タブを押すと中身が切り替わる
+  ・新規ユーザー（localStorage.clear() → リロード）でタブバーが出ない
+  ・予定を1件追加すると「予定」タブがリロード無しでその場に出る
+  ・「予定」タブを開いてリロード → 予定タブのまま
+  ・タブを切り替えたあとに予定を1件足しても、開いていたタブが戻らない
+    （§4 の2系統分離ができているかの確認。ここが最頻出バグです）
+  ・日付をまたぐとクエストタブに戻る。次のコードで昨日の状態を作れます
+
+      const y = new Date(Date.now() - 864e5);
+      const k = `${y.getFullYear()}-${String(y.getMonth()+1).padStart(2,'0')}-${String(y.getDate()).padStart(2,'0')}`;
+      localStorage.setItem('gq_home_tab', JSON.stringify({ date: k, tab: 'punch' }));
+
+  ・オトモン3枚がどのタブでも見え、並びが 🤝 → ⚡ → 🥚 のまま
+  ・オフラインで起動する（DevToolsのNetworkをOfflineにしてリロード）
+  ・STARTの上端を375pxと320pxで測る（L-2は573px / 567px。縮むはずです）
+  ・タブのコントラストと文字サイズを測る（4.5:1以上 / 10px以上）
+  ・コンソールエラーがゼロ
+
+═══ 8. 仕上げ
+
+  python3 tools/check_load_order.py（新ファイルを足すので必ず実行。✅が出ること）
+  bash tools/bump_version.sh
+  日本語のコミットメッセージでコミット
+
+§7 に当たったら、進めずに報告してください。特に
+「タブを切り替えたらカードの中身が消えた／二重に描画された」は
+起こりやすいので、無理に直そうとせず、そこで一度止めてください。
 ```
 
 ---
