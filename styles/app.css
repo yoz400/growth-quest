@@ -2370,8 +2370,17 @@ header {
 /* ═══════════════════════════════════════
    GLASS CARD HOVER
 ═══════════════════════════════════════ */
-#app > .glass { transition: border-color .25s, box-shadow .25s; }
-#app > .glass:hover { border-color: rgba(255,255,255,.14); }
+#app > .glass, #app .home-layer > .glass { transition: border-color .25s, box-shadow .25s; }
+#app > .glass:hover, #app .home-layer > .glass:hover { border-color: rgba(255,255,255,.14); }
+
+.home-layer {
+  display: flex; flex-direction: column; gap: 10px;
+  margin-bottom: 22px;
+}
+.layer-title {
+  font-size: .72rem; font-weight: 700; letter-spacing: .08em;
+  color: var(--text-dim); margin: 0 0 0 4px;
+}
 
 /* ═══════════════════════════════════════
    ABOUT BLOCK

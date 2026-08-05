@@ -40,7 +40,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles/app.css?v=guild-146">
+<link rel="stylesheet" href="styles/app.css?v=guild-147">
 </head>
 <body>
 
@@ -110,6 +110,9 @@
        ジャンルを選ぶ → STARTを押す → 25分たつ、が「学習が続く」の全部。
        他のカードをこの2枚より上に入れないこと（STARTが画面外に沈むため）。 -->
 
+  <section class="home-layer" id="layer-now">
+  <h2 class="layer-title">🎯 いま</h2>
+
   <!-- GENRE SELECTOR -->
   <div class="glass" id="genre-card">
     <div class="genre-section-label">学習ジャンル</div>
@@ -175,17 +178,22 @@
     <div class="onboard-hint" id="onboard-hint">1→2→3 の順にやると、自動で ✓ に変わるよ。まずは上の光ってる START を押してね。</div>
   </div>
 
+  <!-- ⚔ あなたの使命（召喚で決めた目標・育てる/断つ） -->
+  <div class="glass" id="mission-card" style="display:none">
+    <div class="quest-header mc-header">⚔ あなたの使命</div>
+    <div id="mission-body"></div>
+  </div>
+
+  </section>
+
+  <section class="home-layer" id="layer-today">
+  <h2 class="layer-title">📋 きょう</h2>
+
   <!-- DAILY QUEST（基本クエスト＋選択肢クエストを1枚に統合） -->
   <div class="glass" id="daily-quest-card" data-guide="daily-quests">
     <div class="quest-header">📜 今日のクエスト</div>
     <div class="quest-list" id="quest-list"></div>
     <div id="nudge-body"></div>
-  </div>
-
-  <!-- ⚔ あなたの使命（召喚で決めた目標・育てる/断つ） -->
-  <div class="glass" id="mission-card" style="display:none">
-    <div class="quest-header mc-header">⚔ あなたの使命</div>
-    <div id="mission-body"></div>
   </div>
 
   <!-- 今日の予定（固定カード。widget並べ替えには入れない） -->
@@ -196,6 +204,18 @@
     </div>
     <div id="today-plan-list"></div>
   </div>
+
+  <!-- ⏱ いまから何する？（打刻：タップした瞬間からタイムログに記録） -->
+  <div class="glass" id="punch-card" style="display:none">
+    <div class="quest-header">⏱ いまから何する？</div>
+    <div class="tl-punch-status" id="tl-punch-status"></div>
+    <div id="tl-punch-chips"></div>
+  </div>
+
+  </section>
+
+  <section class="home-layer" id="layer-review">
+  <h2 class="layer-title">📚 ふりかえり</h2>
 
   <!-- STATS -->
   <div class="glass" id="stats-strip">
@@ -212,13 +232,6 @@
       <div id="stat-freeze"></div>
       <div class="stat-lbl">🔥 連続日数</div>
     </div>
-  </div>
-
-  <!-- ⏱ いまから何する？（打刻：タップした瞬間からタイムログに記録） -->
-  <div class="glass" id="punch-card" style="display:none">
-    <div class="quest-header">⏱ いまから何する？</div>
-    <div class="tl-punch-status" id="tl-punch-status"></div>
-    <div id="tl-punch-chips"></div>
   </div>
 
   <!-- CALENDAR -->
@@ -255,6 +268,8 @@
       </div>
     </div>
   </div>
+
+  </section>
 
 </div><!-- #app -->
 
@@ -1082,16 +1097,16 @@
 })();
 </script>
 
-<script src="scripts/areas.js?v=guild-146"></script>
-<script src="scripts/core.js?v=guild-146"></script>
-<script src="scripts/progression.js?v=guild-146"></script>
-<script src="scripts/quests.js?v=guild-146"></script>
-<script src="scripts/timer.js?v=guild-146"></script>
-<script src="scripts/settings-genre.js?v=guild-146"></script>
-<script src="scripts/calendar-review.js?v=guild-146"></script>
-<script src="scripts/features.js?v=guild-146"></script>
-<script src="scripts/boot.js?v=guild-146"></script>
-<script src="scripts/otomon.js?v=guild-146"></script>
+<script src="scripts/areas.js?v=guild-147"></script>
+<script src="scripts/core.js?v=guild-147"></script>
+<script src="scripts/progression.js?v=guild-147"></script>
+<script src="scripts/quests.js?v=guild-147"></script>
+<script src="scripts/timer.js?v=guild-147"></script>
+<script src="scripts/settings-genre.js?v=guild-147"></script>
+<script src="scripts/calendar-review.js?v=guild-147"></script>
+<script src="scripts/features.js?v=guild-147"></script>
+<script src="scripts/boot.js?v=guild-147"></script>
+<script src="scripts/otomon.js?v=guild-147"></script>
 
 <script>
 // ── Service Worker 登録 ────────────────────────────────
