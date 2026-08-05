@@ -1886,8 +1886,8 @@ function validMissionKpi(kpi) {
 }
 
 // 週次レビューと同じ関数を通して、月曜〜日曜の7日を数える。
-function missionWeekProgress(kpi) {
-  const weekDates = getWeekDates(getWeekKey(new Date()));
+function missionWeekProgress(kpi, weekKey = getWeekKey(new Date())) {
+  const weekDates = getWeekDates(weekKey);
   const days = weekDates.reduce((count, date) => {
     const mins = Number(data.historyDetails?.[dkey(date)]?.genres?.[kpi.genreId]) || 0;
     return count + (mins >= kpi.minsPerDay ? 1 : 0);
@@ -1907,6 +1907,44 @@ function missionQuestLabel(questId) {
   return '';
 }
 window.missionQuestLabel = missionQuestLabel;
+
+function missionFairyHTML(kpi, index, progress) {
+  const remaining = Math.max(0, progress.target - progress.days);
+  if (progress.done) {
+    return `<div class="mc-fairy"><span class="mc-fairy-icon">🧚</span><span>今週の使命は達成。今日は好きなことをする日でもいいよ</span></div>`;
+  }
+
+  const todayGenres = data.historyDetails?.[dkey(new Date())]?.genres || {};
+  const missionMins = Number(todayGenres[kpi.genreId]) || 0;
+  const otherEntries = Object.entries(todayGenres).filter(([genreId]) => genreId !== kpi.genreId);
+  const otherMins = otherEntries.reduce((sum, [, mins]) => sum + (Number(mins) || 0), 0);
+  if (missionMins < kpi.minsPerDay && otherMins > 0) {
+    const otherGenreId = otherEntries.find(([, mins]) => (Number(mins) || 0) > 0)?.[0];
+    const otherGenre = genres.find(g => g.id === otherGenreId);
+    const missionGenre = genres.find(g => g.id === kpi.genreId);
+    return `<div class="mc-fairy"><span class="mc-fairy-icon">🧚</span><span>今日は${escHtml(otherGenre?.name || '別の学び')}だったね。それも立派な一歩。${escHtml(missionGenre?.name || 'この使命')}は今週あと${remaining}日。続きはまた明日でも大丈夫だよ</span></div>`;
+  }
+
+  const lastWeekKey = getWeekKey(new Date(Date.now() - 7 * 864e5));
+  const lastWeekProgress = missionWeekProgress(kpi, lastWeekKey);
+  const currentWeekDates = getWeekDates(getWeekKey(new Date()));
+  const availableDays = currentWeekDates.slice(dowIndex(new Date())).filter(date => {
+    const mins = Number(data.historyDetails?.[dkey(date)]?.genres?.[kpi.genreId]) || 0;
+    return mins < kpi.minsPerDay;
+  }).length;
+  const cannotReachThisWeek = progress.days + availableDays < progress.target;
+  if (!lastWeekProgress.done && cannotReachThisWeek) {
+    const suggestion = kpi.daysPerWeek > 1
+      ? `週${kpi.daysPerWeek - 1}日に減らしてみる？`
+      : `1日${kpi.minsPerDay}分を少し短くしてみる？`;
+    return `<div class="mc-fairy"><span class="mc-fairy-icon">🧚</span><span>難しい週もあるよ。<button type="button" class="mc-fairy-edit" data-mc-kpi-open="${index}">${suggestion}</button></span></div>`;
+  }
+
+  const message = remaining === 1
+    ? `あと1日で達成。${kpi.minsPerDay}分がしんどければ、今日は10分だけでもいいよ`
+    : `今週あと${remaining}日。今日やっておくと、後がラクだよ。しんどければ10分だけでも、今日は休んでも大丈夫`;
+  return `<div class="mc-fairy"><span class="mc-fairy-icon">🧚</span><span>${message}</span></div>`;
+}
 
 function missionKpiEditorHTML() {
   const draft = missionKpiDraft;
@@ -1957,7 +1995,7 @@ function missionKpiHTML(item, index) {
   return `<div class="mc-kpi-summary">
     <div><span class="mc-kpi-progress">今週 ${progress.days} / ${progress.target}日</span><span class="mc-kpi-rule">${genre?.emoji || '📖'} ${escHtml(genre?.name || '学習')}・1日${kpi.minsPerDay}分</span></div>
     <button type="button" class="mc-kpi-change" data-mc-kpi-open="${index}">変更</button>
-  </div>`;
+  </div>${missionFairyHTML(kpi, index, progress)}`;
 }
 
 function missionSectionHTML(kind, label, emoji) {
