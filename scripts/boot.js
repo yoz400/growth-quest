@@ -1873,14 +1873,87 @@ if (!localStorage.getItem('gq_summoned')) {
 
 // ── ⚔ 使命カード（ホーム表示：育てる/断つ）──
 let missionAddKind = null;   // インライン追加中の種別（'build' | 'quit' | null）
+let missionKpiEditIndex = null;
+let missionKpiDraft = null;
+
+function validMissionKpi(kpi) {
+  if (!kpi || typeof kpi.genreId !== 'string' || !kpi.genreId) return null;
+  const daysPerWeek = Number(kpi.daysPerWeek);
+  const minsPerDay = Number(kpi.minsPerDay);
+  if (!Number.isInteger(daysPerWeek) || daysPerWeek < 1 || daysPerWeek > 7) return null;
+  if (!Number.isInteger(minsPerDay) || minsPerDay < 1 || minsPerDay > 1440) return null;
+  return { genreId: kpi.genreId, daysPerWeek, minsPerDay };
+}
+
+// 週次レビューと同じ関数を通して、月曜〜日曜の7日を数える。
+function missionWeekProgress(kpi) {
+  const weekDates = getWeekDates(getWeekKey(new Date()));
+  const days = weekDates.reduce((count, date) => {
+    const mins = Number(data.historyDetails?.[dkey(date)]?.genres?.[kpi.genreId]) || 0;
+    return count + (mins >= kpi.minsPerDay ? 1 : 0);
+  }, 0);
+  return { days, target: kpi.daysPerWeek, done: days >= kpi.daysPerWeek };
+}
+
+function missionKpiEditorHTML() {
+  const draft = missionKpiDraft;
+  if (!draft) return '';
+  const genreUI = genres.length > 1
+    ? `<div class="mc-kpi-field">
+        <div class="mc-kpi-label">📚 どのジャンル？</div>
+        <div class="mc-kpi-options">${genres.map(g => `<button type="button" class="mc-kpi-option${draft.genreId === g.id ? ' selected' : ''}" data-mc-kpi-genre="${escHtml(g.id)}" aria-pressed="${draft.genreId === g.id}">${g.emoji || '📖'} ${escHtml(g.name)}</button>`).join('')}</div>
+      </div>`
+    : `<div class="mc-kpi-only-genre">📚 ${genres[0]?.emoji || '📖'} ${escHtml(genres[0]?.name || '学習')}</div>`;
+  const daysCustom = draft.daysChoice === 'custom'
+    ? `<input class="mc-kpi-number" data-mc-kpi-custom="days" type="number" inputmode="numeric" min="1" max="7" value="${draft.daysCustom}" aria-label="週に何日">日`
+    : '';
+  const minsCustom = draft.minsChoice === 'custom'
+    ? `<input class="mc-kpi-number" data-mc-kpi-custom="mins" type="number" inputmode="numeric" min="1" max="1440" value="${draft.minsCustom}" aria-label="1日何分">分`
+    : '';
+  return `<div class="mc-kpi-editor">
+    ${genreUI}
+    <div class="mc-kpi-field">
+      <div class="mc-kpi-label">🗓 週に何日？</div>
+      <div class="mc-kpi-options">
+        ${[1,2,3,5,7].map(n => `<button type="button" class="mc-kpi-option${draft.daysChoice === String(n) ? ' selected' : ''}" data-mc-kpi-days="${n}" aria-pressed="${draft.daysChoice === String(n)}">${n === 7 ? '毎日' : n + '日'}</button>`).join('')}
+        <button type="button" class="mc-kpi-option${draft.daysChoice === 'custom' ? ' selected' : ''}" data-mc-kpi-days="custom" aria-pressed="${draft.daysChoice === 'custom'}">自分で決める</button>
+      </div>
+      ${daysCustom ? `<div class="mc-kpi-custom">${daysCustom}</div>` : ''}
+    </div>
+    <div class="mc-kpi-field">
+      <div class="mc-kpi-label">⏱ 1日どれくらい？</div>
+      <div class="mc-kpi-options">
+        ${[10,25,50].map(n => `<button type="button" class="mc-kpi-option${draft.minsChoice === String(n) ? ' selected' : ''}" data-mc-kpi-mins="${n}" aria-pressed="${draft.minsChoice === String(n)}">${n}分</button>`).join('')}
+        <button type="button" class="mc-kpi-option${draft.minsChoice === 'custom' ? ' selected' : ''}" data-mc-kpi-mins="custom" aria-pressed="${draft.minsChoice === 'custom'}">自分で決める</button>
+      </div>
+      ${minsCustom ? `<div class="mc-kpi-custom">${minsCustom}</div>` : ''}
+    </div>
+    <div class="mc-kpi-actions">
+      <button type="button" class="mc-kpi-cancel" data-mc-kpi-cancel>やめる</button>
+      <button type="button" class="mc-kpi-save" data-mc-kpi-save${draft.genreId ? '' : ' disabled'}>この目標にする</button>
+    </div>
+  </div>`;
+}
+
+function missionKpiHTML(item, index) {
+  if (missionKpiEditIndex === index) return missionKpiEditorHTML();
+  const kpi = validMissionKpi(item.kpi);
+  if (!kpi) return `<button type="button" class="mc-kpi-set" data-mc-kpi-open="${index}">どうなれば達成か決める</button>`;
+  const progress = missionWeekProgress(kpi);
+  const genre = genres.find(g => g.id === kpi.genreId);
+  return `<div class="mc-kpi-summary">
+    <div><span class="mc-kpi-progress">今週 ${progress.days} / ${progress.target}日</span><span class="mc-kpi-rule">${genre?.emoji || '📖'} ${escHtml(genre?.name || '学習')}・1日${kpi.minsPerDay}分</span></div>
+    <button type="button" class="mc-kpi-change" data-mc-kpi-open="${index}">変更</button>
+  </div>`;
+}
 
 function missionSectionHTML(kind, label, emoji) {
   const arr = mission[kind] || [];
   const items = arr.length
-    ? arr.map(it => `<div class="mc-item${it.done ? ' done' : ''}">
-        <button class="mc-check" data-mc-toggle="${kind}:${it.id}" title="できた日に押す">${it.done ? '✓' : '○'}</button>
-        <span class="mc-text">${escHtml(it.text)}</span>
-        <button class="mc-del" data-mc-del="${kind}:${it.id}" title="削除">✕</button>
+    ? arr.map((it, index) => `<div class="mc-item${it.done ? ' done' : ''}">
+        <button class="mc-check" data-mc-toggle="${kind}:${index}" title="できた日に押す">${it.done ? '✓' : '○'}</button>
+        <div class="mc-content"><span class="mc-text">${escHtml(it.text)}</span>${kind === 'build' ? missionKpiHTML(it, index) : ''}</div>
+        <button class="mc-del" data-mc-del="${kind}:${index}" title="削除">✕</button>
       </div>`).join('')
     : `<div class="mc-empty">まだありません</div>`;
   const addUI = missionAddKind === kind
@@ -1922,16 +1995,79 @@ function renderMissionCard() {
 document.getElementById('mission-card')?.addEventListener('click', e => {
   const tog = e.target.closest('[data-mc-toggle]');
   if (tog) {
-    const [kind, id] = tog.dataset.mcToggle.split(':');
-    const it = (mission[kind] || []).find(x => x.id === id);
+    const [kind, index] = tog.dataset.mcToggle.split(':');
+    const it = (mission[kind] || [])[Number(index)];
     if (it) { it.done = !it.done; saveMission(); renderMissionCard(); }
     return;
   }
   const del = e.target.closest('[data-mc-del]');
   if (del) {
-    const [kind, id] = del.dataset.mcDel.split(':');
-    mission[kind] = (mission[kind] || []).filter(x => x.id !== id);
+    const [kind, index] = del.dataset.mcDel.split(':');
+    mission[kind].splice(Number(index), 1);
+    missionKpiEditIndex = null;
+    missionKpiDraft = null;
     saveMission(); renderMissionCard();
+    return;
+  }
+  const kpiOpen = e.target.closest('[data-mc-kpi-open]');
+  if (kpiOpen) {
+    const index = Number(kpiOpen.dataset.mcKpiOpen);
+    const existing = validMissionKpi(mission.build?.[index]?.kpi);
+    const daysIsPreset = existing && [1,2,3,5,7].includes(existing.daysPerWeek);
+    const minsIsPreset = existing && [10,25,50].includes(existing.minsPerDay);
+    missionKpiEditIndex = index;
+    missionKpiDraft = {
+      genreId: existing?.genreId || (genres.length === 1 ? genres[0].id : ''),
+      daysChoice: existing ? (daysIsPreset ? String(existing.daysPerWeek) : 'custom') : '3',
+      daysCustom: existing?.daysPerWeek || 3,
+      minsChoice: existing ? (minsIsPreset ? String(existing.minsPerDay) : 'custom') : '25',
+      minsCustom: existing?.minsPerDay || 25,
+    };
+    renderMissionCard();
+    return;
+  }
+  const kpiGenre = e.target.closest('[data-mc-kpi-genre]');
+  if (kpiGenre && missionKpiDraft) {
+    missionKpiDraft.genreId = kpiGenre.dataset.mcKpiGenre;
+    renderMissionCard();
+    return;
+  }
+  const kpiDays = e.target.closest('[data-mc-kpi-days]');
+  if (kpiDays && missionKpiDraft) {
+    missionKpiDraft.daysChoice = kpiDays.dataset.mcKpiDays;
+    renderMissionCard();
+    if (missionKpiDraft.daysChoice === 'custom') setTimeout(() => document.querySelector('[data-mc-kpi-custom="days"]')?.focus(), 30);
+    return;
+  }
+  const kpiMins = e.target.closest('[data-mc-kpi-mins]');
+  if (kpiMins && missionKpiDraft) {
+    missionKpiDraft.minsChoice = kpiMins.dataset.mcKpiMins;
+    renderMissionCard();
+    if (missionKpiDraft.minsChoice === 'custom') setTimeout(() => document.querySelector('[data-mc-kpi-custom="mins"]')?.focus(), 30);
+    return;
+  }
+  if (e.target.closest('[data-mc-kpi-cancel]')) {
+    missionKpiEditIndex = null;
+    missionKpiDraft = null;
+    renderMissionCard();
+    return;
+  }
+  if (e.target.closest('[data-mc-kpi-save]') && missionKpiDraft && missionKpiEditIndex !== null) {
+    const daysInput = document.querySelector('[data-mc-kpi-custom="days"]');
+    const minsInput = document.querySelector('[data-mc-kpi-custom="mins"]');
+    const daysPerWeek = Number(missionKpiDraft.daysChoice === 'custom' ? daysInput?.value : missionKpiDraft.daysChoice);
+    const minsPerDay = Number(missionKpiDraft.minsChoice === 'custom' ? minsInput?.value : missionKpiDraft.minsChoice);
+    if (!missionKpiDraft.genreId) return;
+    if (!Number.isInteger(daysPerWeek) || daysPerWeek < 1 || daysPerWeek > 7) { daysInput?.reportValidity(); return; }
+    if (!Number.isInteger(minsPerDay) || minsPerDay < 1 || minsPerDay > 1440) { minsInput?.reportValidity(); return; }
+    const item = mission.build?.[missionKpiEditIndex];
+    if (item) {
+      item.kpi = { genreId: missionKpiDraft.genreId, daysPerWeek, minsPerDay };
+      saveMission();
+    }
+    missionKpiEditIndex = null;
+    missionKpiDraft = null;
+    renderMissionCard();
     return;
   }
   const addBtn = e.target.closest('[data-mc-addbtn]');
@@ -1954,6 +2090,13 @@ document.getElementById('mission-card')?.addEventListener('click', e => {
     renderMissionCard();
     return;
   }
+});
+
+// 自由入力の片方を編集してから、もう片方を開いて再描画しても値を保つ。
+document.getElementById('mission-card')?.addEventListener('input', e => {
+  if (!missionKpiDraft) return;
+  if (e.target.dataset.mcKpiCustom === 'days') missionKpiDraft.daysCustom = e.target.value;
+  if (e.target.dataset.mcKpiCustom === 'mins') missionKpiDraft.minsCustom = e.target.value;
 });
 
 // 追加入力で Enter → 確定

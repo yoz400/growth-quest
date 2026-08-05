@@ -3230,14 +3230,35 @@ header {
 /* ── ⚔ 使命カード（ホーム） ── */
 .mc-section + .mc-section { margin-top: 14px; }
 .mc-sec-title { font-size: .78rem; font-weight: 700; color: var(--text-dim); margin-bottom: 8px; letter-spacing: .04em; }
-.mc-item { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border-radius: 10px; background: rgba(255,255,255,.04); border: 1px solid var(--glass-border); margin-bottom: 6px; }
+.mc-item { display: flex; align-items: flex-start; gap: 8px; padding: 7px 8px; border-radius: 10px; background: rgba(255,255,255,.04); border: 1px solid var(--glass-border); margin-bottom: 6px; }
 .mc-item.done { opacity: .55; }
 .mc-item.done .mc-text { text-decoration: line-through; }
-.mc-check { flex: 0 0 auto; width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--glass-border); background: rgba(255,255,255,.04); color: var(--cyan); font-size: .8rem; cursor: pointer; transition: all .15s; }
+.mc-check { flex: 0 0 auto; width: 24px; height: 24px; margin-top: 1px; border-radius: 50%; border: 1px solid var(--glass-border); background: rgba(255,255,255,.04); color: var(--cyan); font-size: .8rem; cursor: pointer; transition: all .15s; }
 .mc-item.done .mc-check { background: rgba(74,222,128,.18); border-color: #4ade80; color: #4ade80; }
-.mc-text { flex: 1; font-size: .86rem; color: var(--text); text-align: left; line-height: 1.4; }
-.mc-del { flex: 0 0 auto; background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: .85rem; padding: 2px 4px; border-radius: 6px; transition: color .15s; }
+.mc-content { flex: 1; min-width: 0; text-align: left; }
+.mc-text { display: block; font-size: .86rem; color: var(--text); text-align: left; line-height: 1.4; }
+.mc-del { flex: 0 0 auto; margin-top: 1px; background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: .85rem; padding: 2px 4px; border-radius: 6px; transition: color .15s; }
 .mc-del:hover { color: #ef4444; }
+.mc-kpi-set { margin-top: 5px; padding: 3px 0; border: 0; background: none; color: var(--cyan); font-family: inherit; font-size: .73rem; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.mc-kpi-summary { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 5px; }
+.mc-kpi-progress { display: block; color: #4ade80; font-size: .76rem; font-weight: 800; }
+.mc-kpi-rule { display: block; margin-top: 2px; color: var(--text-dim); font-size: .68rem; }
+.mc-kpi-change { flex: 0 0 auto; padding: 3px 7px; border: 1px solid var(--glass-border); border-radius: 7px; background: rgba(255,255,255,.04); color: var(--text-dim); font-family: inherit; font-size: .68rem; cursor: pointer; }
+.mc-kpi-editor { margin-top: 8px; padding: 9px; border: 1px solid rgba(6,182,212,.28); border-radius: 9px; background: rgba(6,182,212,.06); }
+.mc-kpi-field + .mc-kpi-field { margin-top: 9px; }
+.mc-kpi-label { margin-bottom: 5px; color: var(--text-dim); font-size: .72rem; font-weight: 700; }
+.mc-kpi-only-genre { margin-bottom: 9px; color: var(--text); font-size: .75rem; }
+.mc-kpi-options { display: flex; flex-wrap: wrap; gap: 5px; }
+.mc-kpi-option { padding: 5px 8px; border: 1px solid var(--glass-border); border-radius: 7px; background: rgba(255,255,255,.04); color: var(--text-dim); font-family: inherit; font-size: .7rem; cursor: pointer; }
+.mc-kpi-option.selected { border-color: var(--cyan); background: rgba(6,182,212,.17); color: var(--cyan); font-weight: 700; }
+.mc-kpi-custom { display: flex; align-items: center; gap: 5px; margin-top: 6px; color: var(--text-dim); font-size: .72rem; }
+.mc-kpi-number { width: 72px; padding: 5px 7px; border: 1px solid var(--glass-border); border-radius: 7px; background: rgba(0,0,0,.18); color: var(--text); font-family: inherit; font-size: .78rem; }
+.mc-kpi-number:focus { outline: none; border-color: var(--cyan); }
+.mc-kpi-actions { display: flex; justify-content: flex-end; gap: 7px; margin-top: 11px; }
+.mc-kpi-cancel, .mc-kpi-save { padding: 6px 10px; border-radius: 7px; font-family: inherit; font-size: .72rem; font-weight: 700; cursor: pointer; }
+.mc-kpi-cancel { border: 1px solid var(--glass-border); background: none; color: var(--text-dim); }
+.mc-kpi-save { border: 1px solid var(--cyan); background: rgba(6,182,212,.17); color: var(--cyan); }
+.mc-kpi-save:disabled { cursor: not-allowed; opacity: .42; }
 .mc-empty { font-size: .76rem; color: var(--text-dim); padding: 4px 2px 8px; opacity: .7; }
 .mc-add-btn { background: none; border: 1px dashed var(--glass-border); color: var(--text-dim); font-family: inherit; font-size: .78rem; padding: 6px 12px; border-radius: 8px; cursor: pointer; transition: all .15s; }
 .mc-add-btn:hover { border-color: var(--cyan); color: var(--cyan); }
