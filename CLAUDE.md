@@ -26,7 +26,10 @@ claude-practice/
 1. **CSS/JSを編集したら `bash tools/bump_version.sh`**（?v=guild-N を一括+1）。
    忘れると「直したのに直ってない」現象になる（過去に何度もハマった）
 2. **ファイルをまたぐ読み込み時参照は禁止**。コールバックは `() => fn()` で包む。
-   `typeof` はTDZ（宣言前のlet）に無力。起動フリーズ事故2回の原因
+   `typeof` はTDZ（宣言前のlet）に無力。**起動フリーズ事故3回の原因**
+   → **JSを編集したら `python3 tools/check_load_order.py` を実行**（数秒で終わる）。
+     「読み込み時に、後から読まれるファイルの関数を裸で呼んでいないか」を機械的に調べる。
+     3回とも目視では見つけられなかった（guild-141 は本番が起動不能になった）
 3. モーダルは OverlayManager（core.js）の DEFS 登録 + Overlay.open/close のみ
 4. localStorage 新キーは gq_接頭辞 + architecture_review.md §6 の台帳へ追記 +
    exportAllData() に含める
@@ -40,6 +43,12 @@ claude-practice/
 - **新規ユーザー検証**: preview上で `localStorage.clear()` → reload（実データはヨージの
   各端末にあるので消えない）
 - 構文チェック: node未インストール。ブラウザ実行とコンソールエラー確認で代替
+  （ロジック検証は jsc が使える:
+  `/System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Helpers/jsc`）
+- **読み込み順の確認**: `python3 tools/check_load_order.py`。
+  ⚠️ **プレビュー検証だけでは足りない**。guild-141 の起動フリーズは
+  「ナッジコースを選んでいる人」にしか出ず、`localStorage.clear()` から始める
+  プレビューでは一度も再現しなかった。**条件付きで走る経路は、条件を作らないと踏めない**
 - 本番確認: `curl -s https://yoz400.github.io/growth-quest/ | grep v=guild-` でデプロイ確認
 - MCPは現状構成（Claude Preview / claude-in-chrome）で十分。追加不要と判断済み
 
