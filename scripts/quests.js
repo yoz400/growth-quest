@@ -188,12 +188,28 @@ let nudgeCourseId = (function () {
 
 function currentNudgeCourse() { return NUDGE_COURSES.find(c => c.id === nudgeCourseId) || null; }
 
+// 日付キー。calendar-review.js の dkey と同じ形式だが、あちらは quests.js より
+// 後に読まれるため、ここで dkey を呼ぶと読み込み時に ReferenceError になる。
+// このファイルは 120行目と373行目で読み込み時に描画するので、その時点で落ちると
+// 以降の window 公開（completeQuest / renderDailyQuests 等）が全部行われず、
+// 他ファイルまで巻き込んで起動フリーズする（実際に guild-141 で発生）。
+function qDateKey(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+// escHtml も calendar-review.js（7番目）のもので、同じ理由でここでは呼べない。
+// 中身は calendar-review.js の escHtml と同じ。
+function qEsc(v) {
+  return (v || '').replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                  .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 // 復帰クエストを出す条件：前日に未達成がある／最後の記録から2日以上空いた
 function shouldShowComeback(course) {
   const today = todayKey();
   if (nudgeDone[today] && nudgeDone[today]['comeback']) return true;   // 今日すでに達成→表示は維持
   const y = new Date(); y.setDate(y.getDate() - 1);
-  const yRec = nudgeDone[dkey(y)];
+  const yRec = nudgeDone[qDateKey(y)];
   if (yRec) return course.quests.some(q => !yRec[q.id]);
   const dates = Object.keys(nudgeDone).filter(k => k < today).sort();
   if (!dates.length) return false;   // まだ使い始め
@@ -287,8 +303,8 @@ function renderNudgeCard() {
         <div class="quest-title">${cb.label} <span class="nudge-xp">+${cb.xp}XP</span></div>
         <div class="quest-desc">${cb.msg}</div>
         ${cbDone
-          ? `<div class="quest-reward">達成！${typeof cbDone === 'object' && cbDone.choice ? `「${escHtml(cbDone.choice)}」から再開` : ''}</div>`
-          : `<div class="nudge-choices">${cb.choices.map(ch => `<button class="nudge-choice" data-ch="${escHtml(ch)}">${ch}</button>`).join('')}</div>`}
+          ? `<div class="quest-reward">達成！${typeof cbDone === 'object' && cbDone.choice ? `「${qEsc(cbDone.choice)}」から再開` : ''}</div>`
+          : `<div class="nudge-choices">${cb.choices.map(ch => `<button class="nudge-choice" data-ch="${qEsc(ch)}">${ch}</button>`).join('')}</div>`}
       </div>
     </div>`;
     (cbDone ? doneParts : undoneParts).push(cbHTML);
@@ -304,7 +320,7 @@ function renderNudgeCard() {
         <button class="nudge-save" data-q="${q.id}">記録する</button>
       </div>`;
     } else if (q.input && isDone && typeof d === 'object' && d.text) {
-      extra = `<div class="quest-reward">📝 ${escHtml(d.text)}</div>`;
+      extra = `<div class="quest-reward">📝 ${qEsc(d.text)}</div>`;
     }
     const itemHTML = `<div class="quest-item${isDone ? ' done' : ''}">
       <div class="quest-check nudge-check" data-q="${q.id}" data-input="${q.input ? '1' : ''}">${isDone ? '✓' : '○'}</div>
