@@ -184,6 +184,40 @@ calendar-panel      14px      →  14px
 > ⚠️ **層に `.glass` を付けて「箱の中に箱」にしないこと。** 二重の枠線で圧迫感が出る。
 > 層は「見出し＋余白」だけで区切る。カード自体の見た目は今のまま変えない。
 
+### 🚨 最大の罠：`#app` は flex。層で囲むとカード同士の隙間が消える（2026-08-05 レビューで実際に発生）
+
+カード同士の 10px の隙間は、**カード自身の margin ではなく `#app` の flex gap** が作っている。
+
+```css
+#app { display: flex; flex-direction: column; gap: 10px; }   /* ← ここが隙間の正体 */
+```
+
+`.glass` の margin は **0px**。つまり `<section>` で囲むと、**gap は層と層の間にしか効かなくなり、
+層の中のカードはピッタリくっつく**。
+
+```text
+【囲む前】                    【素朴に囲んだ後】
+  統計                          統計
+   ↕ 10px（#app の gap）        ↕ 0px      ← 枠線どうしが接触する
+  カレンダー                    カレンダー
+```
+
+**層にも同じ flex を与えること。**
+
+```css
+.home-layer {
+  display: flex; flex-direction: column; gap: 10px;   /* ← #app と同じ隙間を層の中にも */
+  margin-bottom: 22px;
+}
+.layer-title {
+  font-size: .72rem; font-weight: 700; letter-spacing: .08em;
+  color: var(--text-dim); margin: 0 0 0 4px;          /* 下余白は gap が作るので0 */
+}
+```
+
+> 💡 **学び**: 「囲むだけだから安全」は成り立たない。**親が flex/grid のとき、
+> 子を囲む行為はレイアウトの担い手を切り替える**。囲む前に親の `display` を見ること。
+
 ### ⚠️ 実在する副作用：`#app > .glass` のホバーが切れる
 
 [app.css:2373-2374](../styles/app.css:2373) に**直下セレクタ**がある。
@@ -226,6 +260,11 @@ calendar-panel      14px      →  14px
 
 - [ ] 3つの見出し「🎯 いま」「📋 きょう」「📚 ふりかえり」が出る
 - [ ] カードの順番が上の表のとおり
+- [ ] **層の中のカード同士に 10px の隙間がある**（枠線が接触していない）。**数値を報告すること**
+      ```javascript
+      const r=id=>document.getElementById(id).getBoundingClientRect();
+      Math.round(r('calendar-panel').top - r('stats-strip').bottom)   // → 10 であること
+      ```
 - [ ] **JSファイルを1つも変更していない**（変更が要ると思ったら §7 のとおり止まって報告）
 - [ ] カードにマウスを載せると枠線が光る（`#app > .glass` の修正ができている）
 - [ ] 375px で START が初回表示の画面内（上端 812px 以内）に収まる。**数値を報告すること**
@@ -491,6 +530,82 @@ CSS（styles/app.css に追加）は §4 のとおりです。
 
 ---
 
+## 8-3. Codexへの依頼文（L-2 の差し戻し・ヨージがコピペする）
+
+```text
+docs/spec_home_three_layers.md の L-2 をレビューしました。
+構造は仕様どおりで正しいです。直すのは2点だけです。作り直す必要はありません。
+
+【1】層の中のカード同士の隙間が 0px になっています（実害あり）
+
+カード同士の 10px の隙間は、カード自身の margin ではなく
+#app の flex gap が作っていました。
+
+  #app { display: flex; flex-direction: column; gap: 10px; }
+  .glass の margin は 0px
+
+section で囲んだことで、gap が「層と層の間」にしか効かなくなり、
+層の中のカードは枠線どうしが接触しています（統計とカレンダーで確認）。
+
+styles/app.css の .home-layer と .layer-title を次のようにしてください。
+
+  .home-layer {
+    display: flex; flex-direction: column; gap: 10px;
+    margin-bottom: 22px;
+  }
+  .layer-title {
+    font-size: .72rem; font-weight: 700; letter-spacing: .08em;
+    color: var(--text-dim); margin: 0 0 0 4px;
+  }
+
+layer-title の下余白を 8px から 0 にしているのは、gap:10px が
+その役目をするようになるためです（8px を残すと18px空きます）。
+
+確認は次のコードで、10 が出ることを報告してください。
+
+  const r=id=>document.getElementById(id).getBoundingClientRect();
+  Math.round(r('calendar-panel').top - r('stats-strip').bottom)   // → 10
+
+【2】bash tools/bump_version.sh が実行されていません
+
+index.html は ?v=guild-146 のままです。CSSとHTMLを変えたのに
+バージョンが上がっていないので、既存ユーザーには Service Worker が
+古い app.css を配り続けます。
+
+これは実際に起きました。レビュー中、私の環境では
+
+  見出しの文字サイズ  24px（本来 11.5px）
+  .home-layer の余白  0px（本来 22px）
+
+となり、新しいCSSがまったく効いていませんでした。原因は
+キャッシュで、Service Worker を手で消したら正しく表示されました。
+実ユーザーにも同じことが起きます。
+
+【3】そのあと
+
+  python3 tools/check_load_order.py（✅が出ること）
+  bash tools/bump_version.sh
+  日本語のコミットメッセージでコミット
+
+なお、今回の変更はまだコミットされていません（作業ツリーに未コミットの
+まま残っています）。上の2点を直してから、まとめて1つのコミットにしてください。
+
+■ レビューで合格している項目（触らないでください）
+
+  ・3つの section の構造とカードの割り当て（仕様どおり）
+  ・mission-card が「いま」層の末尾、punch-card が「きょう」層
+  ・オトモン3枚が「きょう」層のクエスト直後に入っている
+  ・ヘッダーと #login-bonus-overlay が #app 直下のまま
+  ・#app > .glass のホバー修正
+  ・JSの変更ゼロ
+  ・設定モーダルを開くと層に inert が付き、背後が操作できない
+  ・START の上端  375px で 522px / 320px で 555px（画面内）
+  ・見出し 11.52px・コントラスト 5.85 : 1
+  ・横スクロールなし・コンソールエラーゼロ・check_load_order.py ✅
+```
+
+---
+
 ## 8. Codexへの依頼文（L-1・完了済み。記録として残す）
 
 ```text
@@ -524,6 +639,36 @@ bash tools/bump_version.sh を実行して、日本語のコミットメッセ�
 ---
 
 ## 9. 実装記録
+
+### ⏳ L-2 レビュー（2026-08-05 クロ）— 差し戻し2件、構造は合格
+
+Codex の実装は**構造としては仕様どおり**。差し戻したのは仕上げの2点で、作り直しは不要。
+
+| 項目 | 結果 |
+|---|---|
+| 3層の構造・カードの割り当て | ✅ 仕様どおり |
+| mission が「いま」層末尾／punch が「きょう」層 | ✅ |
+| オトモン3枚が「きょう」層のクエスト直後 | ✅ |
+| ヘッダーと login-bonus-overlay が `#app` 直下 | ✅ |
+| `#app > .glass` ホバーの修正 | ✅ |
+| JS変更ゼロ | ✅ |
+| モーダルを開くと層に `inert` が付く | ✅ |
+| START上端（375 / 320px） | ✅ 522px / 555px |
+| 見出し 11.52px・コントラスト 5.85 : 1 | ✅ |
+| 横スクロール・コンソールエラー・`check_load_order.py` | ✅ なし / ゼロ / 通過 |
+| **層の中のカード同士の隙間** | ❌ **0px**（本来10px。枠線が接触） |
+| **`bump_version.sh`** | ❌ **未実行**（`?v=guild-146` のまま） |
+
+**差し戻し①は仕様書の落ち度**。`#app` が `display:flex; gap:10px` で隙間を作っていることを
+仕様に書いていなかった。§4 に「最大の罠」として追記した（依頼文は §8-3）。
+
+**差し戻し②は掟1**。レビュー中に私自身が踏み、見出しが 24px・層の余白 0px と表示された。
+Service Worker を手で消して初めて正しい値が出た。**実ユーザーに起きる症状そのもの**。
+
+> 💡 **学び: レビューは「新しいファイルが本当に届いているか」から始める。**
+> 最初の測定値（24px / 0px）は実装の失敗に見えたが、実際は**キャッシュ越しに
+> 古いCSSを測っていた**。バージョンが上がっていない状態での測定値は、
+> 合否どちらの証拠にもならない。**測る前に `?v=` を確認する。**
 
 ### ✅ L-1 完了（2026-08-05 クロが実装・検証）`?v=guild-146`
 
