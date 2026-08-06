@@ -151,6 +151,7 @@ function saveTimerSession() {
     state: timerState, mode: currentMode,
     startWall: timerStartWall, pausedSec: timerPausedSec,
     sessionStartHour: sessionStartHour,
+    genreId: currentGenreId,   // 走っている集中が「どのジャンルの集中か」も一緒に保存する
   }));
 }
 function clearTimerSession() { localStorage.removeItem(TIMER_SESSION_KEY); }
@@ -161,6 +162,11 @@ function restoreTimerSession() {
   if (!saved || (saved.state !== 'running' && saved.state !== 'paused')) return;
 
   currentMode = MODES[saved.mode] ? saved.mode : currentMode;
+  // 中断前に選んでいたジャンルへ戻す（記録先が「学習」に化けるのを防ぐ）
+  if (saved.genreId && genres.some(g => g.id === saved.genreId)) {
+    setCurrentGenre(saved.genreId);
+    if (typeof renderGenreSelector === 'function') renderGenreSelector();
+  }
   sessionStartHour = typeof saved.sessionStartHour === 'number' ? saved.sessionStartHour : new Date().getHours();
   timerPausedSec = saved.pausedSec || 0;
   timerStartWall = saved.state === 'running' ? saved.startWall : null;
@@ -302,18 +308,14 @@ function stopTimer() {
 
     const cfg = MODES[currentMode];
     if (currentMode === 'flow') {
-      // フローモードは自分で終えるのが「完了」→ 達成の告（すごろくも振る）
-      const _sgResult = doSugorokuRoll(currentMode, mins);
-      pendingSugorokuRoll = _sgResult;
-      addBonusXP(_sgResult.bonusXP);
+      // フローモードは自分で終えるのが「完了」→ 達成の告
+      grantSugorokuTicket(currentMode, mins, false);
       playChime();
       showTimerNotif('セッション完了！', `${mins}分間、集中できました！`);
       showKoku(mins, cfg.break, 'complete', 0, _firstXp);
     } else {
-      // ポモドーロ/ディープを目標時間の前に手動停止 → 労いの告（控えめにすごろく前進）
-      const _sgResult = doSugorokuRoll(currentMode, mins, true);
-      pendingSugorokuRoll = _sgResult;
-      addBonusXP(_sgResult.bonusXP);
+      // ポモドーロ/ディープを目標時間の前に手動停止 → 労いの告
+      grantSugorokuTicket(currentMode, mins, true);
       showKoku(mins, cfg.break, 'partial', 0, _firstXp);
     }
     // 告が閉じたら「褒めログ入力」モーダルを案内
@@ -429,10 +431,8 @@ function completeSession() {
   const _isFirstToday      = !data.history[_today];
   const _isResumeFromBreak = !!data.streakWasBroken;
   recordSessionCompletion(mins);
-  const _sgResult = doSugorokuRoll(currentMode, mins);
-  pendingSugorokuRoll = _sgResult;
+  grantSugorokuTicket(currentMode, mins, false);
   addXP(mins); // also saves & renders
-  addBonusXP(_sgResult.bonusXP);
   // 💎集中の珠などで予約された「次のセッション完了ボーナスXP」を発動
   if (itemBuffs.nextSessionXP) {
     addBonusXP(itemBuffs.nextSessionXP);
@@ -458,6 +458,7 @@ function completeSession() {
   // 告が閉じたら「褒めログ入力」モーダルを案内
   _pendingPraisePrompt = true;
   _praiseSessionDate   = _today;
+  _praiseSessionGenre  = currentGenreId;
 
   // break
   if (cfg.break > 0) {
@@ -551,6 +552,10 @@ function showKoku(mins, breakMins, kind, equipBonusXp, firstTodayXp) {
     ? `<span class="koku-first-bonus">🌅 今日はじめての集中 +${firstTodayXp} XP</span><br>`
     : '';
 
+  const ticketLine = getSugorokuTicketCount() > 0
+    ? `<span class="koku-ticket">🎲 すごろくを振れます（あと ${getSugorokuTicketCount()} 回）</span><br>`
+    : '';
+
   overlay.className = 'style-' + settings.kokuStyle;
 
   result.innerHTML = `
@@ -559,6 +564,7 @@ function showKoku(mins, breakMins, kind, equipBonusXp, firstTodayXp) {
     集中時間 ${mins}分 &nbsp;/&nbsp; 経験値 <strong>+${xpGained} XP</strong><br>
     ${equipLine}
     ${firstLine}
+    ${ticketLine}
     累計 ${data.totalMinutes}分<br>
     ${streakMsg ? streakMsg + '<br>' : ''}
     <span class="result-divider">────────────────</span>
@@ -605,12 +611,6 @@ function showKoku(mins, breakMins, kind, equipBonusXp, firstTodayXp) {
   if (pendingNewSkills.length) {
     renderNewSkillsInKoku(pendingNewSkills);
     pendingNewSkills = [];
-  }
-
-  // すごろく演出
-  if (pendingSugorokuRoll) {
-    showSugorokuInKoku(pendingSugorokuRoll);
-    pendingSugorokuRoll = null;
   }
 
   lastLevelUp = false;

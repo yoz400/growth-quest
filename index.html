@@ -40,7 +40,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles/app.css?v=guild-151">
+<link rel="stylesheet" href="styles/app.css?v=guild-153">
 </head>
 <body>
 
@@ -78,6 +78,7 @@
       </button>
       <button class="icon-btn feat-locked" id="board-btn" data-unlock="board" data-nav-label="すごろく" title="すごろく">
         <span class="icon-btn-emoji">🎲</span><span class="icon-btn-label">すごろく</span>
+        <span class="icon-btn-badge" id="board-ticket-badge" style="display:none">0</span>
       </button>
       <button class="icon-btn feat-locked" id="skill-btn" data-unlock="skill" data-nav-label="スキル" title="スキルツリー">
         <span class="icon-btn-emoji">🌳</span><span class="icon-btn-label">スキル</span>
@@ -444,6 +445,18 @@
     </div>
     <div id="board-body">
 
+      <!-- ⓪ 振れる権利（集中を終えるたびに1枚たまる） -->
+      <div id="board-roll-section">
+        <button id="board-roll-btn" class="board-roll-btn">
+          <span class="brb-dice">🎲</span>
+          <span class="brb-label">振る</span>
+          <span class="brb-count" id="board-roll-count">0</span>
+        </button>
+        <div class="board-roll-hint" id="board-roll-hint">
+          集中を1回終えるごとに1回振れます
+        </div>
+      </div>
+
       <!-- ① RPG冒険マップ エリアビュー -->
       <div id="board-area-view">
         <div id="ba-zone-header" class="ba-zone-header">
@@ -458,6 +471,7 @@
         </div>
         <div id="board-next-rewards"></div>
       </div>
+      <div id="board-roll-result" aria-live="polite"></div>
 
       <!-- ② 100マス盤面（折りたたみ）＋大陸図 -->
       <div id="board-map-section">
@@ -1105,17 +1119,17 @@
 })();
 </script>
 
-<script src="scripts/areas.js?v=guild-151"></script>
-<script src="scripts/core.js?v=guild-151"></script>
-<script src="scripts/home-layers.js?v=guild-151"></script>
-<script src="scripts/progression.js?v=guild-151"></script>
-<script src="scripts/quests.js?v=guild-151"></script>
-<script src="scripts/timer.js?v=guild-151"></script>
-<script src="scripts/settings-genre.js?v=guild-151"></script>
-<script src="scripts/calendar-review.js?v=guild-151"></script>
-<script src="scripts/features.js?v=guild-151"></script>
-<script src="scripts/boot.js?v=guild-151"></script>
-<script src="scripts/otomon.js?v=guild-151"></script>
+<script src="scripts/areas.js?v=guild-153"></script>
+<script src="scripts/core.js?v=guild-153"></script>
+<script src="scripts/home-layers.js?v=guild-153"></script>
+<script src="scripts/progression.js?v=guild-153"></script>
+<script src="scripts/quests.js?v=guild-153"></script>
+<script src="scripts/timer.js?v=guild-153"></script>
+<script src="scripts/settings-genre.js?v=guild-153"></script>
+<script src="scripts/calendar-review.js?v=guild-153"></script>
+<script src="scripts/features.js?v=guild-153"></script>
+<script src="scripts/boot.js?v=guild-153"></script>
+<script src="scripts/otomon.js?v=guild-153"></script>
 
 <script>
 // ── Service Worker 登録 ────────────────────────────────

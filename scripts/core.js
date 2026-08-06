@@ -400,6 +400,21 @@ function loadGenres() {
 }
 function saveGenres() { safeSetItem('gq_genres', JSON.stringify(genres)); }
 
+// 選んでいるジャンルは保存する。保存しないと、リロード（下スワイプ更新・PWAの
+// 再起動・端末のメモリ解放）のたびに先頭ジャンル＝「学習」へ戻ってしまい、
+// 25分の集中が丸ごと別ジャンルに記録される事故になる。
+const CURRENT_GENRE_KEY = 'gq_current_genre';
+function loadCurrentGenreId() {
+  let saved = null;
+  try { saved = localStorage.getItem(CURRENT_GENRE_KEY); } catch { saved = null; }
+  if (saved && genres.some(g => g.id === saved)) return saved;   // 消されたジャンルは復元しない
+  return genres[0]?.id || 'default';
+}
+function setCurrentGenre(id) {
+  currentGenreId = id;
+  safeSetItem(CURRENT_GENRE_KEY, id);
+}
+
 _gqObservedDay = null;
 
 function todayKey() {
@@ -449,12 +464,14 @@ function getMissedDaysInWeek(weekDates) {
 data = loadData();
 settings = loadSettings();
 genres = loadGenres();
-currentGenreId = genres[0]?.id || 'default';
+currentGenreId = loadCurrentGenreId();
 editingGenreId = null;
 
 // ═══════════════════════════════════════════════════════
 //  SUGOROKU SYSTEM — DATA
 // ═══════════════════════════════════════════════════════
+
+const SG_TICKET_MAX = 10;
 
 // Cell types: [0]='start', [1-100]=type
 const BOARD_CELL_TYPES = (() => {
@@ -490,8 +507,13 @@ const SUGOROKU_ITEMS = [
 ];
 
 function loadSugorokuData() {
-  try { return JSON.parse(localStorage.getItem('gq_sugoroku') || 'null') || { pos:0, stage:1, items:[], initialized:false }; }
-  catch { return { pos:0, stage:1, items:[], initialized:false }; }
+  const fallback = { pos:0, stage:1, items:[], initialized:false, tickets:[] };
+  try {
+    const saved = JSON.parse(localStorage.getItem('gq_sugoroku') || 'null');
+    if (!saved) return fallback;
+    if (!Array.isArray(saved.tickets)) saved.tickets = [];
+    return saved;
+  } catch { return fallback; }
 }
 function saveSugorokuData() { safeSetItem('gq_sugoroku', JSON.stringify(sugorokuData)); }
 
@@ -563,6 +585,7 @@ sgAnimating   = false;         // 歩行アニメ実行中フラグ
 sgPendingWalk = null;          // { fromPos, rollTime } ─ 次の開放時にアニメ再生
 _sgPendingReward = null;       // 到着マスで出すGET演出（装備/アイテム）
 _sgJustRolled    = false;      // 今セッションでサイコロを振った→双六へ誘導
+renderSugorokuTicketBadge();
 
 // ═══════════════════════════════════════════════════════
 //  EQUIPMENT SYSTEM — DATA
@@ -1113,6 +1136,50 @@ function rollDice(modeKey, mins, partial) {
 function sgPickItem(isRare) {
   const pool = SUGOROKU_ITEMS.filter(it => !!it.rare === isRare);
   return pool[Math.floor(Math.random() * pool.length)];
+}
+
+// 集中を終えた時点では振らず、「好きなときに振れる権利」だけを渡す。
+function grantSugorokuTicket(mode, mins, partial) {
+  if (!Array.isArray(sugorokuData.tickets)) sugorokuData.tickets = [];
+  sugorokuData.tickets.push({ mode, mins, partial: !!partial, at: Date.now() });
+  while (sugorokuData.tickets.length > SG_TICKET_MAX) sugorokuData.tickets.shift();
+  saveSugorokuData();
+  renderSugorokuTicketBadge();
+  return sugorokuData.tickets.length;
+}
+
+function getSugorokuTicketCount() {
+  return Array.isArray(sugorokuData.tickets) ? sugorokuData.tickets.length : 0;
+}
+
+function renderSugorokuTicketBadge() {
+  const count = getSugorokuTicketCount();
+  const badge = document.getElementById('board-ticket-badge');
+  const countEl = document.getElementById('board-roll-count');
+  const button = document.getElementById('board-roll-btn');
+  const hint = document.getElementById('board-roll-hint');
+
+  if (badge) {
+    badge.textContent = count;
+    badge.style.display = count > 0 ? '' : 'none';
+  }
+  if (countEl) countEl.textContent = count;
+  if (button) button.disabled = count === 0 || !!sgAnimating;
+  if (hint) {
+    hint.textContent = count > 0
+      ? '集中を1回終えるごとに1回振れます'
+      : '集中を終えると振れます';
+  }
+}
+
+function rollSugorokuFromTicket() {
+  if (!Array.isArray(sugorokuData.tickets) || !sugorokuData.tickets.length) return null;
+  const ticket = sugorokuData.tickets.shift();
+  saveSugorokuData();
+  const result = doSugorokuRoll(ticket.mode, ticket.mins, ticket.partial);
+  addBonusXP(result.bonusXP);
+  renderSugorokuTicketBadge();
+  return result;
 }
 
 function doSugorokuRoll(modeKey, mins, partial) {
@@ -2370,6 +2437,8 @@ function renderBoard() {
     sgPendingWalk = null;
   }
 
+  renderSugorokuTicketBadge();
+
   // ① エリアビューと報酬プレビューを更新
   buildAreaView();
   buildNextRewards();
@@ -2437,6 +2506,21 @@ function openBoardModal() {
     }
   }, 900);
 }
+
+document.getElementById('board-roll-btn')?.addEventListener('click', () => {
+  if (sgAnimating) return;
+  const result = rollSugorokuFromTicket();
+  if (!result) {
+    renderSugorokuTicketBadge();
+    return;
+  }
+  const message = document.getElementById('board-roll-result');
+  if (message) {
+    const quietMessage = result.message.replace(/<br\s*\/?>/gi, ' ／ ');
+    message.innerHTML = `<strong>🎲 ${result.roll}</strong> ${quietMessage}`;
+  }
+  renderBoard();
+});
 
 // ── Koku dice animation ────────────────────────────────
 function showSugorokuInKoku(result) {
@@ -2640,6 +2724,7 @@ window.saveSettings = saveSettings;
 window.DEFAULT_GENRES = DEFAULT_GENRES;
 window.loadGenres = loadGenres;
 window.saveGenres = saveGenres;
+window.setCurrentGenre = setCurrentGenre;
 window.todayKey = todayKey;
 window.BOARD_CELL_TYPES = BOARD_CELL_TYPES;
 window.SUGOROKU_ITEMS = SUGOROKU_ITEMS;
@@ -2702,6 +2787,10 @@ window.sgGetCellNum = sgGetCellNum;
 window.sgGetStage = sgGetStage;
 window.rollDice = rollDice;
 window.sgPickItem = sgPickItem;
+window.grantSugorokuTicket = grantSugorokuTicket;
+window.getSugorokuTicketCount = getSugorokuTicketCount;
+window.renderSugorokuTicketBadge = renderSugorokuTicketBadge;
+window.rollSugorokuFromTicket = rollSugorokuFromTicket;
 window.doSugorokuRoll = doSugorokuRoll;
 window.addBonusXP = addBonusXP;
 window.sgMoveDir = sgMoveDir;

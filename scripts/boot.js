@@ -52,8 +52,12 @@ document.getElementById('skill-overlay').addEventListener('click', e => {
 // ═══════════════════════════════════════════════════════
 applySettings();
 // 誤操作リロード（下スワイプ更新・戻るボタン等）で消えた実行中/一時停止中のタイマーを復元
-// applySettings() の後に呼ぶ（そうしないとモードタブの初期化で上書きされる）
-restoreTimerSession();
+// applySettings() の後に呼ぶ（そうしないとモードタブの初期化で上書きされる）。
+// ⚠ さらに setTimeout(0) で「全ファイルの読み込み後」まで遅らせる。
+//    復元した時点で目標時間を過ぎていると、その場で completeSession() が走る。
+//    ここで即実行すると boot.js の後半（GQ.on('session:complete') のタイムログ自動記録）や
+//    otomon.js（window.Otomon）がまだ登録されておらず、日レビューに何も残らない事故になる。
+setTimeout(restoreTimerSession, 0);
 // すごろく遡及初期化: 初回ロード時、既存セッション数分だけマスを進める
 if (!sugorokuData.initialized) {
   sugorokuData.pos = Math.min(data.sessions, 99);

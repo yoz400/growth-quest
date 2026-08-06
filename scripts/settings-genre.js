@@ -347,7 +347,7 @@ function renderGenreSelector() {
 
   // 選択
   container.querySelectorAll('.genre-tab').forEach(btn => {
-    btn.addEventListener('click', () => { currentGenreId = btn.dataset.gid; renderGenreSelector(); });
+    btn.addEventListener('click', () => { setCurrentGenre(btn.dataset.gid); renderGenreSelector(); });
   });
   // 削除（× は選択に伝播させない）
   container.querySelectorAll('.genre-tab-del').forEach(btn => {
@@ -409,7 +409,7 @@ function quickAddGenre() {
   const g = { id: Date.now().toString(36), name, emoji, color, xp: 0, minutes: 0 };
   if (genreQuickImage) g.image = genreQuickImage;
   genres.push(g);
-  currentGenreId = g.id;
+  setCurrentGenre(g.id);
   saveGenres();
   genreQuickAdd = false;
   genreQuickImage = null;
@@ -424,7 +424,7 @@ function quickDeleteGenre(id) {
   const g = genres.find(x => x.id === id);
   if (!confirm(`「${g ? g.name : ''}」を削除しますか？\nこのジャンルの記録も消えます。`)) return;
   genres = genres.filter(x => x.id !== id);
-  if (currentGenreId === id) currentGenreId = genres[0]?.id || '';
+  if (currentGenreId === id) setCurrentGenre(genres[0]?.id || '');
   saveGenres();
   renderGenreSelector();
   if (document.getElementById('genre-overlay')?.classList.contains('open')) renderGenreList();
@@ -464,7 +464,7 @@ function renderGenreList() {
   list.querySelectorAll('[data-del]').forEach(btn => {
     btn.addEventListener('click', () => {
       genres = genres.filter(x => x.id !== btn.dataset.del);
-      if (currentGenreId === btn.dataset.del) currentGenreId = genres[0]?.id || '';
+      if (currentGenreId === btn.dataset.del) setCurrentGenre(genres[0]?.id || '');
       saveGenres();
       renderGenreList();
       renderGenreSelector();

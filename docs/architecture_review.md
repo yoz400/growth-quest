@@ -108,7 +108,7 @@
 | プロフィール | gq_player_name, gq_av_type, gq_avatar, gq_summoned, gq_onboard_done, gq_tutorial_seen |
 | タイマー | gq_timer_session（誤操作リロード復元用・完了時必ず削除） |
 | クエスト/使命 | gq_daily_quests, gq_mission, gq_mission_reset, gq_nudge_course, gq_nudge_done, gq_vows |
-| ジャンル/スキル | gq_genres, gq_skills, gq_skill_notes |
+| ジャンル/スキル | gq_genres, gq_current_genre（選択中ジャンル・リロードで「学習」に戻る事故の対策）, gq_skills, gq_skill_notes |
 | 褒め/妖精/名言 | growthPraiseLogs（⚠️唯一の命名違反・既存データのため改名不可）, gq_words, gq_words_favs, gq_words_hist |
 | すごろく/装備 | gq_sugoroku, gq_inventory, gq_equipped, gq_item_buffs, gq_active_buffs, gq_item_dex, gq_item_memories, gq_streak_shield_protected, gq_world_seen_cell |
 | オトモン | gq_otomon, gq_eggs, gq_wake_items, gq_hatch_quest |
