@@ -1052,6 +1052,124 @@ header {
   display: inline-block; font-size: .82em;
   color: var(--cyan); letter-spacing: .04em; opacity: .9;
 }
+
+/* 告の中の「いま振る／あとで」。急かさない見た目にする */
+#koku-ticket-choice { margin: 14px auto 2px; }
+.ktc-lead {
+  font-size: .8rem; color: var(--cyan);
+  letter-spacing: .04em; opacity: .92; margin-bottom: 9px;
+}
+.ktc-lead.ktc-kept { color: var(--text-dim); opacity: .8; margin-bottom: 0; }
+.ktc-btns { display: flex; justify-content: center; gap: 9px; flex-wrap: wrap; }
+.ktc-btn {
+  min-height: 40px; padding: 9px 20px; border-radius: 999px;
+  font: inherit; font-size: .84rem; font-weight: 800;
+  cursor: pointer; transition: transform .15s, filter .2s, box-shadow .2s;
+}
+.ktc-btn:active { transform: scale(.96); }
+.ktc-roll {
+  border: 1px solid rgba(103,232,249,.45);
+  background: linear-gradient(135deg, rgba(6,182,212,.92), rgba(99,102,241,.92));
+  color: #fff; box-shadow: 0 6px 20px rgba(6,182,212,.24);
+}
+.ktc-roll:hover { filter: brightness(1.12); box-shadow: 0 8px 24px rgba(6,182,212,.34); }
+.ktc-later {
+  border: 1px solid rgba(255,255,255,.16);
+  background: rgba(255,255,255,.05); color: var(--text-dim);
+}
+.ktc-later:hover { color: var(--text); border-color: rgba(255,255,255,.3); }
+
+/* ── 桃鉄風 3Dサイコロ ────────────────────────────────
+   立方体を6面ぶん組んで、実際に転がして止める。
+   .tossing = 空中で跳ねながら回転中 / .landing = 着地してつぶれて戻る */
+.sg-dice-stage {
+  position: relative;
+  display: flex; align-items: flex-end; justify-content: center; gap: 16px;
+  height: 96px; margin: 2px auto 12px; perspective: 640px;
+}
+/* preserve-3d は必須。跳ねる/着地アニメで wrap に transform がかかった瞬間に
+   立方体が平面へ潰れ、面が真っ白（目が無い）になる。 */
+.sgd-wrap {
+  position: relative; width: 58px; height: 58px; margin-bottom: 16px;
+  transform-style: preserve-3d;
+}
+.sgd-cube { position: absolute; inset: 0; transform-style: preserve-3d; }
+/* ⚠ 目（ピップ）は子要素ではなく「背景」で描く。
+   backface-visibility:hidden の面に子要素を置くと、跳ねるアニメで合成レイヤーに
+   なった瞬間に子要素だけ描画から落ち、真っ白なサイコロになる（実機で再現済み）。
+   背景なら要素が1つなので、この壊れ方が起きようがない。 */
+.sgd-face {
+  --pip: radial-gradient(circle, #4a5464 0%, #10151f 55%, rgba(16,21,31,0) 58%);
+  --die: linear-gradient(150deg, #fdfdff 0%, #e6eaf2 60%, #d3d9e6 100%);
+  position: absolute; width: 58px; height: 58px; border-radius: 11px;
+  border: 1px solid rgba(0,0,0,.16);
+  box-shadow: inset 0 0 12px rgba(90,105,135,.22);
+  background-repeat: no-repeat;
+  backface-visibility: hidden;
+}
+/* 目の位置（3×3の中心）: 8.5px / 22.5px / 36.5px */
+.sgd-f1 { transform: translateZ(29px);
+  background-image: var(--pip), var(--die);
+  background-size: 13px 13px, 100% 100%;
+  background-position: 22.5px 22.5px, 0 0; }
+.sgd-f2 { transform: rotateY(90deg) translateZ(29px);
+  background-image: var(--pip), var(--pip), var(--die);
+  background-size: 13px 13px, 13px 13px, 100% 100%;
+  background-position: 8.5px 8.5px, 36.5px 36.5px, 0 0; }
+.sgd-f3 { transform: rotateX(90deg) translateZ(29px);
+  background-image: var(--pip), var(--pip), var(--pip), var(--die);
+  background-size: 13px 13px, 13px 13px, 13px 13px, 100% 100%;
+  background-position: 8.5px 8.5px, 22.5px 22.5px, 36.5px 36.5px, 0 0; }
+.sgd-f4 { transform: rotateX(-90deg) translateZ(29px);
+  background-image: var(--pip), var(--pip), var(--pip), var(--pip), var(--die);
+  background-size: 13px 13px, 13px 13px, 13px 13px, 13px 13px, 100% 100%;
+  background-position: 8.5px 8.5px, 36.5px 8.5px, 8.5px 36.5px, 36.5px 36.5px, 0 0; }
+.sgd-f5 { transform: rotateY(-90deg) translateZ(29px);
+  background-image: var(--pip), var(--pip), var(--pip), var(--pip), var(--pip), var(--die);
+  background-size: 13px 13px, 13px 13px, 13px 13px, 13px 13px, 13px 13px, 100% 100%;
+  background-position: 8.5px 8.5px, 36.5px 8.5px, 22.5px 22.5px, 8.5px 36.5px, 36.5px 36.5px, 0 0; }
+.sgd-f6 { transform: rotateY(180deg) translateZ(29px);
+  background-image: var(--pip), var(--pip), var(--pip), var(--pip), var(--pip), var(--pip), var(--die);
+  background-size: 13px 13px, 13px 13px, 13px 13px, 13px 13px, 13px 13px, 13px 13px, 100% 100%;
+  background-position: 8.5px 8.5px, 36.5px 8.5px, 8.5px 22.5px, 36.5px 22.5px, 8.5px 36.5px, 36.5px 36.5px, 0 0; }
+
+.sgd-shadow {
+  position: absolute; left: 50%; bottom: -15px;
+  width: 48px; height: 10px; transform: translateX(-50%);
+  background: radial-gradient(ellipse at center, rgba(0,0,0,.55), transparent 72%);
+  filter: blur(1.5px);
+}
+.sgd-wrap.tossing { animation: sgdToss .5s ease-in-out infinite; }
+.sgd-wrap.tossing .sgd-shadow { animation: sgdTossShadow .5s ease-in-out infinite; }
+.sgd-wrap.landing { animation: sgdLand .55s cubic-bezier(.2,1.5,.4,1); }
+@keyframes sgdToss {
+  0%, 100% { transform: translateY(0); }
+  32%      { transform: translateY(-34px); }
+  64%      { transform: translateY(-10px); }
+}
+@keyframes sgdTossShadow {
+  0%, 100% { transform: translateX(-50%) scale(1);   opacity: .55; }
+  32%      { transform: translateX(-50%) scale(.55); opacity: .2; }
+}
+@keyframes sgdLand {
+  0%   { transform: translateY(-30px) scale(1.04); }
+  52%  { transform: translateY(0) scaleY(.78) scaleX(1.16); }
+  74%  { transform: translateY(-8px) scale(1); }
+  100% { transform: translateY(0) scale(1); }
+}
+/* 2個振ったときの合計。着地してから出す */
+.sgd-sum {
+  align-self: center; margin-bottom: 16px;
+  font-size: 1.05rem; font-weight: 900; color: var(--text-dim);
+  opacity: 0; transform: scale(.7); transition: opacity .3s, transform .3s cubic-bezier(.2,1.5,.4,1);
+}
+.sgd-sum.show { opacity: 1; transform: scale(1); }
+.sgd-sum b { color: var(--cyan); font-size: 1.3rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sgd-wrap.tossing, .sgd-wrap.landing,
+  .sgd-wrap.tossing .sgd-shadow { animation: none; }
+}
 .koku-quote-text {
   font-size: .9rem; font-style: italic; line-height: 1.8;
   color: rgba(255,255,255,.88); letter-spacing: .03em;

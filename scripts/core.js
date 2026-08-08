@@ -2522,6 +2522,60 @@ document.getElementById('board-roll-btn')?.addEventListener('click', () => {
   renderBoard();
 });
 
+// ── 桃鉄風 3Dサイコロ ──────────────────────────────────
+// 立方体を6面ぶん組み、JSで回してから「出したい面」を正面へ向けて止める。
+// 面の配置は本物のサイコロと同じ（向かい合う面の和が7：1-6 / 2-5 / 3-4）。
+// 面Nを正面へ向けるための回転（面の置き方の逆回転）: [rotateX, rotateY]
+const SG_FACE_ROT = { 1:[0,0], 2:[0,-90], 3:[-90,0], 4:[90,0], 5:[0,90], 6:[0,180] };
+
+// 出目が7以上のときは2個のサイコロで表す（1個では6までしか出せないため）
+function sgSplitDice(roll) {
+  if (roll <= 6) return [Math.max(1, roll)];
+  const lo = Math.max(1, roll - 6);
+  const hi = Math.min(6, roll - 1);
+  const a = lo + Math.floor(Math.random() * (hi - lo + 1));
+  return [a, roll - a];
+}
+
+// 面は中身を持たない（目はCSSの背景で描く。理由は app.css の .sgd-face を参照）
+function buildDieHTML(id) {
+  const faces = [1,2,3,4,5,6].map(n => `<div class="sgd-face sgd-f${n}"></div>`).join('');
+  return `<div class="sgd-wrap" id="${id}-w">
+      <div class="sgd-cube" id="${id}">${faces}</div>
+      <div class="sgd-shadow"></div>
+    </div>`;
+}
+
+// 転がす → 止める。isAlive で「告が閉じられたら即やめる」を守る。
+function sgRollDice3D(cubeEls, values, isAlive, onLanded) {
+  const TUMBLE_MS = 1150, STEP_MS = 115;
+  const started = Date.now();
+  const wraps = cubeEls.map(el => el.parentElement);
+  wraps.forEach(w => w.classList.add('tossing'));
+
+  const randTurn = () => (Math.floor(Math.random() * 4) * 90) + (Math.random() * 60 - 30);
+
+  function _step() {
+    if (!isAlive()) return;
+    if (Date.now() - started >= TUMBLE_MS) {
+      cubeEls.forEach((el, i) => {
+        const [rx, ry] = SG_FACE_ROT[values[i]] || [0, 0];
+        el.style.transition = 'transform .6s cubic-bezier(.2,1.45,.4,1)';
+        el.style.transform  = `rotateX(${rx + 720}deg) rotateY(${ry + 720}deg)`;
+      });
+      wraps.forEach(w => { w.classList.remove('tossing'); w.classList.add('landing'); });
+      _sgSpinT2 = setTimeout(() => { if (isAlive()) onLanded(); }, 620);
+      return;
+    }
+    cubeEls.forEach(el => {
+      el.style.transition = `transform ${STEP_MS}ms linear`;
+      el.style.transform  = `rotateX(${randTurn()}deg) rotateY(${randTurn()}deg)`;
+    });
+    _sgSpinT1 = setTimeout(_step, STEP_MS);
+  }
+  _step();
+}
+
 // ── Koku dice animation ────────────────────────────────
 function showSugorokuInKoku(result) {
   const { roll, newPos, cellNum, message, evClass } = result;
@@ -2548,10 +2602,17 @@ function showSugorokuInKoku(result) {
   // 進むマス数（＝出目）。レーンに並べるタイル数は見やすさ優先で最大8に丸める
   const steps = Math.max(1, Math.min(roll, 8));
 
+  // 出目を1〜2個のサイコロに割る（7以上は2個）
+  const diceVals = sgSplitDice(roll);
+
   sec.innerHTML = `
     <div class="koku-sg-label">🎲 すごろく</div>
-    <div class="koku-sg-dice-box spinning" id="${diceId}">?</div>
-    <div class="koku-sg-status" id="${statId}">サイコロを振っています...</div>
+    <div class="sg-dice-stage" id="${diceId}">
+      ${diceVals.map((_, i) => buildDieHTML(`${diceId}-d${i}`)).join('')}
+      ${diceVals.length > 1
+        ? `<div class="sgd-sum" id="${diceId}-sum">＝ <b>${roll}</b></div>` : ''}
+    </div>
+    <div class="koku-sg-status" id="${statId}">サイコロを振っています…</div>
     <div class="koku-adv" id="${advId}" style="--zaccent:${zone.accent};--zrgb:${zone.rgb}">
       <div class="koku-adv-zone">${zone.emoji} ${zone.name} を冒険！</div>
       <div class="koku-adv-track" id="${advId}-track"></div>
@@ -2573,40 +2634,25 @@ function showSugorokuInKoku(result) {
 
   const kokuAlive = () => document.getElementById('koku-overlay')?.classList.contains('active');
 
-  const FACES = ['⚀','⚁','⚂','⚃','⚄','⚅'];
-  let fi = 0;
-  const spinStart = Date.now();
-  const SPIN_DUR  = 1200;
+  // 転がして止める → 着地したら冒険レーンへ
+  const cubeEls = diceVals.map((_, i) => document.getElementById(`${diceId}-d${i}`)).filter(Boolean);
+  sgRollDice3D(cubeEls, diceVals, kokuAlive, () => {
+    const kokuEl = document.getElementById('koku-overlay');
+    if (kokuEl) { kokuEl.classList.add('sg-shake'); setTimeout(() => kokuEl.classList.remove('sg-shake'), 400); }
 
-  // スロットマシン風：だんだんゆっくりになって止まる → 止まったら冒険レーンへ
-  function _spinStep() {
-    if (!kokuAlive()) return;
-    const elapsed = Date.now() - spinStart;
-    if (elapsed >= SPIN_DUR) {
-      const faceStr = roll > 6 ? String(roll) : FACES[roll - 1];
-      diceEl.textContent = faceStr;
-      diceEl.classList.remove('spinning');
-      diceEl.classList.add('stopped');
-      const kokuEl = document.getElementById('koku-overlay');
-      if (kokuEl) { kokuEl.classList.add('sg-shake'); setTimeout(() => kokuEl.classList.remove('sg-shake'), 400); }
-      if (roll >= 5) {
-        const lucky = document.createElement('div');
-        lucky.className = 'sg-lucky-pop';
-        lucky.textContent = roll === 6 ? '🎉 MAX!!' : '✨ LUCKY!';
-        diceEl.parentNode.style.position = 'relative';
-        diceEl.parentNode.appendChild(lucky);
-        setTimeout(() => lucky.remove(), 1200);
-      }
-      statEl.textContent = `${roll} が出た！ ${zone.emoji} ${zone.name}を ${roll}マス進む`;
-      _sgSpinT2 = setTimeout(_startAdventure, 450);   // 冒険レーンへ
-      return;
+    const sumEl = document.getElementById(diceId + '-sum');
+    if (sumEl) sumEl.classList.add('show');
+
+    if (roll >= 5 && diceEl) {
+      const lucky = document.createElement('div');
+      lucky.className = 'sg-lucky-pop';
+      lucky.textContent = roll >= 9 ? '🎉 MAX!!' : '✨ LUCKY!';
+      diceEl.appendChild(lucky);
+      setTimeout(() => lucky.remove(), 1200);
     }
-    diceEl.textContent = FACES[fi++ % 6];
-    const prog = elapsed / SPIN_DUR;
-    const delay = Math.floor(55 + prog * prog * 210);
-    _sgSpinT1 = setTimeout(_spinStep, delay);
-  }
-  _sgSpinT1 = setTimeout(_spinStep, 55);
+    statEl.textContent = `${roll} が出た！ ${zone.emoji} ${zone.name}を ${roll}マス進む`;
+    _sgSpinT2 = setTimeout(_startAdventure, 450);   // 冒険レーンへ
+  });
 
   // ── 冒険レーン：コマが1マスずつ跳ねて進み、到着マスで宝が弾ける ──
   function _startAdventure() {

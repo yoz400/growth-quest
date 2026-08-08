@@ -552,10 +552,6 @@ function showKoku(mins, breakMins, kind, equipBonusXp, firstTodayXp) {
     ? `<span class="koku-first-bonus">🌅 今日はじめての集中 +${firstTodayXp} XP</span><br>`
     : '';
 
-  const ticketLine = getSugorokuTicketCount() > 0
-    ? `<span class="koku-ticket">🎲 すごろくを振れます（あと ${getSugorokuTicketCount()} 回）</span><br>`
-    : '';
-
   overlay.className = 'style-' + settings.kokuStyle;
 
   result.innerHTML = `
@@ -564,12 +560,36 @@ function showKoku(mins, breakMins, kind, equipBonusXp, firstTodayXp) {
     集中時間 ${mins}分 &nbsp;/&nbsp; 経験値 <strong>+${xpGained} XP</strong><br>
     ${equipLine}
     ${firstLine}
-    ${ticketLine}
     累計 ${data.totalMinutes}分<br>
     ${streakMsg ? streakMsg + '<br>' : ''}
     <span class="result-divider">────────────────</span>
     ${closingMsg}
   `;
+
+  // 🎲 すごろく：振るかどうかをここで選ぶ。
+  //    勝手には回さない（それが余韻を奪う）。でも「いま振りたい」人を歩かせもしない。
+  const _ticketN = getSugorokuTicketCount();
+  if (_ticketN > 0) {
+    const choice = document.createElement('div');
+    choice.id = 'koku-ticket-choice';
+    choice.innerHTML = `
+      <div class="ktc-lead">🎲 すごろくを振れます（あと ${_ticketN} 回）</div>
+      <div class="ktc-btns">
+        <button class="ktc-btn ktc-roll"  id="koku-roll-btn">🎲 いま振る</button>
+        <button class="ktc-btn ktc-later" id="koku-later-btn">あとで</button>
+      </div>`;
+    result.appendChild(choice);
+
+    document.getElementById('koku-roll-btn').addEventListener('click', () => {
+      const r = rollSugorokuFromTicket();
+      if (!r) { choice.remove(); return; }
+      choice.remove();
+      showSugorokuInKoku(r);
+    });
+    document.getElementById('koku-later-btn').addEventListener('click', () => {
+      choice.innerHTML = `<div class="ktc-lead ktc-kept">🎲 すごろくから、好きなときに振れます</div>`;
+    });
+  }
 
   // 名言を選んで表示
   let qScene = 'session_complete';
