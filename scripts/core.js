@@ -1185,6 +1185,7 @@ function rollSugorokuFromTicket() {
 function doSugorokuRoll(modeKey, mins, partial) {
   // 基本出目を決める（アイテム効果を反映）
   let baseDice;
+  let usedBuff = null;  // 演出用：どのバフを使ったか（'advantage'|'bestOf3'|null）
   if (itemBuffs.fixedDice) {
     // 🧭運命の羅針盤：選んだ出目を確定で使用
     baseDice = Math.max(1, Math.min(6, itemBuffs.fixedDice));
@@ -1195,10 +1196,12 @@ function doSugorokuRoll(modeKey, mins, partial) {
       // 🏮導きの灯：2回振って良い方
       baseDice = Math.max(baseDice, rollDice(modeKey, mins, partial));
       itemBuffs.advantage = false; saveItemBuffs();
+      usedBuff = 'advantage';
     } else if (itemBuffs.bestOf3) {
       // ⏳時の砂：3回振って一番大きい出目
       baseDice = Math.max(baseDice, rollDice(modeKey, mins, partial), rollDice(modeKey, mins, partial));
       itemBuffs.bestOf3 = false; saveItemBuffs();
+      usedBuff = 'bestOf3';
     }
   }
   // 基本出目 + 装備の dice_bonus + アイテムの一時ボーナスを加算
@@ -1322,7 +1325,7 @@ function doSugorokuRoll(modeKey, mins, partial) {
   saveSugorokuData();
   sgPendingWalk = { fromPos: prevPos, rollTime: Date.now() };
   _sgJustRolled = true;
-  return { roll, prevPos, newPos, cellNum, cellType, bonusXP, message, evClass };
+  return { roll, prevPos, newPos, cellNum, cellType, bonusXP, message, evClass, usedBuff, baseDice };
 }
 
 function addBonusXP(xp) {
@@ -2602,15 +2605,32 @@ function showSugorokuInKoku(result) {
   // 進むマス数（＝出目）。レーンに並べるタイル数は見やすさ優先で最大8に丸める
   const steps = Math.max(1, Math.min(roll, 8));
 
-  // 出目を1〜2個のサイコロに割る（7以上は2個）
-  const diceVals = sgSplitDice(roll);
+  // アイテム効果によってサイコロの個数を変える
+  // advantage（導きの灯）→2個、bestOf3（時の砂）→3個、通常→sgSplitDiceで分割
+  let diceVals, diceMultiLabel = null;
+  if (result.usedBuff === 'advantage') {
+    // 2回振って良い方を採用 → 勝ったサイコロ + 負けたサイコロを表示
+    const winner = Math.max(1, Math.min(6, result.baseDice));
+    const loser  = Math.max(1, Math.floor(Math.random() * winner));
+    diceVals = [winner, loser];
+    diceMultiLabel = '🏮 良い方を採用！';
+  } else if (result.usedBuff === 'bestOf3') {
+    // 3回振って最大を採用 → 勝ったサイコロ + 負け2個を表示
+    const winner = Math.max(1, Math.min(6, result.baseDice));
+    const l1 = Math.max(1, Math.floor(Math.random() * winner));
+    const l2 = Math.max(1, Math.floor(Math.random() * winner));
+    diceVals = [winner, l1, l2];
+    diceMultiLabel = '⏳ 最大を採用！';
+  } else {
+    diceVals = sgSplitDice(roll);
+  }
 
   sec.innerHTML = `
     <div class="koku-sg-label">🎲 すごろく</div>
     <div class="sg-dice-stage" id="${diceId}">
       ${diceVals.map((_, i) => buildDieHTML(`${diceId}-d${i}`)).join('')}
       ${diceVals.length > 1
-        ? `<div class="sgd-sum" id="${diceId}-sum">＝ <b>${roll}</b></div>` : ''}
+        ? `<div class="sgd-sum" id="${diceId}-sum">${diceMultiLabel ? diceMultiLabel : '＝ <b>' + roll + '</b>'}</div>` : ''}
     </div>
     <div class="koku-sg-status" id="${statId}">サイコロを振っています…</div>
     <div class="koku-adv" id="${advId}" style="--zaccent:${zone.accent};--zrgb:${zone.rgb}">
