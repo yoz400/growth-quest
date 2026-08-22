@@ -1029,7 +1029,7 @@
     // ⑥ 図鑑・お供
     getDiscovered, getActiveOtomon, setActive, setNudge,
     // なつき度（bond）
-    addBond, bondTier, touchActiveOtomon, isTouchedToday,
+    BOND_TIERS, addBond, bondTier, touchActiveOtomon, isTouchedToday,
     // UI層との連携（第2 IIFE が使う）
     setOnChange, setOnHatch, setOnBondUp, setOnStreak,
     // デバッグ
@@ -1106,14 +1106,15 @@
       #otomon-buddy-card .ohb-face .otomon-face-img { width:52px; height:52px; }
       #otomon-buddy-card .ohb-line { font-size:.82rem; color:var(--text-dim); margin:4px 0 2px; line-height:1.4; }
       .otomon-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(84px,1fr)); gap:10px; }
-      .otomon-cell { background:var(--glass); border:1px solid var(--glass-border); border-radius:14px; padding:10px 6px; text-align:center; }
+      .otomon-cell { background:var(--glass); border:1px solid var(--glass-border); border-radius:14px; padding:10px 6px; text-align:center; cursor:pointer; }
       .otomon-cell.locked { opacity:.5; }
       .otomon-cell-emoji { font-size:1.7rem; line-height:1.2; }
       .otomon-face-img { width:46px; height:46px; object-fit:contain; display:inline-block; vertical-align:middle; }
       .otomon-cell.locked .otomon-cell-emoji { filter:grayscale(1) brightness(.55); }
       .otomon-cell-name { font-size:.72rem; color:var(--text); margin-top:4px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
       .otomon-cell-rarity { font-size:.64rem; font-weight:800; margin-top:2px; }
-      .otomon-cell.owned { cursor:pointer; transition:border-color .15s; }
+      .otomon-cell.owned { transition:border-color .15s; }
+      .otomon-cell.locked:active { opacity:.7; }
       .otomon-cell.owned:hover { border-color:var(--cyan); }
       .otomon-cell.is-active { position:relative; border-color:var(--gold); box-shadow:0 0 0 1px var(--gold), 0 0 16px rgba(244,162,97,.25); }
       .otomon-cell-badge { position:absolute; top:-7px; right:-6px; background:var(--gold); color:#0a0a0f; font-size:.58rem; font-weight:800; padding:1px 7px; border-radius:8px; }
@@ -1140,6 +1141,33 @@
       .otomon-item-btn:hover { border-color:var(--cyan); background:rgba(6,182,212,.1); }
       .otomon-item-btn .oi-count { float:right; color:var(--text-dim); font-weight:700; }
       .otomon-pick-msg { color:var(--red); font-size:.8rem; margin:6px 2px 10px; }
+      /* ── オトモン詳細ビュー（図鑑のセルをタップして開く）── */
+      .od-head { text-align:center; margin:12px 0 14px; }
+      .od-face { width:132px; height:132px; margin:0 auto 9px; display:flex; align-items:center; justify-content:center;
+        background:rgba(255,255,255,.05); border-radius:20px; font-size:4rem; }
+      .od-face .otomon-face-img { width:116px; height:116px; }
+      .od-name { font-size:1.16rem; font-weight:900; color:var(--text); }
+      .od-tags { font-size:.78rem; color:var(--text-dim); font-weight:700; margin-top:4px; }
+      .od-sep { opacity:.55; margin:0 5px; }
+      .od-block { background:var(--glass); border:1px solid var(--glass-border); border-radius:14px;
+        padding:12px 14px; margin-bottom:10px; }
+      .od-tier { font-size:.9rem; font-weight:800; color:var(--gold); }
+      .od-bondval { font-size:.72rem; color:var(--text-dim); margin-top:5px; }
+      .od-flavor { font-size:.86rem; color:var(--text); line-height:1.6; }
+      .od-desc { font-size:.8rem; color:var(--text-dim); line-height:1.65; margin-top:8px; }
+      .od-row { display:flex; justify-content:space-between; align-items:baseline; gap:10px;
+        font-size:.8rem; color:var(--text-dim); padding:6px 0; border-bottom:1px solid rgba(255,255,255,.05); }
+      .od-row:last-child { border-bottom:none; }
+      .od-row b { color:var(--text); font-weight:700; white-space:nowrap; }
+      .od-lines { list-style:none; margin:0; padding:0; }
+      .od-line { font-size:.82rem; line-height:1.55; padding:8px 0; border-bottom:1px solid rgba(255,255,255,.05); }
+      .od-line:last-child { border-bottom:none; }
+      .od-line.got { color:var(--text); }
+      .od-line.yet { color:var(--text-dim); opacity:.7; }
+      .od-set-btn { display:block; width:100%; margin:2px 0 4px; padding:13px; border:none; border-radius:14px;
+        cursor:pointer; background:rgba(244,162,97,.18); color:var(--gold); font-weight:800; font-size:.95rem; }
+      .od-set-btn:hover { background:rgba(244,162,97,.3); }
+      .od-active-tag { text-align:center; font-size:.88rem; font-weight:800; color:var(--cyan); padding:12px; }
       #otomon-birth-overlay { position:fixed; inset:0; z-index:96; background:rgba(0,0,0,.86);
         backdrop-filter:blur(14px); display:flex; align-items:center; justify-content:center;
         opacity:0; pointer-events:none; transition:opacity .3s; }
@@ -1309,6 +1337,7 @@
   // ── 描画：図鑑パネル（一覧モード ／ アイテム選択モード）──
   let _pickEggUid = null;
   let _pickMsg = '';
+  let _detailId = null;   // 詳細ビューで開いているオトモンid（null＝一覧）
   // ── お供詳細カード（bond段階・ゲージ・実績・ふれあう）──
   function buddyCardHtml() {
     const o = O.getActiveOtomon();
@@ -1344,6 +1373,7 @@
     const body = document.getElementById('otomon-panel-body');
     if (!body) return;
     if (_pickEggUid) return renderPickView(body);
+    if (_detailId)   return renderDetailView(body, _detailId);
 
     const eggs = O.listEggs();
     const activeQ = O.getActiveQuest();
@@ -1394,7 +1424,7 @@
         '</div>';
     }).join('');
 
-    const zukanHint = got > 0 ? ' <span style="color:var(--text-dim);font-weight:400;">（タップでお供にできる）</span>' : '';
+    const zukanHint = got > 0 ? ' <span style="color:var(--text-dim);font-weight:400;">（タップでくわしく見られる）</span>' : '';
     body.innerHTML =
       buddyCardHtml() +
       flowGuideHtml(eggs.length > 0, !!(activeQ && !activeQ.done)) +
@@ -1405,7 +1435,10 @@
     body.querySelectorAll('.otomon-wake-btn').forEach(b =>
       b.addEventListener('click', () => { _pickEggUid = b.dataset.egg; _pickMsg = ''; renderPanel(); }));
     body.querySelectorAll('.otomon-cell[data-otomon]').forEach(c =>
-      c.addEventListener('click', () => { if (O.setActive(c.dataset.otomon)) renderPanel(); }));
+      c.addEventListener('click', () => { _detailId = c.dataset.otomon; renderPanel(); }));
+    // 未発見セルは「押しても沈黙」だと壊れて見えるので、必ず反応を返す（名前は伏せる）
+    body.querySelectorAll('.otomon-cell.locked').forEach(c =>
+      c.addEventListener('click', () => showNudge('❓', 'まだ会っていないオトモンだよ。卵を孵すと図鑑に加わるよ。')));
     const touchBtn = document.getElementById('otomon-touch-btn');
     if (touchBtn) touchBtn.addEventListener('click', () => { O.touchActiveOtomon(); renderPanel(); });
   }
@@ -1435,6 +1468,82 @@
     if (r && r.error) { _pickMsg = r.error; renderPanel(); return; }
     _pickEggUid = null; _pickMsg = '';
     closePanel();   // ホームにクエストカードが出る（notifyChange で自動描画）
+  }
+
+  // ── 描画：オトモン詳細ビュー（図鑑のセルをタップ → その子のページ）──
+  //  未発見の子はここへ来ない（呼び出し側で弾く＝ネタバレ防止）。
+  //  100体のうち説明文・役割を持たない子が多いので、無い項目は行ごと出さない。
+  function fmtMetDate(ms) {
+    if (!ms) return null;
+    const d = new Date(ms);
+    return d.getFullYear() + '/' + (d.getMonth() + 1) + '/' + d.getDate();
+  }
+  function renderDetailView(body, id) {
+    const o   = O.OTOMON_MASTER.find(x => x.id === id);
+    const rec = O.getDiscovered().find(x => x.id === id);
+    if (!o || !rec) { _detailId = null; return renderPanel(); }   // データが無い＝一覧へ戻す
+
+    const bond = rec.bond || 0;
+    const t    = O.bondTier(bond);
+    const pct  = t.next ? Math.round(((bond - t.min) / (t.next.min - t.min)) * 100) : 100;
+    const bondLabel = t.next ? ('bond ' + bond + ' / ' + t.next.min) : ('bond ' + bond + '（MAX）');
+    const col  = RARITY_COLOR[o.rarity] || 'var(--text-dim)';
+    const attr = (O.ATTRIBUTES && O.ATTRIBUTES[o.attribute]) || '';
+
+    const tags = '<span style="color:' + col + '">' + o.rarity + '</span>' +
+      (attr   ? '<span class="od-sep">・</span>' + attr   : '') +
+      (o.role ? '<span class="od-sep">・</span>' + o.role : '');
+
+    // 記録：この子と積み上げてきたもの
+    const rows = [];
+    const met = fmtMetDate(rec.firstMetAt);
+    if (met) rows.push(['出会った日', met]);
+    rows.push(['一緒に過ごした日数', (rec.metDays || 0) + '日']);
+    rows.push(['一緒に学習した時間', (rec.totalMins || 0) + '分']);
+    if ((rec.streak || 0) >= 2) rows.push(['連続ふれあい', '🔥 ' + rec.streak + '日']);
+    const rowsHtml = rows.map(r =>
+      '<div class="od-row"><span>' + r[0] + '</span><b>' + r[1] + '</b></div>').join('');
+
+    // 覚えたセリフ：いまの段階までを公開。先の段階は「？？？」（先取りさせない）
+    const lines = BUDDY_LINES[o.id] || {};
+    const tiers = (O.BOND_TIERS || []).filter(x => lines[x.name]);
+    const gotN  = tiers.filter(x => bond >= x.min).length;
+    const linesHtml = tiers.map(x => (bond >= x.min)
+      ? '<li class="od-line got">' + x.face + '「' + lines[x.name] + '」</li>'
+      : '<li class="od-line yet">🔒 ？？？（「' + x.name + '」で解放）</li>').join('');
+
+    const isActive = (O.getActiveOtomon() || {}).id === o.id;
+
+    body.innerHTML =
+      '<button class="otomon-back" id="otomon-detail-back">← 図鑑にもどる</button>' +
+      '<div class="od-head">' +
+        '<div class="od-face">' + otomonFace(o, 'medium') + '</div>' +
+        '<div class="od-name">' + o.name + '</div>' +
+        '<div class="od-tags">' + tags + '</div>' +
+      '</div>' +
+      '<div class="od-block">' +
+        '<div class="od-tier">' + t.face + ' ' + t.name + '</div>' +
+        '<div class="otomon-gauge"><div class="otomon-gauge-fill" style="width:' + pct + '%"></div></div>' +
+        '<div class="od-bondval">' + bondLabel + '</div>' +
+      '</div>' +
+      ((o.flavorText || o.description) ?
+        '<div class="od-block">' +
+          (o.flavorText  ? '<div class="od-flavor">「' + o.flavorText + '」</div>' : '') +
+          (o.description ? '<div class="od-desc">' + o.description + '</div>' : '') +
+        '</div>' : '') +
+      '<div class="od-block">' + rowsHtml + '</div>' +
+      (tiers.length ?
+        '<div class="otomon-section-title">💬 覚えたセリフ（' + gotN + ' / ' + tiers.length + '）</div>' +
+        '<div class="od-block"><ul class="od-lines">' + linesHtml + '</ul></div>' : '') +
+      (isActive ? '<div class="od-active-tag">🤝 いまのお供です</div>'
+                : '<button class="od-set-btn" id="od-set-btn">🤝 お供にする</button>');
+
+    document.getElementById('otomon-detail-back')
+      .addEventListener('click', () => { _detailId = null; renderPanel(); });
+    const setBtn = document.getElementById('od-set-btn');
+    if (setBtn) setBtn.addEventListener('click', () => {
+      if (O.setActive(o.id)) { showNudge(o.emoji || '🤝', o.name + 'をお供にしたよ！'); renderPanel(); }
+    });
   }
 
   // ── 描画：ホームのオトモンクエストカード（進行中のクエスト）──
@@ -1626,8 +1735,8 @@
   }
   function closeBondUp() { Overlay.close('otomon-bondup-overlay'); }
 
-  function openPanel()  { injectAll(); _pickEggUid = null; _pickMsg = ''; renderPanel(); Overlay.open('otomon-overlay'); }
-  function closePanel() { _pickEggUid = null; _pickMsg = ''; Overlay.close('otomon-overlay'); }
+  function openPanel()  { injectAll(); _pickEggUid = null; _pickMsg = ''; _detailId = null; renderPanel(); Overlay.open('otomon-overlay'); }
+  function closePanel() { _pickEggUid = null; _pickMsg = ''; _detailId = null; Overlay.close('otomon-overlay'); }
 
   function refreshHome() {
     renderHomeBuddyCard(); renderHomeEggCard(); renderQuestCard();
