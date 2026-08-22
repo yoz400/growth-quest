@@ -1192,15 +1192,23 @@ function doSugorokuRoll(modeKey, mins, partial) {
     itemBuffs.fixedDice = 0; saveItemBuffs();
   } else {
     baseDice = rollDice(modeKey, mins, partial);
-    if (itemBuffs.advantage) {
+    // 両方セットされていても確実に両方消費（else ifだと片方が次ロールに残るバグを防ぐ）
+    const _adv = itemBuffs.advantage;
+    const _b3  = itemBuffs.bestOf3;
+    if (_adv) { itemBuffs.advantage = false; }
+    if (_b3)  { itemBuffs.bestOf3  = false; }
+    if (_adv || _b3) saveItemBuffs();
+    if (_adv && _b3) {
+      // 灯籠＋砂時計：3回振って最大（bestOf3が強い方なので合算）
+      baseDice = Math.max(baseDice, rollDice(modeKey, mins, partial), rollDice(modeKey, mins, partial));
+      usedBuff = 'bestOf3';
+    } else if (_adv) {
       // 🏮導きの灯：2回振って良い方
       baseDice = Math.max(baseDice, rollDice(modeKey, mins, partial));
-      itemBuffs.advantage = false; saveItemBuffs();
       usedBuff = 'advantage';
-    } else if (itemBuffs.bestOf3) {
+    } else if (_b3) {
       // ⏳時の砂：3回振って一番大きい出目
       baseDice = Math.max(baseDice, rollDice(modeKey, mins, partial), rollDice(modeKey, mins, partial));
-      itemBuffs.bestOf3 = false; saveItemBuffs();
       usedBuff = 'bestOf3';
     }
   }
@@ -2368,13 +2376,18 @@ function renderActiveBuffs() {
 // 🎆 アイテム使用エフェクト演出（中央にアイコン＋テーマのパーティクル）
 const ITEM_FX = {
   // id: [中央アイコン, パーティクル絵文字, 画面フラッシュ色]
-  dragon_scroll:[ '🐉', ['🔥','🔥','✨','🔥','💥','🔥'], 'rgba(239,68,68,.28)' ],
-  cosmic_orb:   [ '🔮', ['🌟','✨','💫','🌌','⭐','✨'], 'rgba(139,92,246,.28)' ],
-  legend_gem:   [ '🌟', ['✨','💎','✨','⭐','💎','✨'], 'rgba(251,191,36,.26)' ],
-  phoenix:      [ '🪶', ['🔥','🪶','✨','🔥','🪶','💫'], 'rgba(251,146,60,.26)' ],
-  golden_key:   [ '🗝', ['✨','🔑','⭐','✨','🗝','✨'], 'rgba(251,191,36,.24)' ],
-  crown:        [ '👑', ['✨','👑','⭐','✨','💛','✨'], 'rgba(251,191,36,.22)' ],
-  compass:      [ '🧭', ['🧭','✨','➡','✨','🧭','✨'], 'rgba(125,150,255,.22)' ],
+  dragon_scroll:[ '🐉', ['🔥','🔥','✨','🔥','💥','🔥'], 'rgba(239,68,68,.28)'   ],
+  cosmic_orb:   [ '🔮', ['🌟','✨','💫','🌌','⭐','✨'], 'rgba(139,92,246,.28)'   ],
+  legend_gem:   [ '🌟', ['✨','💎','✨','⭐','💎','✨'], 'rgba(251,191,36,.26)'   ],
+  phoenix:      [ '🪶', ['🔥','🪶','✨','🔥','🪶','💫'], 'rgba(251,146,60,.26)'  ],
+  golden_key:   [ '🗝', ['✨','🔑','⭐','✨','🗝','✨'], 'rgba(251,191,36,.24)'   ],
+  crown:        [ '👑', ['✨','👑','⭐','✨','💛','✨'], 'rgba(251,191,36,.22)'    ],
+  compass:      [ '🧭', ['🧭','✨','➡','✨','🧭','✨'], 'rgba(125,150,255,.22)'  ],
+  // ── サイコロ系（使用時に🎲が飛び出して「これは出目に効く」と伝える）──
+  hourglass:    [ '⏳', ['🎲','🎲','🎲','✨','🎲','✨'], 'rgba(6,182,212,.24)'    ],
+  lantern:      [ '🏮', ['🎲','🎲','✨','🎲','✨','✨'], 'rgba(251,191,36,.22)'   ],
+  lucky_coin:   [ '🎲', ['🎲','✨','🎲','⭐','🎲','✨'], 'rgba(125,150,255,.22)'  ],
+  sage_staff:   [ '🪄', ['🎲','🎲','✨','🎲','✨','✨'], 'rgba(125,150,255,.22)'  ],
 };
 function playItemUseEffect(item) {
   if (!item) return;

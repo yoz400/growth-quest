@@ -1167,7 +1167,11 @@
       .od-set-btn { display:block; width:100%; margin:2px 0 4px; padding:13px; border:none; border-radius:14px;
         cursor:pointer; background:rgba(244,162,97,.18); color:var(--gold); font-weight:800; font-size:.95rem; }
       .od-set-btn:hover { background:rgba(244,162,97,.3); }
-      .od-active-tag { text-align:center; font-size:.88rem; font-weight:800; color:var(--cyan); padding:12px; }
+      .od-active-tag { text-align:center; font-size:.88rem; font-weight:800; color:var(--cyan); padding:10px 12px 6px; }
+      .od-touch-btn { display:block; width:100%; margin:2px 0 4px; padding:13px; border:none; border-radius:14px;
+        cursor:pointer; background:rgba(244,162,97,.18); color:var(--gold); font-weight:800; font-size:.95rem; }
+      .od-touch-btn:hover { background:rgba(244,162,97,.3); }
+      .od-touch-done { text-align:center; font-size:.84rem; font-weight:700; color:var(--cyan); padding:6px 12px 12px; }
       #otomon-birth-overlay { position:fixed; inset:0; z-index:96; background:rgba(0,0,0,.86);
         backdrop-filter:blur(14px); display:flex; align-items:center; justify-content:center;
         opacity:0; pointer-events:none; transition:opacity .3s; }
@@ -1535,8 +1539,12 @@
       (tiers.length ?
         '<div class="otomon-section-title">💬 覚えたセリフ（' + gotN + ' / ' + tiers.length + '）</div>' +
         '<div class="od-block"><ul class="od-lines">' + linesHtml + '</ul></div>' : '') +
-      (isActive ? '<div class="od-active-tag">🤝 いまのお供です</div>'
-                : '<button class="od-set-btn" id="od-set-btn">🤝 お供にする</button>');
+      (isActive
+        ? '<div class="od-active-tag">💛 いまのお供です</div>' +
+          (O.isTouchedToday()
+            ? '<div class="od-touch-done">🤝 今日はふれあい済み</div>'
+            : '<button class="od-touch-btn" id="od-touch-btn">🤝 ふれあう</button>')
+        : '<button class="od-set-btn" id="od-set-btn">🤝 お供にする</button>');
 
     document.getElementById('otomon-detail-back')
       .addEventListener('click', () => { _detailId = null; renderPanel(); });
@@ -1544,6 +1552,9 @@
     if (setBtn) setBtn.addEventListener('click', () => {
       if (O.setActive(o.id)) { showNudge(o.emoji || '🤝', o.name + 'をお供にしたよ！'); renderPanel(); }
     });
+    // ふれあうはお供の子だけ（touchActiveOtomon は active に対して働くため）
+    const touchBtn = document.getElementById('od-touch-btn');
+    if (touchBtn) touchBtn.addEventListener('click', () => { O.touchActiveOtomon(); renderPanel(); });
   }
 
   // ── 描画：ホームのオトモンクエストカード（進行中のクエスト）──
