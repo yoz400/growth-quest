@@ -1747,6 +1747,39 @@ header {
   font-size: .78rem; cursor: pointer; padding: 2px 5px; line-height: 1;
 }
 
+/* ── 新しい版のお知らせ帯（画面下）──
+   上には週次レビューの帯が出るので、ぶつからないよう下に置く。
+   iPhoneのホームバーに隠れないよう safe-area ぶん持ち上げる。 */
+#update-bar {
+  position: fixed; left: 50%; transform: translateX(-50%);
+  bottom: calc(-120px - env(safe-area-inset-bottom, 0px));
+  z-index: 200;
+  background: linear-gradient(135deg,#13132b,#1c1c34);
+  border: 1px solid rgba(251,191,36,.34); border-radius: 16px;
+  padding: 11px 34px 11px 14px;
+  display: flex; align-items: center; gap: 9px;
+  box-shadow: 0 14px 50px rgba(0,0,0,.85);
+  transition: bottom .45s cubic-bezier(.175,.885,.32,1.275);
+  /* 幅を内容任せにすると文字が1〜2文字ずつ折り返して読みにくくなる。
+     画面幅いっぱい（上限360px）を確保して、文言に余裕を持たせる。 */
+  width: calc(100vw - 24px); max-width: 360px;
+}
+#update-bar.show { bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
+.update-bar-icon { font-size: .95rem; flex-shrink: 0; }
+.update-bar-text { flex: 1; font-size: .78rem; line-height: 1.5; }
+.update-bar-text strong { color: #fbbf24; display: block; font-size: .82rem; }
+.update-bar-sub { color: var(--text-dim); font-size: .68rem; }
+.update-bar-now {
+  background: #fbbf24; border: none; border-radius: 9px; padding: 7px 13px;
+  color: #1a1a0a; font-family: 'Noto Sans JP',sans-serif; font-size: .73rem; font-weight: 700;
+  cursor: pointer; flex-shrink: 0; white-space: nowrap;
+}
+.update-bar-x {
+  position: absolute; top: 7px; right: 9px;
+  background: none; border: none; color: var(--text-dim);
+  font-size: .78rem; cursor: pointer; padding: 2px 5px; line-height: 1;
+}
+
 .past-review-item {
   padding: 11px 13px; margin-bottom: 7px;
   background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07);

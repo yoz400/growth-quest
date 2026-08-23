@@ -17,13 +17,13 @@ claude-practice/
 │   core → progression → quests → timer → settings-genre
 │   → calendar-review → features → boot → otomon
 ├─ assets/               画像（WebP。PWAアイコンのみPNG維持）
-├─ tools/bump_version.sh キャッシュ用バージョン一括+1
+├─ tools/bump_version.sh キャッシュ用バージョン一括+1（version.json も同時更新）
 └─ docs/                 設計書・仕様書（spec_*.md は Codex への発注書）
 ```
 
 ## 開発の掟（違反すると実際に事故る。詳細は docs/architecture_review.md §4）
 
-1. **CSS/JSを編集したら `bash tools/bump_version.sh`**（?v=guild-N を一括+1）。
+1. **CSS/JSを編集したら `bash tools/bump_version.sh`**（?v=guild-N と version.json を一括更新）。
    忘れると「直したのに直ってない」現象になる（過去に何度もハマった）
 2. **ファイルをまたぐ読み込み時参照は禁止**。コールバックは `() => fn()` で包む。
    `typeof` はTDZ（宣言前のlet）に無力。**起動フリーズ事故3回の原因**

@@ -2,7 +2,7 @@
 //  Growth Quest — Service Worker
 //  バージョンを上げると古いキャッシュが自動削除されます
 // ═══════════════════════════════════════════════════════
-const CACHE_NAME = 'gq-cache-v15';
+const CACHE_NAME = 'gq-cache-v16';
 
 // インストール時に事前キャッシュするファイル一覧
 const PRECACHE_URLS = [
@@ -112,11 +112,19 @@ self.addEventListener('fetch', event => {
   // 同一オリジン以外（外部CDNなど）はそのまま通す
   if (url.origin !== self.location.origin) return;
 
+  // 「新しい版が出ていないか」を確かめるリクエストは横取りしない。
+  // ここを通すと、確認そのものがキャッシュから返って永遠に古い番号を見続ける。
+  // ついでにキャッシュも汚さない（vcheck付きURLは毎回違うため）。
+  if (url.searchParams.has('vcheck') || url.pathname.endsWith('/version.json')) return;
+
   // ナビゲーション（HTMLページ遷移）→ Network First
   // オンラインなら最新を取得。失敗時はキャッシュで代替
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request)
+      // cache:'reload' でブラウザ自身のキャッシュも飛ばす。
+      // GitHub Pages は index.html に max-age=600 を付けるため、これが無いと
+      // 「更新したのに10分間は古いHTMLが返る」時間帯ができてしまう。
+      fetch(request.url, { cache: 'reload', credentials: 'same-origin' })
         .then(res => {
           // 成功したら最新をキャッシュにも保存
           const clone = res.clone();

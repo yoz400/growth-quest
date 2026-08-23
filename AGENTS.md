@@ -16,7 +16,7 @@ claude-practice/
 │   core → progression → quests → timer → settings-genre
 │   → calendar-review → features → boot → otomon
 ├─ assets/               画像（WebP。PWAアイコンのみPNG維持）
-├─ tools/bump_version.sh キャッシュ用バージョン一括+1
+├─ tools/bump_version.sh キャッシュ用バージョン一括+1（version.json も同時更新）
 └─ docs/                 設計書・仕様書（spec_*.md が発注書）
 ```
 
@@ -29,7 +29,7 @@ claude-practice/
 
 ## 開発の掟（違反すると実際に事故る）
 
-1. **CSS/JSを編集したら `bash tools/bump_version.sh`**（?v=guild-N を一括+1）
+1. **CSS/JSを編集したら `bash tools/bump_version.sh`**（?v=guild-N と version.json を一括更新）
 2. **ファイルをまたぐ「読み込み時参照」は禁止**。コールバックは `() => fn()` で包む。
    前のファイルから後のファイルの関数・変数は、読み込み時点では見えない
    （function宣言の巻き上げはファイル内でしか効かない。typeofもTDZには無力）

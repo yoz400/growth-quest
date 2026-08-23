@@ -40,7 +40,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles/app.css?v=guild-167">
+<link rel="stylesheet" href="styles/app.css?v=guild-171">
 </head>
 <body>
 
@@ -577,6 +577,19 @@
   <button class="review-prompt-x" id="review-prompt-dismiss">✕</button>
 </div>
 
+<!-- ─── UPDATE BAR（新しい版が出たときのお知らせ・画面下） ───
+     ⚠️ body直下・position:fixed の浮き要素。モーダル中に出すと inert を浴びて
+        押せなくなるため、表示側（boot.js）で Overlay.topId() を必ず見ること -->
+<div id="update-bar">
+  <span class="update-bar-icon">✨</span>
+  <span class="update-bar-text">
+    <strong>新しい版があります</strong>
+    <span class="update-bar-sub" id="update-bar-msg"></span>
+  </span>
+  <button class="update-bar-now" id="update-bar-now">更新する</button>
+  <button class="update-bar-x" id="update-bar-x" aria-label="あとで">✕</button>
+</div>
+
 <!-- ─── WEEKLY REVIEW MODAL ─── -->
 <div id="review-overlay">
   <div id="review-panel" class="gq-panel">
@@ -871,6 +884,7 @@
           </p>
         </div>
         <div class="about-version">Version 1.0.0 &nbsp;·&nbsp; 2026年5月</div>
+        <div class="about-version">ビルド <span id="about-build">—</span></div>
         <div class="about-desc">このアプリは、自分を整えたいすべての人へ</div>
         <div class="about-credit">Made by ヨージ × クロ ☕</div>
       </div>
@@ -1123,17 +1137,17 @@
 })();
 </script>
 
-<script src="scripts/areas.js?v=guild-167"></script>
-<script src="scripts/core.js?v=guild-167"></script>
-<script src="scripts/home-layers.js?v=guild-167"></script>
-<script src="scripts/progression.js?v=guild-167"></script>
-<script src="scripts/quests.js?v=guild-167"></script>
-<script src="scripts/timer.js?v=guild-167"></script>
-<script src="scripts/settings-genre.js?v=guild-167"></script>
-<script src="scripts/calendar-review.js?v=guild-167"></script>
-<script src="scripts/features.js?v=guild-167"></script>
-<script src="scripts/boot.js?v=guild-167"></script>
-<script src="scripts/otomon.js?v=guild-167"></script>
+<script src="scripts/areas.js?v=guild-171"></script>
+<script src="scripts/core.js?v=guild-171"></script>
+<script src="scripts/home-layers.js?v=guild-171"></script>
+<script src="scripts/progression.js?v=guild-171"></script>
+<script src="scripts/quests.js?v=guild-171"></script>
+<script src="scripts/timer.js?v=guild-171"></script>
+<script src="scripts/settings-genre.js?v=guild-171"></script>
+<script src="scripts/calendar-review.js?v=guild-171"></script>
+<script src="scripts/features.js?v=guild-171"></script>
+<script src="scripts/boot.js?v=guild-171"></script>
+<script src="scripts/otomon.js?v=guild-171"></script>
 
 <script>
 // ── Service Worker 登録 ────────────────────────────────

@@ -2900,4 +2900,102 @@ window.initTimelogExtras = initTimelogExtras;
 window.renderEquipmentModal = renderEquipmentModal;
 window.showEquipmentGetModal = showEquipmentGetModal;
 window.guildPickRecommended = guildPickRecommended;
+
+// ═══════════════════════════════════════════════════════
+//  新しい版が出ていないか確認する
+// ═══════════════════════════════════════════════════════
+//  ?v=guild-N のキャッシュ対策は「index.html が読み直されたとき」しか効かない。
+//  ホーム画面に置いたアプリはアイコンを押しても前の画面を再開するだけで、
+//  ページを読み直さないことがある。そうなると古い版に固定されたままになる
+//  （2026-08-23 ヨージのiPhoneで発生。PCとcurlは新しいのにスマホだけ古かった）。
+//  そこでアプリに戻ってきたタイミングで version.json を見に行き、番号が違えば
+//  画面下に帯を出す。
+//  ★勝手に読み直さない。タイマー計測中に画面が飛ぶほうが事故が大きいので、
+//    読み直すかどうかは必ず本人に押してもらう。
+
+// いま動いている版。index.html の ?v=guild-N が唯一の出どころ
+const GQ_BUILD = (() => {
+  const el = document.querySelector('link[href*="app.css?v="]');
+  const m  = el && (el.getAttribute('href') || '').match(/v=(guild-\d+)/);
+  return m ? m[1] : '';
+})();
+
+let _buildCheckAt   = 0;
+let _buildCheckBusy = false;
+
+function checkForNewBuild() {
+  if (!GQ_BUILD || _buildCheckBusy) return;
+  const now = Date.now();
+  if (now - _buildCheckAt < 60000) return;   // 確認は1分に1回まで（通信の無駄打ちを防ぐ）
+  _buildCheckAt = now;                       // 失敗しても連打しないよう、先に立てる
+  _buildCheckBusy = true;
+  // vcheck 付きのURLはサービスワーカーが横取りしない約束（sw.js 参照）。
+  // no-store と合わせて、必ずサーバーの最新を見に行く。
+  fetch('version.json?vcheck=' + now, { cache: 'no-store' })
+    .then(res => (res && res.ok) ? res.json() : null)
+    .then(json => {
+      const latest = json && json.version;
+      if (latest && latest !== GQ_BUILD && latest !== _dismissedBuild) showUpdateBar(latest);
+    })
+    .catch(() => {})                         // オフライン等。次に戻ってきたとき確認する
+    .finally(() => { _buildCheckBusy = false; });
+}
+
+let _pendingBuild   = null;  // 見つかった新しい版（帯を出しておくべき状態）
+let _dismissedBuild = null;  // 「あとで」と言われた版。この起動中は蒸し返さない
+let _barKeeper      = null;  // モーダルの開閉を見張るタイマー
+
+function showUpdateBar(latest) {
+  const msg = document.getElementById('update-bar-msg');
+  if (!msg) return;
+  _pendingBuild = latest;
+  msg.textContent = latest;
+  if (!_barKeeper) _barKeeper = setInterval(syncUpdateBar, 800);
+  syncUpdateBar();
+}
+
+// ⚠️ この帯は OverlayManager の外にいる浮きカード（body直下・position:fixed）。
+//    モーダルが開くと OverlayManager が body 直下の要素をすべて inert にするため、
+//    巻き添えで「見えているのに押せない」状態のまま画面下に居座る。
+//    出す瞬間に閉じているかを一度見るだけでは足りない。あとからモーダルが
+//    開くほうが多いため（実際、召喚オンボーディングで再現した）、
+//    開いている間はずっと引っ込め、閉じたらまた出す＝見張り続ける必要がある。
+function syncUpdateBar() {
+  const bar = document.getElementById('update-bar');
+  if (!bar) return;
+  if (!_pendingBuild) { bar.classList.remove('show'); return; }
+  const overlayOpen = (typeof Overlay !== 'undefined' && Overlay.topId) ? !!Overlay.topId() : false;
+  bar.classList.toggle('show', !overlayOpen);
+}
+
+// 「あとで」＝この版についてはこの起動中もう出さない（読み直せば自然に消える）
+function dismissUpdateBar() {
+  _dismissedBuild = _pendingBuild;
+  _pendingBuild = null;
+  clearInterval(_barKeeper); _barKeeper = null;
+  document.getElementById('update-bar')?.classList.remove('show');
+}
+
+document.getElementById('update-bar-x')?.addEventListener('click', dismissUpdateBar);
+document.getElementById('update-bar-now')?.addEventListener('click', () => {
+  dismissUpdateBar();
+  // サービスワーカーも新しいものに入れ替えてから読み直す。
+  // 入れ替えが終わらなくても必ず読み直せるよう、時間で打ち切る。
+  try { navigator.serviceWorker?.getRegistration().then(r => r && r.update()).catch(() => {}); } catch (e) {}
+  setTimeout(() => location.reload(), 1200);
+});
+
+// アプリに戻ってきたとき／ブラウザが前の画面を復元したとき／起動から少し経ったとき
+document.addEventListener('visibilitychange', () => { if (!document.hidden) checkForNewBuild(); });
+window.addEventListener('pageshow', e => { if (e.persisted) checkForNewBuild(); });
+setTimeout(checkForNewBuild, 3000);
+
+// 設定の「Growth Quest について」に、いま動いている版を出す
+(() => {
+  const el = document.getElementById('about-build');
+  if (el) el.textContent = GQ_BUILD || '不明';
+})();
+
+window.GQ_BUILD = GQ_BUILD;
+window.checkForNewBuild = checkForNewBuild;
 })();
