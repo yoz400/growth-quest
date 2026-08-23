@@ -40,7 +40,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles/app.css?v=guild-161">
+<link rel="stylesheet" href="styles/app.css?v=guild-162">
 </head>
 <body>
 
@@ -291,8 +291,12 @@
     <div id="koku-quote-box" style="display:none">
       <div class="koku-quote-text" id="koku-quote-text"></div>
       <div class="koku-quote-author" id="koku-quote-author"></div>
+      <!-- ⚠️ ♡お気に入りを戻さないこと（2026-08-23 ヨージ判断で撤去）
+           押すだけでバッジ💌と称号が手に入る＝判断基準1「努力を要求しない報酬を
+           与えない」に反していた。集める楽しみはオトモン図鑑が担う。
+           名言そのものは残す（学習を終えた人にだけ出る＝基準に合う）。
+           経緯: docs/AI/DECISIONS.md 2026-08-23 -->
       <div class="koku-quote-actions">
-        <button class="koku-q-btn" id="koku-fav-btn">♡ お気に入り</button>
         <button class="koku-q-btn" id="koku-share-btn">📤 コピー</button>
       </div>
     </div>
@@ -1119,17 +1123,17 @@
 })();
 </script>
 
-<script src="scripts/areas.js?v=guild-161"></script>
-<script src="scripts/core.js?v=guild-161"></script>
-<script src="scripts/home-layers.js?v=guild-161"></script>
-<script src="scripts/progression.js?v=guild-161"></script>
-<script src="scripts/quests.js?v=guild-161"></script>
-<script src="scripts/timer.js?v=guild-161"></script>
-<script src="scripts/settings-genre.js?v=guild-161"></script>
-<script src="scripts/calendar-review.js?v=guild-161"></script>
-<script src="scripts/features.js?v=guild-161"></script>
-<script src="scripts/boot.js?v=guild-161"></script>
-<script src="scripts/otomon.js?v=guild-161"></script>
+<script src="scripts/areas.js?v=guild-162"></script>
+<script src="scripts/core.js?v=guild-162"></script>
+<script src="scripts/home-layers.js?v=guild-162"></script>
+<script src="scripts/progression.js?v=guild-162"></script>
+<script src="scripts/quests.js?v=guild-162"></script>
+<script src="scripts/timer.js?v=guild-162"></script>
+<script src="scripts/settings-genre.js?v=guild-162"></script>
+<script src="scripts/calendar-review.js?v=guild-162"></script>
+<script src="scripts/features.js?v=guild-162"></script>
+<script src="scripts/boot.js?v=guild-162"></script>
+<script src="scripts/otomon.js?v=guild-162"></script>
 
 <script>
 // ── Service Worker 登録 ────────────────────────────────

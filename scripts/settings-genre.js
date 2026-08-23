@@ -911,12 +911,13 @@ const SCENE_TAG_LABELS = {
 };
 
 function renderDailyQuote() {
-  // 響く言葉はダッシュボードから外したため、表示ウィジェットが無ければ
-  // 「今日の一言」だけ内部に保持して描画はスキップ（💬モーダルや週次で利用）
-  const scene = detectDailyScene();
-  currentDailyQuote = pickQuote(scene);
+  // 響く言葉はダッシュボードから外したので、表示先が無ければ何もしない。
+  //  ここで pickQuote を呼ぶと「出した」と記録され（gq_words_hist）、誰にも
+  //  見られないまま告の"1週間は同じ言葉を出さない"プールを消費してしまう。
   const card = document.getElementById('daily-quote-card');
   if (!card) return;
+  const scene = detectDailyScene();
+  currentDailyQuote = pickQuote(scene);
   if (!currentDailyQuote) { card.style.display = 'none'; return; }
   card.style.display = '';
   document.getElementById('dq-scene-tag').textContent = SCENE_TAG_LABELS[scene] || '今日の一言';
@@ -937,8 +938,9 @@ function updateDQFavBtn() {
 
 function updateKokuFavBtn() {
   if (!currentKokuQuote) return;
-  const isFav = favIds.has(currentKokuQuote.id);
   const btn = document.getElementById('koku-fav-btn');
+  if (!btn) return;                     // ♡撤去後は存在しない＝何もしない
+  const isFav = favIds.has(currentKokuQuote.id);
   btn.textContent = isFav ? '♥ お気に入り済み' : '♡ お気に入り';
   btn.classList.toggle('fav-active', isFav);
 }
@@ -978,12 +980,7 @@ document.getElementById('dq-refresh-btn')?.addEventListener('click', () => {
   updateDQFavBtn();
 });
 
-// Koku quote buttons
-document.getElementById('koku-fav-btn').addEventListener('click', () => {
-  if (!currentKokuQuote) return;
-  toggleFav(currentKokuQuote.id);
-  updateKokuFavBtn();
-});
+// Koku quote buttons（♡お気に入りは 2026-08-23 に撤去。index.html のメモ参照）
 document.getElementById('koku-share-btn').addEventListener('click', () => {
   copyQuoteToClipboard(currentKokuQuote);
   const btn = document.getElementById('koku-share-btn');
@@ -1163,7 +1160,6 @@ const BADGES = [
   { id:'b15', name:'セッション職人',       desc:'50セッション達成',               icon:'🎓', cat:'total',  rarity:'rare',      check:()=> (data.sessions||0) >= 50 },
   // 特別系
   { id:'b16', name:'レベル10突破',         desc:'レベル10に到達',                 icon:'✨', cat:'special', rarity:'rare',     check:()=> (data.level||1) >= 10 },
-  { id:'b17', name:'言葉コレクター',       desc:'名言を10個お気に入りに登録',      icon:'💌', cat:'special', rarity:'common',   check:()=> favIds.size >= 10 },
   { id:'b18', name:'ジャンルマスター',     desc:'1ジャンルで100分以上学習',        icon:'🔬', cat:'special', rarity:'rare',     check:()=> genres.some(g => (g.minutes||0) >= 100) },
   { id:'b19', name:'完璧な週',             desc:'7日間全て学習記録あり',           icon:'🌟', cat:'special', rarity:'epic',     check:()=> checkPerfectWeek() },
   { id:'b20', name:'伝説の探求者',         desc:'Lv5 & 7日連続 & 累計5時間達成',  icon:'🔮', cat:'special', rarity:'legendary', check:()=> (data.level||1)>=5 && (data.streak||0)>=7 && (data.totalMinutes||0)>=300 },
@@ -1189,7 +1185,7 @@ const BADGES = [
     favs:        () => (typeof favIds !== 'undefined' ? favIds.size : 0),
     praise:      () => (typeof praiseLogs !== 'undefined' ? sum(Object.values(praiseLogs).map(a => a.length)) : 0),
     skill:       () => (typeof skillData !== 'undefined' ? Object.keys(skillData).length : 0),
-    meta:        () => Object.keys(earnedBadges).length,
+    meta:        () => earnedBadgeCount(),
     conf:        () => data.confidenceLevel || 1,
     equip:       () => (typeof inventory !== 'undefined' ? inventory.length : 0),
     gcount:      () => G().length,
@@ -1231,7 +1227,6 @@ const BADGES = [
   fam('mo','朝活',['🌅','☀️','👑'],'start', M.morning, [5,50,200],'回');
   fam('ni','夜更かし',['🌙','🦉','👑'],'start', M.night, [5,50,200],'回');
   fam('fl','フロー',['🌊','🐋'],'start', M.flow, [5,50],'回');
-  fam('fv','名言コレクター',['💌','🏛️'],'special', M.favs, [10,50],'個');
   fam('pr','自分を褒める',['💛','😇'],'special', M.praise, [10,50],'回');
   fam('sk','世界樹の実',['🌱','🌳','🌟'],'special', M.skill, [1,10,30],'個');
   fam('mt','バッジ収集',['🏅','🏆','💎'],'special', M.meta, [10,50,100],'個');
@@ -1288,6 +1283,11 @@ function loadBadgeData() {
   try { return JSON.parse(localStorage.getItem('gq_badges') || '{}'); } catch { return {}; }
 }
 function saveBadgeData() { safeSetItem('gq_badges', JSON.stringify(earnedBadges)); }
+// 獲得数の集計。撤去済みバッジのidが gq_badges に残っていても数に含めない
+// （保存データは消さない＝将来の復活や誤削除に備える）
+function earnedBadgeCount() {
+  return BADGES.reduce((n, b) => n + (earnedBadges[b.id] ? 1 : 0), 0);
+}
 
 earnedBadges = loadBadgeData();
 sessionStartHour = new Date().getHours();
@@ -1344,7 +1344,7 @@ function openBadgesModal() {
 }
 
 function renderBadgeGrid() {
-  const earned = Object.keys(earnedBadges).length;
+  const earned = earnedBadgeCount();
   document.getElementById('badges-earned-count').textContent = earned;
   const totalEl = document.getElementById('badges-total-count');
   if (totalEl) totalEl.textContent = BADGES.length;
