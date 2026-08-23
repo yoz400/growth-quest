@@ -1888,6 +1888,14 @@ const ITEM_EFFECTS = {
         weekEnd: weekDates[6],
         protectedDates: missedDays,
       }));
+      // カレンダーに「守られた日」の印を残す。盾のキーは最新1回分しか持たない
+      // （次に使うと上書きされる）ので、印は data 側に別途ためておく。
+      // 今日は入れない＝これから学習できる日を、休んだ日として塗らないため。
+      if (!data.rescuedDays) data.rescuedDays = {};
+      // 既に印がある日は上書きしない（先に守ってくれた側の手柄を残す）
+      missedDays.forEach(k => { if (k < today && !data.rescuedDays[k]) data.rescuedDays[k] = 'shield'; });
+      saveData(data);
+      if (typeof renderCalendar === 'function') renderCalendar();
       return missedDays.length > 0
         ? `🛡 今週の未達成日 ${missedDays.length}日を保護しました！`
         : '🛡 今週はすでにすべて達成済みです！';
@@ -1911,7 +1919,8 @@ const ITEM_EFFECTS = {
       // 学習時間は入れない（記録の捏造にしない）。カレンダー上は専用マークで区別する。
       if (!data.rescuedDays) data.rescuedDays = {};
       const blanks = getRecentBlankDays(7);
-      blanks.forEach(k => { data.rescuedDays[k] = 'phoenix'; });
+      // 既に印がある日は上書きしない（先に守ってくれた側の手柄を残す）
+      blanks.forEach(k => { if (!data.rescuedDays[k]) data.rescuedDays[k] = 'phoenix'; });
       saveData(data);
       addBonusXP(30);
       if (typeof renderStreak === 'function') renderStreak();

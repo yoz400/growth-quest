@@ -5535,12 +5535,17 @@ body.eq-mood-galaxy    .anim-wrap::after {
   image-rendering: -webkit-optimize-contrast;
 }
 
-/* ═══ 🪶 救済マーク（鳳凰の羽で守られた日）═══
+/* ═══ 🪶🛡 救済マーク（アイテムで守られた日）═══
    学習した日のスタンプ（●★🌸✨）とは、はっきり別物に見せる。
-   記録の捏造にしないため「学習時間」は出さず、うすい羽の印だけを置く。 */
+   記録の捏造にしないため「学習時間」は出さず、守られた印だけを置く。
+   鳳凰の羽＝オレンジ系 ／ 守りの盾＝青系 で、どちらで守ったかも見て分かる。 */
 .cal-cell.rescued {
   background: linear-gradient(160deg, rgba(251,146,60,.14), rgba(251,191,36,.08));
   border-color: rgba(251,146,60,.38);
+}
+.cal-cell.rescued.by-shield {
+  background: linear-gradient(160deg, rgba(56,189,248,.14), rgba(129,140,248,.08));
+  border-color: rgba(56,189,248,.38);
 }
 .cal-rescue {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -5548,10 +5553,12 @@ body.eq-mood-galaxy    .anim-wrap::after {
   filter: drop-shadow(0 1px 2px rgba(251,146,60,.5));
   animation: rescueBreathe 3.2s ease-in-out infinite;
 }
+.cal-rescue.by-shield { filter: drop-shadow(0 1px 2px rgba(56,189,248,.5)); }
 .cal-rescue-cap {
   font-size: 8px; font-weight: 700; letter-spacing: .04em;
   color: rgba(251,191,36,.95);
 }
+.cal-rescue.by-shield .cal-rescue-cap { color: rgba(125,211,252,.95); }
 @keyframes rescueBreathe {
   0%,100% { transform: translateY(0) rotate(-4deg); opacity: .85; }
   50%     { transform: translateY(-2px) rotate(4deg); opacity: 1; }
@@ -5561,6 +5568,9 @@ body.eq-mood-galaxy    .anim-wrap::after {
   display: inline-block; margin-left: 6px; padding: 2px 8px; border-radius: 999px;
   font-size: 11px; font-weight: 700; white-space: nowrap;
   color: #fbbf24; background: rgba(251,146,60,.16); border: 1px solid rgba(251,146,60,.4);
+}
+.cdp-rescue.by-shield {
+  color: #7dd3fc; background: rgba(56,189,248,.16); border-color: rgba(56,189,248,.4);
 }
 
 /* ═══════════════════════════════════════

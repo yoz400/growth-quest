@@ -388,9 +388,35 @@ document.getElementById('reminder-toast')?.addEventListener('click', e => {
   e.currentTarget.classList.remove('show');
 });
 
+// ── 🪶🛡「守られた日」──────────────────────────────────
+//  学習はしていないが、アイテムで連続記録を守った日。学習日ではないので
+//  history には入れず、この一覧だけで管理する（集計は増えない）。
+const RESCUE_LABEL = {
+  phoenix: ['🪶', '鳳凰の羽に守られた日'],
+  shield:  ['🛡', '守りの盾に守られた日'],
+};
+// 日付キー → 'phoenix' | 'shield' の対応表。
+// 盾は gq_streak_shield_protected が最新1回分しか持たない（次に使うと消える）ため、
+// 使った時点で data.rescuedDays にも書いている。ここで盾のキーも読むのは、
+// この仕組みが入る前に使った盾のぶんを拾うための保険。
+// 今日は「これから学習できる日」なので、どちらの経路でも印を付けない。
+function getRescuedMap() {
+  const map = Object.assign({}, data.rescuedDays || {});
+  const today = todayKey();
+  try {
+    const s = JSON.parse(localStorage.getItem('gq_streak_shield_protected') || 'null');
+    if (s && Array.isArray(s.protectedDates)) {
+      s.protectedDates.forEach(d => { if (d < today && !map[d]) map[d] = 'shield'; });
+    }
+  } catch (e) {}
+  delete map[today];
+  return map;
+}
+
 function renderCalendar() {
   const y = calYear, m = calMonth;
   document.getElementById('cal-title').textContent = `${y}年${m + 1}月`;
+  const rescuedMap = getRescuedMap();
 
   const firstDow    = new Date(y, m, 1).getDay();     // 0=日
   const daysInMonth = new Date(y, m + 1, 0).getDate();
@@ -432,7 +458,7 @@ function renderCalendar() {
 
     // スタンプ
     let stampHTML = '';
-    const rescuedBy = (!isFuture && mins === 0) ? (data.rescuedDays || {})[k] : null;
+    const rescuedBy = (!isFuture && mins === 0) ? rescuedMap[k] : null;
     if (mins > 0 && !isFuture) {
       let lv, sym;
       if      (mins >= 120) { lv = 4; sym = '✨'; }
@@ -442,7 +468,8 @@ function renderCalendar() {
       stampHTML = `<div class="cal-stamp stamp-lv${lv}">${sym}<span class="cal-mins">${mins}分</span></div>`;
     } else if (rescuedBy) {
       // 救済マーク：学習した日ではないので、スタンプとは別の見た目にする
-      stampHTML = `<div class="cal-rescue" title="鳳凰の羽に守られた日">🪶<span class="cal-rescue-cap">守</span></div>`;
+      const [sym, label] = RESCUE_LABEL[rescuedBy] || RESCUE_LABEL.phoenix;
+      stampHTML = `<div class="cal-rescue by-${rescuedBy}" title="${label}">${sym}<span class="cal-rescue-cap">守</span></div>`;
     }
 
     // 連続ライン（右隣が同月&学習済み）
@@ -459,7 +486,7 @@ function renderCalendar() {
       isToday     ? 'today'   : '',
       isFuture    ? 'future'  : '',
       mins > 0 && !isFuture ? 'studied' : '',
-      rescuedBy   ? 'rescued' : '',
+      rescuedBy   ? 'rescued by-' + rescuedBy : '',
       streakRight ? 'streak-right' : '',
       dow === 0   ? 'sun'     : '',
       dow === 6   ? 'sat'     : '',
@@ -631,10 +658,14 @@ function showDayPopup(dateKey, cellEl) {
 
   const [y, mo, d] = dateKey.split('-');
   document.getElementById('cdp-date').textContent = `${y}年${parseInt(mo)}月${parseInt(d)}日`;
-  const rescuedBy = (data.rescuedDays || {})[dateKey];
+  const rescuedBy = getRescuedMap()[dateKey];
+  const rescueInfo = rescuedBy ? (RESCUE_LABEL[rescuedBy] || RESCUE_LABEL.phoenix) : null;
+  const rescueTag = rescueInfo
+    ? ` <span class="cdp-rescue by-${rescuedBy}">${rescueInfo[0]} ${rescueInfo[1]}</span>`
+    : '';
   document.getElementById('cdp-mins').innerHTML = mins
     ? `学習時間: <strong>${mins}分</strong>`
-    : (rescuedBy ? '学習記録なし <span class="cdp-rescue">🪶 鳳凰の羽に守られた日</span>' : '学習記録なし');
+    : '学習記録なし' + rescueTag;
   document.getElementById('cdp-sessions').innerHTML = det
     ? `セッション: <strong>${det.sessions}回</strong>` : '';
 
