@@ -5524,9 +5524,44 @@ body.eq-mood-galaxy    .anim-wrap::after {
 .cal-runner-run .cal-runner-sprite {
   animation: pwMove 5s ease-in-out infinite alternate, pwHop .5s ease-in-out infinite;
 }
-@keyframes pwMove  { from{ left: 4%; } to{ left: 88%; } }
+/* 走る範囲は1体ずつずらせるようにする（--pw-from / --pw-to を JS から与える）。
+   ずらさないと、複数体が同じ軌道に乗って完全に重なり、1体にしか見えない。 */
+@keyframes pwMove  { from{ left: var(--pw-from, 4%); } to{ left: var(--pw-to, 88%); } }
 @keyframes pwFloat { 0%,100%{ transform: translateY(-50%) rotate(-6deg);} 50%{ transform: translateY(-78%) rotate(6deg);} }
 @keyframes pwHop   { 0%,100%{ transform: translateY(-50%) scaleY(1);} 30%{ transform: translateY(-82%) scaleY(1.08);} 60%{ transform: translateY(-50%) scaleY(.94);} }
+/* オトモンの画像で走るとき（絵文字と同じくらいの大きさに揃える） */
+.cal-runner-img {
+  width: 22px; height: 22px; object-fit: contain;
+  image-rendering: -webkit-optimize-contrast;
+}
+
+/* ═══ 🪶 救済マーク（鳳凰の羽で守られた日）═══
+   学習した日のスタンプ（●★🌸✨）とは、はっきり別物に見せる。
+   記録の捏造にしないため「学習時間」は出さず、うすい羽の印だけを置く。 */
+.cal-cell.rescued {
+  background: linear-gradient(160deg, rgba(251,146,60,.14), rgba(251,191,36,.08));
+  border-color: rgba(251,146,60,.38);
+}
+.cal-rescue {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 1px; font-size: 15px; line-height: 1; opacity: .92;
+  filter: drop-shadow(0 1px 2px rgba(251,146,60,.5));
+  animation: rescueBreathe 3.2s ease-in-out infinite;
+}
+.cal-rescue-cap {
+  font-size: 8px; font-weight: 700; letter-spacing: .04em;
+  color: rgba(251,191,36,.95);
+}
+@keyframes rescueBreathe {
+  0%,100% { transform: translateY(0) rotate(-4deg); opacity: .85; }
+  50%     { transform: translateY(-2px) rotate(4deg); opacity: 1; }
+}
+/* 日付ポップアップの「守られた日」バッジ */
+.cdp-rescue {
+  display: inline-block; margin-left: 6px; padding: 2px 8px; border-radius: 999px;
+  font-size: 11px; font-weight: 700; white-space: nowrap;
+  color: #fbbf24; background: rgba(251,146,60,.16); border: 1px solid rgba(251,146,60,.4);
+}
 
 /* ═══════════════════════════════════════
    overlay共通（Phase A / spec_overlay_manager.md）

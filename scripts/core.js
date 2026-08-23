@@ -360,6 +360,7 @@ const DEFAULT_DATA = {
   confidenceLevel: 1,        // 自信レベル
   history: {}, historyDetails: {},
   morningSessions: 0, nightSessions: 0, flowSessions: 0, freezeEverUsed: false,
+  rescuedDays: {},           // 救済マーク（日付キー → 'phoenix'）。学習記録ではなく「守られた日」の印
 };
 
 const DEFAULT_SETTINGS = {
@@ -377,6 +378,7 @@ function loadData() {
     const d = { ...DEFAULT_DATA, ...JSON.parse(localStorage.getItem('gq_data') || '{}') };
     if (!d.history) d.history = {};
     if (!d.historyDetails) d.historyDetails = {};
+    if (!d.rescuedDays) d.rescuedDays = {};
     return d;
   } catch { return { ...DEFAULT_DATA }; }
 }
@@ -459,6 +461,22 @@ function getMissedDaysInWeek(weekDates) {
   const completedDates = getCompletedStudyDates();
   const today = todayKey();
   return weekDates.filter(date => date <= today && !completedDates.includes(date));
+}
+
+// 昨日からさかのぼって「学習記録の無い日」が何日つづいているかを返す。
+// 学習した日に当たった時点で打ち切る＝連続を切った“空白のかたまり”だけを拾う。
+// 今日は含めない（これから学習できる日を、休んだ日として塗ってしまわないため）。
+function getRecentBlankDays(maxDays = 7) {
+  const out = [];
+  const base = new Date(); base.setHours(0, 0, 0, 0);
+  for (let i = 1; i <= maxDays; i++) {
+    const d = new Date(base);
+    d.setDate(base.getDate() - i);
+    const k = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    if ((data.history[k] || 0) > 0) break;
+    out.push(k);
+  }
+  return out;
 }
 
 data = loadData();
@@ -1825,7 +1843,7 @@ const ITEM_NEXT_HINTS = {
   // ── レア ──
   legend_gem:   ['🌟 天運の輝き',   '+50 XP & 次のサイコロ +3'],
   dragon_scroll:['🐉 龍の覚醒',     '24時間すべてのXPが 2倍'],
-  phoenix:      ['🪶 不死の加護',   '連続記録が復活＋🧊＋30 XP'],
+  phoenix:      ['🪶 不死の加護',   '連続記録が復活＋🧊＋30 XP・空白日に🪶'],
   cosmic_orb:   ['🔮 宇宙ガチャ',   '強力バフ3つをランダムGET'],
   golden_key:   ['🗝 封印解放',     '目覚めアイテムを1つ入手'],
 };
@@ -1885,14 +1903,22 @@ const ITEM_EFFECTS = {
     },
   },
   phoenix: {
-    confirm: 'ストリークを復活（0なら1へ）＋🧊フリーズ補充＋30 XP',
+    confirm: 'ストリークを復活（0なら1へ）＋🧊フリーズ補充＋30 XP\n直前の空白日にカレンダーへ🪶の印がつきます',
     apply() {
       if ((data.streak || 0) === 0) data.streak = 1;
       data.freezeItems = Math.min(3, (data.freezeItems || 0) + 1);
+      // 直前の空白日に「鳳凰に守られた日」の印を残す。
+      // 学習時間は入れない（記録の捏造にしない）。カレンダー上は専用マークで区別する。
+      if (!data.rescuedDays) data.rescuedDays = {};
+      const blanks = getRecentBlankDays(7);
+      blanks.forEach(k => { data.rescuedDays[k] = 'phoenix'; });
       saveData(data);
       addBonusXP(30);
       if (typeof renderStreak === 'function') renderStreak();
-      return '🪶 不死の加護！連続記録が復活＋30XP';
+      if (typeof renderCalendar === 'function') renderCalendar();
+      return blanks.length
+        ? `🪶 不死の加護！連続記録が復活＋30XP（空白の${blanks.length}日に🪶の印）`
+        : '🪶 不死の加護！連続記録が復活＋30XP';
     },
   },
   golden_key: {

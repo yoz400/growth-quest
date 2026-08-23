@@ -432,6 +432,7 @@ function renderCalendar() {
 
     // スタンプ
     let stampHTML = '';
+    const rescuedBy = (!isFuture && mins === 0) ? (data.rescuedDays || {})[k] : null;
     if (mins > 0 && !isFuture) {
       let lv, sym;
       if      (mins >= 120) { lv = 4; sym = '✨'; }
@@ -439,6 +440,9 @@ function renderCalendar() {
       else if (mins >= 30)  { lv = 2; sym = '★'; }
       else                  { lv = 1; sym = '●'; }
       stampHTML = `<div class="cal-stamp stamp-lv${lv}">${sym}<span class="cal-mins">${mins}分</span></div>`;
+    } else if (rescuedBy) {
+      // 救済マーク：学習した日ではないので、スタンプとは別の見た目にする
+      stampHTML = `<div class="cal-rescue" title="鳳凰の羽に守られた日">🪶<span class="cal-rescue-cap">守</span></div>`;
     }
 
     // 連続ライン（右隣が同月&学習済み）
@@ -455,6 +459,7 @@ function renderCalendar() {
       isToday     ? 'today'   : '',
       isFuture    ? 'future'  : '',
       mins > 0 && !isFuture ? 'studied' : '',
+      rescuedBy   ? 'rescued' : '',
       streakRight ? 'streak-right' : '',
       dow === 0   ? 'sun'     : '',
       dow === 6   ? 'sat'     : '',
@@ -512,16 +517,8 @@ function decoratePerfectWeeks(grid, cells, todayStart) {
   }
   if (!perfectRows.length) return;
 
-  // 走り回る相棒：オトモンが孵化していればそのオトモン、いなければ導きの妖精
-  let sprite = '🧚', mode = 'fly';
-  try {
-    const disc = window.Otomon ? window.Otomon.getDiscovered() : [];
-    if (disc && disc.length) {
-      const o = (window.Otomon.getActiveOtomon && window.Otomon.getActiveOtomon()) || disc[0];
-      sprite = o.emoji || '🐾';
-      mode = 'run';
-    }
-  } catch (e) {}
+  // 走り回る相棒：手に入れたオトモンたち（最大4体）。1体もいなければ導きの妖精
+  const runners = getPerfectWeekRunners();
 
   const gridRect = grid.getBoundingClientRect();
   if (!gridRect.height) return;   // レイアウト未確定時はスキップ（次回描画で付く）
@@ -533,15 +530,71 @@ function decoratePerfectWeeks(grid, cells, todayStart) {
     if (!first) return;
     const rr = first.getBoundingClientRect();
     const top = rr.top - gridRect.top, h = rr.height;
-    const runner = document.createElement('div');
-    runner.className = 'cal-pw-runner cal-runner-' + mode;
-    runner.style.top = top + 'px';
-    runner.style.height = h + 'px';
-    runner.style.animationDelay = (i * 1.3) + 's';
-    runner.innerHTML = `<span class="cal-runner-sprite">${sprite}</span>`;
-    layer.appendChild(runner);
+    runners.forEach((o, j) => {
+      const runner = document.createElement('div');
+      runner.className = 'cal-pw-runner cal-runner-' + (o ? 'run' : 'fly');
+      runner.style.top = top + 'px';
+      runner.style.height = h + 'px';
+      const sprite = makeRunnerSprite(o);
+      // 1体ずつ「走る範囲・速さ・高さ・開始位置」をずらす。
+      // 全部そろえると同じ軌道に完全に重なって、1体しか居ないように見える。
+      // ディレイを負の値にすると「すでに走り出した途中」から始まるので、
+      // 描画した瞬間からバラけて見える（待ち時間が生まれない）。
+      sprite.style.setProperty('--pw-from', (4 + j * 7) + '%');
+      sprite.style.setProperty('--pw-to',   (88 - j * 5) + '%');
+      sprite.style.animationDuration = (5 + j * 0.9) + 's, ' + (o ? 0.5 + j * 0.06 : 1.6) + 's';
+      sprite.style.animationDelay    = (-(i * 1.3 + j * 1.7)) + 's, 0s';
+      sprite.style.top  = (j % 2 === 0 ? 34 : 64) + '%';
+      // アニメを切っている人（prefers-reduced-motion）向けの位置。
+      // 動きが止まると全員が同じ場所に固まるので、静止位置も散らしておく。
+      sprite.style.left = (10 + j * 22) + '%';
+      runner.appendChild(sprite);
+      layer.appendChild(runner);
+    });
   });
   grid.appendChild(layer);
+}
+
+// 完璧な週で走らせる顔ぶれ。お供を先頭に、あとは出会った順。多すぎると
+// マスの上が渋滞するので最大4体。1体もいなければ [null]（＝導きの妖精）を返す。
+function getPerfectWeekRunners() {
+  try {
+    const O = window.Otomon;
+    const disc = (O && O.getDiscovered) ? (O.getDiscovered() || []) : [];
+    if (!disc.length) return [null];
+    const activeId = ((O.getActiveOtomon && O.getActiveOtomon()) || {}).id;
+    return disc.slice().sort((a, b) => {
+      if (a.id === activeId) return -1;
+      if (b.id === activeId) return 1;
+      return (a.firstMetAt || 0) - (b.firstMetAt || 0);
+    }).slice(0, 4);
+  } catch (e) {
+    return [null];
+  }
+}
+
+// 走る1体分の見た目。画像があれば画像、無ければ／読み込みに失敗したら絵文字。
+function makeRunnerSprite(o) {
+  const emo = (o && o.emoji) || '🧚';
+  const src = o && o.image && (o.image.small || o.image.medium || o.image.large);
+  if (src) {
+    const img = document.createElement('img');
+    img.className = 'cal-runner-sprite cal-runner-img';
+    img.src = src;
+    img.alt = o.name || '';
+    img.addEventListener('error', () => {
+      const span = document.createElement('span');
+      span.className = 'cal-runner-sprite';
+      span.style.cssText = img.style.cssText;
+      span.textContent = emo;
+      img.replaceWith(span);
+    });
+    return img;
+  }
+  const span = document.createElement('span');
+  span.className = 'cal-runner-sprite';
+  span.textContent = emo;
+  return span;
 }
 
 function renderCalStats(y, m) {
@@ -578,8 +631,10 @@ function showDayPopup(dateKey, cellEl) {
 
   const [y, mo, d] = dateKey.split('-');
   document.getElementById('cdp-date').textContent = `${y}年${parseInt(mo)}月${parseInt(d)}日`;
+  const rescuedBy = (data.rescuedDays || {})[dateKey];
   document.getElementById('cdp-mins').innerHTML = mins
-    ? `学習時間: <strong>${mins}分</strong>` : '学習記録なし';
+    ? `学習時間: <strong>${mins}分</strong>`
+    : (rescuedBy ? '学習記録なし <span class="cdp-rescue">🪶 鳳凰の羽に守られた日</span>' : '学習記録なし');
   document.getElementById('cdp-sessions').innerHTML = det
     ? `セッション: <strong>${det.sessions}回</strong>` : '';
 
