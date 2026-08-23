@@ -544,6 +544,14 @@ function decoratePerfectWeeks(grid, cells, todayStart) {
   }
   if (!perfectRows.length) return;
 
+  // ⚠️ otomon.js は、このファイルより後に読み込まれる（読み込み順の最後）。
+  //    起動時の renderCalendar() は boot.js から走るので、そのとき window.Otomon は
+  //    まだ存在しない。ここで諦めると、手持ちが何体いても「導きの妖精」のまま
+  //    固定されてしまう（2026-08-24 ヨージの実機で発覚。プレビューでは検証時に
+  //    手で renderCalendar() を呼び直していたため、一度も再現しなかった）。
+  //    読み込みを待って描き直す。
+  if (!window.Otomon) { waitOtomonThenRedraw(); return; }
+
   // 走り回る相棒：手に入れたオトモンたち（最大4体）。1体もいなければ導きの妖精
   const runners = getPerfectWeekRunners();
 
@@ -580,6 +588,19 @@ function decoratePerfectWeeks(grid, cells, todayStart) {
     });
   });
   grid.appendChild(layer);
+}
+
+// otomon.js の読み込みを待ってカレンダーを描き直す。
+// スクリプトは順番に同期で読まれるので、実際は1回目（次のタイマー）で足りる。
+// 取りこぼしに備えて数回だけ様子を見て、来なければ諦める（妖精のまま＝実害なし）。
+let _otomonWaitTries = 0;
+function waitOtomonThenRedraw() {
+  if (_otomonWaitTries >= 20) return;      // 約2秒で打ち切り
+  _otomonWaitTries++;
+  setTimeout(() => {
+    if (window.Otomon) { _otomonWaitTries = 0; renderCalendar(); }
+    else waitOtomonThenRedraw();
+  }, 100);
 }
 
 // 完璧な週で走らせる顔ぶれ。お供を先頭に、あとは出会った順。多すぎると
