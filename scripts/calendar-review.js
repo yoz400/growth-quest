@@ -2105,19 +2105,51 @@ function checkWeeklyReviewTrigger() {
   setTimeout(() => showReviewAutoPrompt(target), 2200);
 }
 
-function showReviewAutoPrompt(wk) {
+// 自動で消えるまでの時間。押されなければ静かに引っ込む（ドットは残る）
+const REVIEW_PROMPT_AUTO_HIDE_MS = 12000;
+let _reviewPromptHideTimer = null;
+
+function showReviewAutoPrompt(wk, _tries) {
+  const prompt = document.getElementById('review-prompt');
+  if (!prompt) return;
+
+  // ⚠️ この帯は OverlayManager の外にいる浮きカード（body直下・position:fixed）。
+  //    モーダルが開いている間に出すと、OverlayManager が body 直下の要素を
+  //    すべて inert にするため、巻き添えで「見えているのに押せない」状態になり、
+  //    ヘッダーを覆ったまま固まる（2026-08-23 実機で発生・inert:true を計測）。
+  //    開いている間は出さず、閉じてから出す。
+  const anyOverlayOpen = (typeof Overlay !== 'undefined' && Overlay.topId) ? !!Overlay.topId() : false;
+  if (anyOverlayOpen) {
+    const tries = (_tries || 0) + 1;
+    if (tries > 60) return;   // 1分待って閉じなければ諦める（次の起動でまた促す）
+    setTimeout(() => showReviewAutoPrompt(wk, tries), 1000);
+    return;
+  }
+
   const now = new Date();
   const msg = now.getDay()===0 ? '今週の学習を振り返りませんか？' : '先週の学習を振り返りませんか？';
   document.getElementById('review-prompt-msg').textContent = msg;
-  const prompt = document.getElementById('review-prompt');
   prompt.classList.add('show');
 
-  document.getElementById('review-prompt-open').onclick = () => {
+  // 押されないまま画面上部を占領し続けないよう、一定時間で引っ込める。
+  // ここでは skips を増やさない（無視ではなく「見逃した」扱い。ドットで残す）
+  clearTimeout(_reviewPromptHideTimer);
+  _reviewPromptHideTimer = setTimeout(() => {
     prompt.classList.remove('show');
+    setReviewDot(true);
+  }, REVIEW_PROMPT_AUTO_HIDE_MS);
+
+  const close = () => {
+    clearTimeout(_reviewPromptHideTimer);
+    prompt.classList.remove('show');
+  };
+
+  document.getElementById('review-prompt-open').onclick = () => {
+    close();
     openReviewModal(wk);
   };
   document.getElementById('review-prompt-dismiss').onclick = () => {
-    prompt.classList.remove('show');
+    close();
     reviewStatus.lastSkipped = wk;
     reviewStatus.skips = (reviewStatus.skips||0) + 1;
     saveReviewStatus();
