@@ -5568,6 +5568,23 @@ body.eq-mood-galaxy    .anim-wrap::after {
   image-rendering: -webkit-optimize-contrast;
 }
 
+/* タップでその子の図鑑をひらく。
+   .cal-pw-layer は pointer-events:none なので、この子だけ受け取れるようにする。
+   動いている的を指で狙うので、見た目は22pxのまま余白で当たり判定を広げる
+   （box-sizing:border-box のため、paddingぶん外側を大きくする）。 */
+.cal-runner-sprite.tappable { pointer-events: auto; cursor: pointer; }
+.cal-runner-img.tappable {
+  width: 36px; height: 36px; padding: 7px;
+  border-radius: 50%;
+  transition: background .15s, transform .15s;
+}
+.cal-runner-img.tappable:active,
+.cal-runner-img.tappable:focus-visible {
+  background: rgba(255,255,255,.16);
+  outline: none;
+}
+.cal-runner-sprite.tappable:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+
 /* ═══ 🪶🛡 救済マーク（アイテムで守られた日）═══
    学習した日のスタンプ（●★🌸✨）とは、はっきり別物に見せる。
    記録の捏造にしないため「学習時間」は出さず、守られた印だけを置く。

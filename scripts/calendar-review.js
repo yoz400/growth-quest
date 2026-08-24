@@ -552,8 +552,9 @@ function decoratePerfectWeeks(grid, cells, todayStart) {
   //    読み込みを待って描き直す。
   if (!window.Otomon) { waitOtomonThenRedraw(); return; }
 
-  // 走り回る相棒：手に入れたオトモンたち（最大4体）。1体もいなければ導きの妖精
-  const runners = getPerfectWeekRunners();
+  // 走り回る相棒は「その週に1体だけ」。全員を毎週出すと、どの週も同じ顔ぶれで
+  // 賑やかすぎるうえ、週ごとの特別感が消える。誰が来るかは週によって変わる。
+  const pool = getRunnerPool();
 
   const gridRect = grid.getBoundingClientRect();
   if (!gridRect.height) return;   // レイアウト未確定時はスキップ（次回描画で付く）
@@ -565,29 +566,39 @@ function decoratePerfectWeeks(grid, cells, todayStart) {
     if (!first) return;
     const rr = first.getBoundingClientRect();
     const top = rr.top - gridRect.top, h = rr.height;
-    runners.forEach((o, j) => {
-      const runner = document.createElement('div');
-      runner.className = 'cal-pw-runner cal-runner-' + (o ? 'run' : 'fly');
-      runner.style.top = top + 'px';
-      runner.style.height = h + 'px';
-      const sprite = makeRunnerSprite(o);
-      // 1体ずつ「走る範囲・速さ・高さ・開始位置」をずらす。
-      // 全部そろえると同じ軌道に完全に重なって、1体しか居ないように見える。
-      // ディレイを負の値にすると「すでに走り出した途中」から始まるので、
-      // 描画した瞬間からバラけて見える（待ち時間が生まれない）。
-      sprite.style.setProperty('--pw-from', (4 + j * 7) + '%');
-      sprite.style.setProperty('--pw-to',   (88 - j * 5) + '%');
-      sprite.style.animationDuration = (5 + j * 0.9) + 's, ' + (o ? 0.5 + j * 0.06 : 1.6) + 's';
-      sprite.style.animationDelay    = (-(i * 1.3 + j * 1.7)) + 's, 0s';
-      sprite.style.top  = (j % 2 === 0 ? 34 : 64) + '%';
-      // アニメを切っている人（prefers-reduced-motion）向けの位置。
-      // 動きが止まると全員が同じ場所に固まるので、静止位置も散らしておく。
-      sprite.style.left = (10 + j * 22) + '%';
-      runner.appendChild(sprite);
-      layer.appendChild(runner);
-    });
+    const o = pickRunnerForWeek(pool, dkey(cells[r * 7]));
+
+    const runner = document.createElement('div');
+    runner.className = 'cal-pw-runner cal-runner-' + (o ? 'run' : 'fly');
+    runner.style.top = top + 'px';
+    runner.style.height = h + 'px';
+    const sprite = makeRunnerSprite(o);
+    // 週ごとに「走る範囲・速さ・開始位置」を少しずらす。
+    // そろえると複数の週がぴったり同じ動きをして、機械っぽく見える。
+    // ディレイを負の値にすると「すでに走り出した途中」から始まるので、
+    // 描画した瞬間からバラけて見える（待ち時間が生まれない）。
+    sprite.style.setProperty('--pw-from', (4 + (i % 3) * 6) + '%');
+    sprite.style.setProperty('--pw-to',   (88 - (i % 3) * 4) + '%');
+    sprite.style.animationDuration = (5 + (i % 4) * 0.8) + 's, ' + (o ? 0.52 : 1.6) + 's';
+    sprite.style.animationDelay    = (-(i * 1.7)) + 's, 0s';
+    sprite.style.top  = '46%';
+    // アニメを切っている人（prefers-reduced-motion）向けの静止位置。
+    // 動きが止まるので、ここが最終的な見た目になる。
+    sprite.style.left = (16 + (i % 3) * 24) + '%';
+    runner.appendChild(sprite);
+    layer.appendChild(runner);
   });
   grid.appendChild(layer);
+}
+
+// その週に出す1体を決める。毎回くじを引くと、カレンダーを描き直すたびに
+// 顔ぶれが入れ替わってチカチカする（月を送って戻るだけで別の子になる）。
+// そこで「その週の日付」から決める＝同じ週はいつ見ても同じ子、週が変われば別の子。
+function pickRunnerForWeek(pool, weekKey) {
+  if (!pool.length) return null;
+  let h = 0;
+  for (let i = 0; i < weekKey.length; i++) h = (h * 31 + weekKey.charCodeAt(i)) >>> 0;
+  return pool[h % pool.length];
 }
 
 // otomon.js の読み込みを待ってカレンダーを描き直す。
@@ -603,28 +614,42 @@ function waitOtomonThenRedraw() {
   }, 100);
 }
 
-// 完璧な週で走らせる顔ぶれ。お供を先頭に、あとは出会った順。多すぎると
-// マスの上が渋滞するので最大4体。1体もいなければ [null]（＝導きの妖精）を返す。
-function getPerfectWeekRunners() {
+// 走る候補になるオトモン一覧（出会った順）。1体もいなければ空配列。
+// ★並び順は必ず安定させること。pickRunnerForWeek がこの並びの何番目かで
+//   選ぶので、順番が揺れると「同じ週なのに別の子」になってしまう。
+function getRunnerPool() {
   try {
     const O = window.Otomon;
     const disc = (O && O.getDiscovered) ? (O.getDiscovered() || []) : [];
-    if (!disc.length) return [null];
-    const activeId = ((O.getActiveOtomon && O.getActiveOtomon()) || {}).id;
-    return disc.slice().sort((a, b) => {
-      if (a.id === activeId) return -1;
-      if (b.id === activeId) return 1;
-      return (a.firstMetAt || 0) - (b.firstMetAt || 0);
-    }).slice(0, 4);
+    return disc.slice().sort((a, b) =>
+      (a.firstMetAt || 0) - (b.firstMetAt || 0) || String(a.id).localeCompare(String(b.id)));
   } catch (e) {
-    return [null];
+    return [];
   }
 }
 
 // 走る1体分の見た目。画像があれば画像、無ければ／読み込みに失敗したら絵文字。
+// オトモンなら「タップでその子の図鑑をひらく」を仕込む（妖精のときは仕込まない）。
 function makeRunnerSprite(o) {
   const emo = (o && o.emoji) || '🧚';
   const src = o && o.image && (o.image.small || o.image.medium || o.image.large);
+
+  const wire = (el) => {
+    if (!o) return el;                 // オトモンが1体もいないときの妖精は押せない
+    el.classList.add('tappable');
+    el.setAttribute('role', 'button');
+    el.setAttribute('tabindex', '0');
+    el.title = (o.name || '') + 'の図鑑をひらく';
+    const open = (e) => {
+      e.preventDefault();
+      e.stopPropagation();             // 下のマスの「日付ポップアップ」を開かせない
+      if (window.Otomon && window.Otomon.openPanelAt) window.Otomon.openPanelAt(o.id);
+    };
+    el.addEventListener('click', open);
+    el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') open(e); });
+    return el;
+  };
+
   if (src) {
     const img = document.createElement('img');
     img.className = 'cal-runner-sprite cal-runner-img';
@@ -635,14 +660,14 @@ function makeRunnerSprite(o) {
       span.className = 'cal-runner-sprite';
       span.style.cssText = img.style.cssText;
       span.textContent = emo;
-      img.replaceWith(span);
+      img.replaceWith(wire(span));     // 差し替え後もタップできるように仕込み直す
     });
-    return img;
+    return wire(img);
   }
   const span = document.createElement('span');
   span.className = 'cal-runner-sprite';
   span.textContent = emo;
-  return span;
+  return wire(span);
 }
 
 function renderCalStats(y, m) {

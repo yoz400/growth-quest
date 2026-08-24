@@ -1747,6 +1747,12 @@
   function closeBondUp() { Overlay.close('otomon-bondup-overlay'); }
 
   function openPanel()  { injectAll(); _pickEggUid = null; _pickMsg = ''; _detailId = null; renderPanel(); Overlay.open('otomon-overlay'); }
+  // 特定の子の詳細をいきなり開く（カレンダーを走っているオトモンをタップしたとき用）。
+  // idが図鑑に無ければ renderDetailView 側で一覧に戻るので、ここでは検査しない。
+  function openPanelAt(id) {
+    injectAll(); _pickEggUid = null; _pickMsg = ''; _detailId = id || null;
+    renderPanel(); Overlay.open('otomon-overlay');
+  }
   function closePanel() { _pickEggUid = null; _pickMsg = ''; _detailId = null; Overlay.close('otomon-overlay'); }
 
   function refreshHome() {
@@ -3008,7 +3014,7 @@
     O.setOnChange(refreshHome);   // データ変更で 卵カード＋クエストカード を自動更新
     O.setOnHatch(showBirth);      // 孵化したら誕生演出
     refreshHome();
-    O.openPanel = openPanel; O.closePanel = closePanel;
+    O.openPanel = openPanel; O.closePanel = closePanel; O.openPanelAt = openPanelAt;
     O.renderHomeEggCard = renderHomeEggCard; O.renderQuestCard = renderQuestCard;
     O.renderHomeBuddyCard = renderHomeBuddyCard; O.refreshHome = refreshHome;
     O.renderPanel = renderPanel; O.showBirth = showBirth; O.fireNudge = fireNudge;
