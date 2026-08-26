@@ -1592,12 +1592,18 @@ function setReviewDot(show) {
   else if (!show && dot) dot.remove();
 }
 
-function openReviewModal(wk) {
+// period … 開いたときに選ばれるタブ。既定は 'day'。
+//   ヘッダーの📊ボタンは「その日の記録を見に行く」入口なので 'day' のまま。
+//   一方「週の振り返りを開く」意図の入口（自動プロンプト・過去の振り返り一覧・
+//   今週の振り返りに戻る）は 'week' を渡すこと。
+//   ※ 'day' タブは保存対象外（renderReviewFooter が閉じるボタンだけにする）ため、
+//     週の振り返りのつもりで開いた人が、保存できないまま迷子になっていた。
+function openReviewModal(wk, period) {
   rvWeekKey   = wk;
   rvGoalMins  = weeklyReviews[wk]?.goal?.targetMins  || 0;
   rvGoalBadge = weeklyReviews[wk]?.goal?.targetBadge || '';
   rvViewMode  = 'current';
-  rvPeriod    = 'day';         // 開いた時は日タブから
+  rvPeriod    = period || 'day';
   rvAnchor    = new Date();
 
   const dates = getWeekDates(wk);
@@ -1621,7 +1627,7 @@ function renderReviewFooter(isPast) {
   }
   if (isPast) {
     footer.innerHTML = `<button class="review-btn-secondary" id="review-back-btn">← 今週の振り返りに戻る</button>`;
-    document.getElementById('review-back-btn').addEventListener('click', () => openReviewModal(rvWeekKey));
+    document.getElementById('review-back-btn').addEventListener('click', () => openReviewModal(rvWeekKey, 'week'));
   } else {
     const isExisting = !!weeklyReviews[rvWeekKey];
     footer.innerHTML = `
@@ -2226,7 +2232,7 @@ function showPastReviews() {
     </div>`;
   }).join('');
   body.querySelectorAll('.past-review-item').forEach(item => {
-    item.addEventListener('click', () => openReviewModal(item.dataset.wk));
+    item.addEventListener('click', () => openReviewModal(item.dataset.wk, 'week'));
   });
 }
 
@@ -2303,7 +2309,8 @@ function showReviewAutoPrompt(wk, _tries) {
 
   document.getElementById('review-prompt-open').onclick = () => {
     close();
-    openReviewModal(wk);
+    // 「今週の学習を振り返りませんか？」と誘っておいて日タブを開かない
+    openReviewModal(wk, 'week');
   };
   document.getElementById('review-prompt-dismiss').onclick = () => {
     close();
