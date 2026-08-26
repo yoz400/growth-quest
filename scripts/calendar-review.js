@@ -594,11 +594,36 @@ function decoratePerfectWeeks(grid, cells, todayStart) {
 // その週に出す1体を決める。毎回くじを引くと、カレンダーを描き直すたびに
 // 顔ぶれが入れ替わってチカチカする（月を送って戻るだけで別の子になる）。
 // そこで「その週の日付」から決める＝同じ週はいつ見ても同じ子、週が変われば別の子。
+//
+// ⚠️ 日付のハッシュで選ぶ方式は捨てた。日付キーは隣の週と2文字しか違わず
+//    （09→16→23）、素朴なハッシュだとその差がいつも きっかり 28 になる。
+//    28は 2・4・7 で割り切れるので、手持ちが2体や4体だと**同じ月の週が
+//    全部同じ子**になった（2026-08-24 ヨージの実機で発覚）。
+//    撹拌を強くすれば偏りは消えるが、それでも運任せなので
+//    「2〜3週つづけて同じ子」は残る。求めているのは週ごとに違う顔なので、
+//    確率ではなく順ぐりで回して保証する。
 function pickRunnerForWeek(pool, weekKey) {
   if (!pool.length) return null;
-  let h = 0;
-  for (let i = 0; i < weekKey.length; i++) h = (h * 31 + weekKey.charCodeAt(i)) >>> 0;
-  return pool[h % pool.length];
+  if (pool.length === 1) return pool[0];
+  // その週が通算何週目か。隣の週とは必ず1違うので、必ず別の子になる。
+  const weekIndex = Math.floor(new Date(weekKey + 'T00:00:00').getTime() / 604800000);
+  // 始まりの位置は年ごとにずらす（毎年きっちり同じ並びにしない）
+  const offset = hashWeekKey(weekKey.slice(0, 4));
+  const n = pool.length;
+  return pool[(((weekIndex + offset) % n) + n) % n];
+}
+
+// 文字列 → よく散らばった32bitの数（FNV-1a ＋ 仕上げの撹拌）。
+function hashWeekKey(s) {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619) >>> 0;
+  }
+  h ^= h >>> 16; h = Math.imul(h, 2246822507) >>> 0;
+  h ^= h >>> 13; h = Math.imul(h, 3266489909) >>> 0;
+  h ^= h >>> 16;
+  return h >>> 0;
 }
 
 // otomon.js の読み込みを待ってカレンダーを描き直す。
