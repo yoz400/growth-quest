@@ -1618,6 +1618,17 @@ function openReviewModal(wk, period) {
 
 function renderReviewFooter(isPast) {
   const footer = document.getElementById('review-footer');
+
+  // 「過去の振り返り一覧」は日/週/月という“期間”の画面ではないので、
+  // 下の期間判定より先に処理する。
+  // ※以前は期間判定が先にあり、日タブから一覧を開くと戻るボタンが出ず、
+  //   一覧から振り返りへ戻る導線が消えていた（閉じることしかできなかった）
+  if (isPast) {
+    footer.innerHTML = `<button class="review-btn-secondary" id="review-back-btn">← 今週の振り返りに戻る</button>`;
+    document.getElementById('review-back-btn').addEventListener('click', () => openReviewModal(rvWeekKey, 'week'));
+    return;
+  }
+
   // 週以外のモードは保存対象外 → 閉じるボタンのみ
   if (rvPeriod !== 'week') {
     footer.innerHTML = `<button class="review-btn-secondary" id="review-close2-btn">閉じる</button>`;
@@ -1625,10 +1636,7 @@ function renderReviewFooter(isPast) {
       () => Overlay.close('review-overlay'));
     return;
   }
-  if (isPast) {
-    footer.innerHTML = `<button class="review-btn-secondary" id="review-back-btn">← 今週の振り返りに戻る</button>`;
-    document.getElementById('review-back-btn').addEventListener('click', () => openReviewModal(rvWeekKey, 'week'));
-  } else {
+  {
     const isExisting = !!weeklyReviews[rvWeekKey];
     footer.innerHTML = `
       <button class="review-btn-secondary" id="review-skip-btn">後で見る</button>
@@ -2292,19 +2300,33 @@ function showReviewAutoPrompt(wk, _tries) {
   const now = new Date();
   const msg = now.getDay()===0 ? '今週の学習を振り返りませんか？' : '先週の学習を振り返りませんか？';
   document.getElementById('review-prompt-msg').textContent = msg;
+
+  // ヘッダーを覆わない高さに出す。
+  // CSS の固定値（top:14px）だとロゴ・ナビ・XPゲージに被る。
+  // ヘッダーの高さは端末幅やボタンの折り返しで変わるので、出す瞬間に実測する。
+  // スクロールでヘッダーが画面外にあるときは負の値になるので下限を設ける。
+  const hdr = document.querySelector('#app > header');
+  const y = hdr ? Math.round(hdr.getBoundingClientRect().bottom) + 8 : 14;
+  prompt.style.top = Math.min(Math.max(y, 14), 220) + 'px';
   prompt.classList.add('show');
+
+  // 隠すときはインライン指定を外し、CSS の top:-90px（画面外）へ戻す
+  const hide = () => {
+    prompt.classList.remove('show');
+    prompt.style.top = '';
+  };
 
   // 押されないまま画面上部を占領し続けないよう、一定時間で引っ込める。
   // ここでは skips を増やさない（無視ではなく「見逃した」扱い。ドットで残す）
   clearTimeout(_reviewPromptHideTimer);
   _reviewPromptHideTimer = setTimeout(() => {
-    prompt.classList.remove('show');
+    hide();
     setReviewDot(true);
   }, REVIEW_PROMPT_AUTO_HIDE_MS);
 
   const close = () => {
     clearTimeout(_reviewPromptHideTimer);
-    prompt.classList.remove('show');
+    hide();
   };
 
   document.getElementById('review-prompt-open').onclick = () => {
