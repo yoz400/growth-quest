@@ -2276,71 +2276,88 @@ function checkWeeklyReviewTrigger() {
   setTimeout(() => showReviewAutoPrompt(target), 2200);
 }
 
-// 自動で消えるまでの時間。押されなければ静かに引っ込む（ドットは残る）
-const REVIEW_PROMPT_AUTO_HIDE_MS = 12000;
+// ⚠️ この帯は OverlayManager の外にいる浮きカード（body直下・position:fixed）。
+//    モーダルが開くと OverlayManager が body 直下の要素をすべて inert にするので、
+//    巻き添えで「見えているのに押せない」状態になり、居座ったまま固まる。
+//
+//    出す瞬間に1回 Overlay.topId() を見るだけでは足りない。
+//    **出したあとでモーダルが開く**向きの事故は防げないため（FAILURES 2026-08-23、
+//    #update-bar が同じ穴を踏んだ）、定期的に見張って出し入れする。
+const REVIEW_PROMPT_AUTO_HIDE_MS = 12000;  // 押されなければ静かに引っ込む（ドットは残る）
+const REVIEW_PROMPT_WATCH_MS     = 800;    // モーダルの開閉を見張る間隔
 let _reviewPromptHideTimer = null;
+let _reviewPromptKeeper    = null;
+let _reviewPromptWk        = null;   // 出したい週。null = もう出さない
 
-function showReviewAutoPrompt(wk, _tries) {
-  const prompt = document.getElementById('review-prompt');
+function _reviewPromptEl() { return document.getElementById('review-prompt'); }
+
+// 「出したい状態」と「いまモーダルが開いているか」を突き合わせて出し入れする
+function _syncReviewPrompt() {
+  const prompt = _reviewPromptEl();
   if (!prompt) return;
+  const open    = (typeof Overlay !== 'undefined' && Overlay.topId) ? !!Overlay.topId() : false;
+  const want    = !!_reviewPromptWk && !open;
+  const visible = prompt.classList.contains('show');
+  if (want === visible) return;
 
-  // ⚠️ この帯は OverlayManager の外にいる浮きカード（body直下・position:fixed）。
-  //    モーダルが開いている間に出すと、OverlayManager が body 直下の要素を
-  //    すべて inert にするため、巻き添えで「見えているのに押せない」状態になり、
-  //    ヘッダーを覆ったまま固まる（2026-08-23 実機で発生・inert:true を計測）。
-  //    開いている間は出さず、閉じてから出す。
-  const anyOverlayOpen = (typeof Overlay !== 'undefined' && Overlay.topId) ? !!Overlay.topId() : false;
-  if (anyOverlayOpen) {
-    const tries = (_tries || 0) + 1;
-    if (tries > 60) return;   // 1分待って閉じなければ諦める（次の起動でまた促す）
-    setTimeout(() => showReviewAutoPrompt(wk, tries), 1000);
-    return;
+  if (want) {
+    // ヘッダーを覆わない高さに出す。
+    // CSSの固定値だとロゴ・ナビ・XPゲージに被る。ヘッダーの高さは端末幅や
+    // ボタンの折り返しで変わるので、出す瞬間に実測する。
+    // スクロールでヘッダーが画面外にあるときは負になるので下限を設ける。
+    const hdr = document.querySelector('#app > header');
+    const y = hdr ? Math.round(hdr.getBoundingClientRect().bottom) + 8 : 14;
+    prompt.style.top = Math.min(Math.max(y, 14), 220) + 'px';
+    prompt.classList.add('show');
+    // 実際に見えている時間で数える（モーダルに隠された時間は数えない）
+    clearTimeout(_reviewPromptHideTimer);
+    _reviewPromptHideTimer = setTimeout(() => {
+      // 見逃した扱い。skips は増やさず、ドットだけ残す
+      _endReviewPrompt();
+      setReviewDot(true);
+    }, REVIEW_PROMPT_AUTO_HIDE_MS);
+  } else {
+    // モーダルに隠されただけ。_reviewPromptWk は残すので、閉じればまた出る
+    clearTimeout(_reviewPromptHideTimer);
+    prompt.classList.remove('show');
+    prompt.style.top = '';   // CSS の top:-90px（画面外）へ戻す
   }
+}
+
+// もう出さない。見張りも止める
+function _endReviewPrompt() {
+  _reviewPromptWk = null;
+  clearTimeout(_reviewPromptHideTimer);
+  clearInterval(_reviewPromptKeeper);
+  _reviewPromptKeeper = null;
+  const prompt = _reviewPromptEl();
+  if (prompt) { prompt.classList.remove('show'); prompt.style.top = ''; }
+}
+
+function showReviewAutoPrompt(wk) {
+  const prompt = _reviewPromptEl();
+  if (!prompt) return;
 
   const now = new Date();
   const msg = now.getDay()===0 ? '今週の学習を振り返りませんか？' : '先週の学習を振り返りませんか？';
   document.getElementById('review-prompt-msg').textContent = msg;
 
-  // ヘッダーを覆わない高さに出す。
-  // CSS の固定値（top:14px）だとロゴ・ナビ・XPゲージに被る。
-  // ヘッダーの高さは端末幅やボタンの折り返しで変わるので、出す瞬間に実測する。
-  // スクロールでヘッダーが画面外にあるときは負の値になるので下限を設ける。
-  const hdr = document.querySelector('#app > header');
-  const y = hdr ? Math.round(hdr.getBoundingClientRect().bottom) + 8 : 14;
-  prompt.style.top = Math.min(Math.max(y, 14), 220) + 'px';
-  prompt.classList.add('show');
-
-  // 隠すときはインライン指定を外し、CSS の top:-90px（画面外）へ戻す
-  const hide = () => {
-    prompt.classList.remove('show');
-    prompt.style.top = '';
-  };
-
-  // 押されないまま画面上部を占領し続けないよう、一定時間で引っ込める。
-  // ここでは skips を増やさない（無視ではなく「見逃した」扱い。ドットで残す）
-  clearTimeout(_reviewPromptHideTimer);
-  _reviewPromptHideTimer = setTimeout(() => {
-    hide();
-    setReviewDot(true);
-  }, REVIEW_PROMPT_AUTO_HIDE_MS);
-
-  const close = () => {
-    clearTimeout(_reviewPromptHideTimer);
-    hide();
-  };
-
   document.getElementById('review-prompt-open').onclick = () => {
-    close();
+    _endReviewPrompt();
     // 「今週の学習を振り返りませんか？」と誘っておいて日タブを開かない
     openReviewModal(wk, 'week');
   };
   document.getElementById('review-prompt-dismiss').onclick = () => {
-    close();
+    _endReviewPrompt();
     reviewStatus.lastSkipped = wk;
     reviewStatus.skips = (reviewStatus.skips||0) + 1;
     saveReviewStatus();
     setReviewDot(true);
   };
+
+  _reviewPromptWk = wk;
+  if (!_reviewPromptKeeper) _reviewPromptKeeper = setInterval(_syncReviewPrompt, REVIEW_PROMPT_WATCH_MS);
+  _syncReviewPrompt();
 }
 
 // ── イベントリスナー ──────────────────────────────────────
