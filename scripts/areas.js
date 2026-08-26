@@ -241,10 +241,62 @@ function markSeen(maxCell) {
   lsSet(KEYS.seenCell, String(maxCell));
 }
 
+// ---- マスの言葉 ────────────────────────────────────────
+//
+// すごろくの100マスのうち40マスは「順調に進んでいます！」の一文しか出ない。
+// 一方このファイルには、10エリアそれぞれに theme（心の段階）が設計してある。
+// ＝ 世界は書けているのに、歩いている人には届いていない状態だった。
+//
+// ■ ここに文章を足すと、そのエリアを歩いたとき代わりに表示される。
+// ■ 空のままでも壊れない（従来どおり「順調に進んでいます！」が出る）。
+//   だから、書けたエリアから少しずつ埋めていける。
+//
+//   lines … 何もないマスに止まったとき。複数書くと、その中からランダムに1つ
+//   clear … そのエリアの最後のマス（10,20,…）を踏んで、エリアを抜けたとき
+//
+// 書くときのコツ:
+//   ・XPや進み具合の実況をしない（それは別の場所に出ている）
+//   ・そのエリアの theme に、いま歩いている人の気持ちを重ねる
+//   ・短く。1〜2行で読み切れる長さに
+//
+// 例（はじまりの草原・踏み出す）:
+//   lines: ['風がやわらかい。まだ何も成し遂げていないが、もう歩き出している。'],
+//   clear: '石橋を渡った。最初の一歩は、いつも一番重い。',
+
+const AREA_LINES = {
+  sougen:    { lines: [], clear: '' },   // 1 はじまりの草原 — 踏み出す
+  mori:      { lines: [], clear: '' },   // 2 ささやきの森   — 続かない不安
+  shitsugen: { lines: [], clear: '' },   // 3 霧雨の湿原     — 重い時期
+  iseki:     { lines: [], clear: '' },   // 4 忘れられた遺跡 — 先人を知る
+  sunahara:  { lines: [], clear: '' },   // 5 灼けた砂原     — 単調さ
+  mizuumi:   { lines: [], clear: '' },   // 6 鏡面の湖       — 振り返り
+  setsuzan:  { lines: [], clear: '' },   // 7 凍る雪山       — 本気の負荷
+  touge:     { lines: [], clear: '' },   // 8 雷鳴の峠       — 最大の試練
+  okibi:     { lines: [], clear: '' },   // 9 熾火の谷       — 静かに燃え続ける
+  itadaki:   { lines: [], clear: '' },   // 10 暁の頂        — 到達
+};
+
+/**
+ * そのマスで出す言葉を1つ返す。まだ書かれていなければ null。
+ * 呼ぶ側は null のとき従来の文言を使うこと（＝空でも壊れない）。
+ * @param {number} cell 1〜100 に正規化済みのマス番号（sgGetCellNum を通したもの）
+ * @param {'normal'|'clear'} kind
+ */
+function lineFor(cell, kind = 'normal', stageId = 'stage1') {
+  const area = areaOf(cell, stageId);
+  const set = area && AREA_LINES[area.id];
+  if (!set) return null;
+  if (kind === 'clear') return set.clear || null;
+  const list = set.lines;
+  if (!Array.isArray(list) || !list.length) return null;
+  return list[Math.floor(Math.random() * list.length)];
+}
+
 // ---- 公開窓口（otomon.js と同じ流儀。export は使わない） ----
 
 window.Areas = {
-  STAGES, KEYS,
+  STAGES, KEYS, AREA_LINES,
   getStage, areaOf, progressInArea, isBoundary,
   cloudOpacity, revealDiff, markSeen,
+  lineFor,
 };

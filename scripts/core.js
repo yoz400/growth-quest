@@ -1316,11 +1316,19 @@ function doSugorokuRoll(modeKey, mins, partial) {
   } else if (cellType === 'checkpoint') {
     bonusXP = 15;
     evClass = 'ev-checkpoint';
-    message = `🏁 チェックポイント ${cellNum}マス！ ボーナス +${bonusXP} XP`;
+    // エリアを抜けたときの言葉（areas.js の AREA_LINES.clear）。
+    // まだ書かれていなければ従来のマス数表示に落ちる
+    const cl = window.Areas && window.Areas.lineFor ? window.Areas.lineFor(cellNum, 'clear') : null;
+    message = cl
+      ? `${cl} ボーナス +${bonusXP} XP`
+      : `🏁 チェックポイント ${cellNum}マス！ ボーナス +${bonusXP} XP`;
   } else {
     bonusXP = 5;
     evClass = 'ev-normal';
-    message = `順調に進んでいます！ +${bonusXP} XP`;
+    // いま歩いているエリアの言葉（areas.js の AREA_LINES.lines）。
+    // 100マス中40マスがここを通る。空なら従来どおり「順調に進んでいます！」
+    const ln = window.Areas && window.Areas.lineFor ? window.Areas.lineFor(cellNum, 'normal') : null;
+    message = ln ? `${ln} +${bonusXP} XP` : `順調に進んでいます！ +${bonusXP} XP`;
   }
 
   // 🔦探索の灯：通り過ぎたマス（着地マスの手前まで）のアイテムも回収
