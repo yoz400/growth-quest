@@ -505,6 +505,9 @@ editingGenreId = null;
 // ═══════════════════════════════════════════════════════
 
 const SG_TICKET_MAX = 10;
+// 上限のいくつ手前から知らせるか。満杯になってから伝えるのでは遅い
+//（気づいた時にはもう振る余地が無い）。2枚手前＝8枚から色を変える。
+const SG_TICKET_WARN = SG_TICKET_MAX - 2;
 
 // Cell types: [0]='start', [1-100]=type
 const BOARD_CELL_TYPES = (() => {
@@ -1196,8 +1199,9 @@ function renderSugorokuTicketBadge() {
     badge.textContent = count;
     badge.style.display = count > 0 ? '' : 'none';
     // 上限に達すると、新しく得た権利が古いものから捨てられる。
-    // 貯めているうちに黙って失われるのが一番よくないので、色で気づけるようにする
-    badge.classList.toggle('is-full', count >= SG_TICKET_MAX);
+    // 貯めているうちに黙って失われるのが一番よくないので、色で気づけるようにする。
+    // 満杯（10）ではなく手前（8）から変える＝まだ振る余地があるうちに気づける
+    badge.classList.toggle('is-full', count >= SG_TICKET_WARN);
   }
   if (countEl) countEl.textContent = count;
   if (button) button.disabled = count === 0 || !!sgAnimating;
@@ -2855,6 +2859,7 @@ window.Toast = Toast;
 window.safeSetItem = safeSetItem;
 window.topBelowHeader = topBelowHeader;
 window.SG_TICKET_MAX = SG_TICKET_MAX;
+window.SG_TICKET_WARN = SG_TICKET_WARN;
 window.GQ = GQ;
 window.MODES = MODES;
 window.DEFAULT_DATA = DEFAULT_DATA;

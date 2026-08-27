@@ -572,12 +572,14 @@ function showKoku(mins, breakMins, kind, equipBonusXp, firstTodayXp) {
   if (_ticketN > 0) {
     const choice = document.createElement('div');
     choice.id = 'koku-ticket-choice';
-    // 上限が近いことを知らせる。貯めたまま黙って捨てられるのを防ぐ
-    const _max  = (typeof SG_TICKET_MAX === 'number') ? SG_TICKET_MAX : 10;
+    // 上限が近いことを知らせる。貯めたまま黙って捨てられるのを防ぐ。
+    // ヘッダーのバッジと同じ枚数（SG_TICKET_WARN＝8）から出して足並みを揃える
+    const _max  = (typeof SG_TICKET_MAX  === 'number') ? SG_TICKET_MAX  : 10;
+    const _wl   = (typeof SG_TICKET_WARN === 'number') ? SG_TICKET_WARN : _max - 2;
     const _warn = _ticketN >= _max
       ? `<div class="ktc-warn">これ以上は増えません。振らないと古いものから消えていきます</div>`
-      : (_ticketN === _max - 1
-        ? `<div class="ktc-warn">あと1回で上限（${_max}回）です</div>`
+      : (_ticketN >= _wl
+        ? `<div class="ktc-warn">あと${_max - _ticketN}回で上限（${_max}回）です</div>`
         : '');
     choice.innerHTML = `
       <div class="ktc-lead">🎲 すごろくを振れます（あと ${_ticketN} 回）</div>
