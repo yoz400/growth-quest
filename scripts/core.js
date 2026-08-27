@@ -324,6 +324,21 @@ function safeSetItem(key, value) {
   }
 }
 
+/* ===== 画面上部に固定表示するものの置き場所 =====
+   ヘッダーの高さは端末幅とボタンの折り返しで変わる（実測で173〜189px）。
+   CSSに top:14px のような固定値を書くと、必ずどこかでヘッダーを覆うし、
+   ブラウザのURLバーがある端末では通知そのものが見切れる。
+   上部に出すものは、出す瞬間にここで測ってから置くこと。
+   ※実際 #review-prompt と #badge-toast が同じ穴に落ちた（2026-08-28 実機）。 */
+function topBelowHeader(gap) {
+  const hdr = document.querySelector('#app > header');
+  const g = typeof gap === 'number' ? gap : 8;
+  const y = hdr ? Math.round(hdr.getBoundingClientRect().bottom) + g : 14;
+  // スクロールでヘッダーが画面外にあると負になるので下限を、
+  // 画面の真ん中まで落ちないように上限を設ける
+  return Math.min(Math.max(y, 14), 220);
+}
+
 /* ===== GQ EventBus: 機能同士を疎結合にする通知係 ===== */
 const GQ = (() => {
   const handlers = new Map();
@@ -2835,6 +2850,7 @@ function showSugorokuInKoku(result) {
 window.Overlay = Overlay;
 window.Toast = Toast;
 window.safeSetItem = safeSetItem;
+window.topBelowHeader = topBelowHeader;
 window.GQ = GQ;
 window.MODES = MODES;
 window.DEFAULT_DATA = DEFAULT_DATA;

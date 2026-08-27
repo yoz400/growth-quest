@@ -1330,9 +1330,13 @@ function showNextBadgeToast() {
   const rEl = document.getElementById('badge-toast-rarity');
   rEl.textContent  = RARITY_LABELS[b.rarity];
   rEl.className    = `badge-toast-rarity badge-${b.rarity}`;
+  // CSSの top:14px 固定だとヘッダーを覆い、ブラウザのURLバーがある端末では
+  // 通知自体が見切れる（2026-08-28 実機で確認）。出す瞬間に測って下に置く
+  toast.style.top  = topBelowHeader() + 'px';
   toast.className  = `badge-toast badge-${b.rarity} show`;
   setTimeout(() => {
     toast.classList.remove('show');
+    toast.style.top = '';   // CSSの -120px（画面外）へ戻す
     setTimeout(showNextBadgeToast, 450);
   }, 3200);
 }

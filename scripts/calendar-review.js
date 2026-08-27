@@ -2301,13 +2301,8 @@ function _syncReviewPrompt() {
   if (want === visible) return;
 
   if (want) {
-    // ヘッダーを覆わない高さに出す。
-    // CSSの固定値だとロゴ・ナビ・XPゲージに被る。ヘッダーの高さは端末幅や
-    // ボタンの折り返しで変わるので、出す瞬間に実測する。
-    // スクロールでヘッダーが画面外にあるときは負になるので下限を設ける。
-    const hdr = document.querySelector('#app > header');
-    const y = hdr ? Math.round(hdr.getBoundingClientRect().bottom) + 8 : 14;
-    prompt.style.top = Math.min(Math.max(y, 14), 220) + 'px';
+    // ヘッダーを覆わない高さに出す（測り方は core.js の topBelowHeader に集約）
+    prompt.style.top = topBelowHeader() + 'px';
     prompt.classList.add('show');
     // 実際に見えている時間で数える（モーダルに隠された時間は数えない）
     clearTimeout(_reviewPromptHideTimer);
