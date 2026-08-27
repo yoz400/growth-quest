@@ -4133,6 +4133,16 @@ header {
   padding: 6px 14px; cursor: pointer; transition: background .15s;
 }
 .genre-add-chip:hover { background: rgba(6,182,212,.14); }
+/* 「▾ ほかN件」「▴ 閉じる」。ジャンルが4個以上のとき、一覧を畳んで
+   STARTが画面外へ沈むのを防ぐ（実測: 7個で205px→STARTが714pxまで下がる） */
+.genre-more-chip {
+  font-family: inherit; font-size: .78rem; font-weight: 700;
+  color: var(--text-dim); background: rgba(255,255,255,.04);
+  border: 1px solid var(--glass-border); border-radius: 999px;
+  padding: 6px 13px; cursor: pointer; transition: background .15s, color .15s;
+  min-height: 34px;
+}
+.genre-more-chip:hover { background: rgba(255,255,255,.09); color: var(--text); }
 .genre-quick-add { display: inline-flex; align-items: center; gap: 4px; }
 .genre-quick-input {
   font-family: inherit; font-size: .8rem; color: var(--text);
