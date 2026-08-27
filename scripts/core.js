@@ -1195,6 +1195,9 @@ function renderSugorokuTicketBadge() {
   if (badge) {
     badge.textContent = count;
     badge.style.display = count > 0 ? '' : 'none';
+    // 上限に達すると、新しく得た権利が古いものから捨てられる。
+    // 貯めているうちに黙って失われるのが一番よくないので、色で気づけるようにする
+    badge.classList.toggle('is-full', count >= SG_TICKET_MAX);
   }
   if (countEl) countEl.textContent = count;
   if (button) button.disabled = count === 0 || !!sgAnimating;
@@ -2851,6 +2854,7 @@ window.Overlay = Overlay;
 window.Toast = Toast;
 window.safeSetItem = safeSetItem;
 window.topBelowHeader = topBelowHeader;
+window.SG_TICKET_MAX = SG_TICKET_MAX;
 window.GQ = GQ;
 window.MODES = MODES;
 window.DEFAULT_DATA = DEFAULT_DATA;

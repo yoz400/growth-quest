@@ -572,8 +572,16 @@ function showKoku(mins, breakMins, kind, equipBonusXp, firstTodayXp) {
   if (_ticketN > 0) {
     const choice = document.createElement('div');
     choice.id = 'koku-ticket-choice';
+    // 上限が近いことを知らせる。貯めたまま黙って捨てられるのを防ぐ
+    const _max  = (typeof SG_TICKET_MAX === 'number') ? SG_TICKET_MAX : 10;
+    const _warn = _ticketN >= _max
+      ? `<div class="ktc-warn">これ以上は増えません。振らないと古いものから消えていきます</div>`
+      : (_ticketN === _max - 1
+        ? `<div class="ktc-warn">あと1回で上限（${_max}回）です</div>`
+        : '');
     choice.innerHTML = `
       <div class="ktc-lead">🎲 すごろくを振れます（あと ${_ticketN} 回）</div>
+      ${_warn}
       <div class="ktc-btns">
         <button class="ktc-btn ktc-roll"  id="koku-roll-btn">🎲 いま振る</button>
         <button class="ktc-btn ktc-later" id="koku-later-btn">あとで</button>
