@@ -2595,19 +2595,83 @@ document.getElementById('board-roll-btn')?.addEventListener('click', () => {
     renderSugorokuTicketBadge();
     return;
   }
-  const message = document.getElementById('board-roll-result');
-  if (message) {
-    const quietMessage = result.message.replace(/<br\s*\/?>/gi, ' ／ ');
-    message.innerHTML = `<strong>🎲 ${result.roll}</strong> ${quietMessage}`;
-  }
-  renderBoard();
+  showBoardRollResult(result);
 });
+
+// すごろく画面で振ったときの見せ方。
+// 以前はテキスト1行だけで、サイコロが1つも出なかった。そのため
+// 🏮学びの灯籠（2回振って良い方）を使っても、効いているのかどうか
+// 利用者からはまったく分からなかった（2026-08-24 ヨージから報告）。
+// 「刻」と同じ 3Dサイコロを、押したボタンのすぐ下で転がす。
+function showBoardRollResult(result) {
+  const stage = document.getElementById('board-dice-stage');
+  const message = document.getElementById('board-roll-result');
+  const quietMessage = result.message.replace(/<br\s*\/?>/gi, ' ／ ');
+
+  if (!stage) {                       // 演出の置き場が無ければ、従来どおり文字だけ
+    if (message) message.innerHTML = `<strong>🎲 ${result.roll}</strong> ${quietMessage}`;
+    renderBoard();
+    return;
+  }
+
+  const { vals, label } = sgDiceValsFor(result);
+  const id = 'bsd-' + Date.now();
+  stage.style.display = '';
+  stage.innerHTML =
+    vals.map((_, i) => buildDieHTML(`${id}-d${i}`)).join('') +
+    (vals.length > 1
+      ? `<div class="sgd-sum" id="${id}-sum">${label || '＝ <b>' + result.roll + '</b>'}</div>`
+      : '');
+  if (message) message.innerHTML = '';   // 転がっている間は答えを先に見せない
+
+  // 振っている最中に二重で振らせない（着地したら戻す）
+  sgAnimating = true;
+  renderSugorokuTicketBadge();
+
+  const cubes = vals.map((_, i) => document.getElementById(`${id}-d${i}`)).filter(Boolean);
+  // すごろく画面が閉じられたら演出をやめる
+  const alive = () => !!document.getElementById('board-dice-stage')
+                   && document.getElementById('board-overlay')?.classList.contains('open');
+  const finish = () => {
+    sgAnimating = false;
+    document.getElementById(`${id}-sum`)?.classList.add('show');
+    if (message) message.innerHTML = `<strong>🎲 ${result.roll}</strong> ${quietMessage}`;
+    renderBoard();
+  };
+  sgRollDice3D(cubes, vals, alive, finish);
+  // 演出が途中で止まっても結果は必ず出す（閉じて開き直したときの取りこぼし防止）
+  setTimeout(() => { if (sgAnimating) finish(); }, 2600);
+}
 
 // ── 桃鉄風 3Dサイコロ ──────────────────────────────────
 // 立方体を6面ぶん組み、JSで回してから「出したい面」を正面へ向けて止める。
 // 面の配置は本物のサイコロと同じ（向かい合う面の和が7：1-6 / 2-5 / 3-4）。
 // 面Nを正面へ向けるための回転（面の置き方の逆回転）: [rotateX, rotateY]
 const SG_FACE_ROT = { 1:[0,0], 2:[0,-90], 3:[-90,0], 4:[90,0], 5:[0,90], 6:[0,180] };
+
+// サイコロを何個・どの目で見せるかを決める。
+// ⚠️ 振れる場所は2つある（集中直後の「刻」と、すごろく画面の「振る」）。
+//    ここを共通にしておかないと、片方だけ直して
+//    「刻では2個出るのに、すごろく画面では何も出ない」というズレが生まれる。
+//    実際それが起きた（2026-08-24 学びの灯籠を使っても2個出ない）。
+// advantage（🏮学びの灯籠）→2個 ／ bestOf3（⏳時の砂）→3個 ／ 通常→出目を分割
+function sgDiceValsFor(result) {
+  if (result.usedBuff === 'advantage') {
+    // 2回振って良い方 → 勝った目 ＋ 負けた目
+    const winner = Math.max(1, Math.min(6, result.baseDice));
+    return { vals: [winner, Math.max(1, Math.floor(Math.random() * winner))],
+             label: '🏮 良い方を採用！' };
+  }
+  if (result.usedBuff === 'bestOf3') {
+    // 3回振って最大 → 勝った目 ＋ 負けた目2つ
+    const winner = Math.max(1, Math.min(6, result.baseDice));
+    return { vals: [winner,
+                    Math.max(1, Math.floor(Math.random() * winner)),
+                    Math.max(1, Math.floor(Math.random() * winner))],
+             label: '⏳ 最大を採用！' };
+  }
+  return { vals: sgSplitDice(result.roll), label: null };
+}
 
 // 出目が7以上のときは2個のサイコロで表す（1個では6までしか出せないため）
 function sgSplitDice(roll) {
@@ -2683,25 +2747,9 @@ function showSugorokuInKoku(result) {
   // 進むマス数（＝出目）。レーンに並べるタイル数は見やすさ優先で最大8に丸める
   const steps = Math.max(1, Math.min(roll, 8));
 
-  // アイテム効果によってサイコロの個数を変える
-  // advantage（導きの灯）→2個、bestOf3（時の砂）→3個、通常→sgSplitDiceで分割
-  let diceVals, diceMultiLabel = null;
-  if (result.usedBuff === 'advantage') {
-    // 2回振って良い方を採用 → 勝ったサイコロ + 負けたサイコロを表示
-    const winner = Math.max(1, Math.min(6, result.baseDice));
-    const loser  = Math.max(1, Math.floor(Math.random() * winner));
-    diceVals = [winner, loser];
-    diceMultiLabel = '🏮 良い方を採用！';
-  } else if (result.usedBuff === 'bestOf3') {
-    // 3回振って最大を採用 → 勝ったサイコロ + 負け2個を表示
-    const winner = Math.max(1, Math.min(6, result.baseDice));
-    const l1 = Math.max(1, Math.floor(Math.random() * winner));
-    const l2 = Math.max(1, Math.floor(Math.random() * winner));
-    diceVals = [winner, l1, l2];
-    diceMultiLabel = '⏳ 最大を採用！';
-  } else {
-    diceVals = sgSplitDice(roll);
-  }
+  // アイテム効果によってサイコロの個数を変える（見せ方は sgDiceValsFor に一本化）
+  const _dv = sgDiceValsFor(result);
+  const diceVals = _dv.vals, diceMultiLabel = _dv.label;
 
   sec.innerHTML = `
     <div class="koku-sg-label">🎲 すごろく</div>
