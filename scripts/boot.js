@@ -730,7 +730,61 @@ function punchTap(catId) {
   if ((document.getElementById('review-overlay')?.classList.contains('open') && rvPeriod === 'day')) renderTimelog();
 }
 
+// ── 今日の未記録バッジ（ホームに常時表示）──────────────────
+//
+// 未記録を埋める仕組み（妖精の推測・ワンタップ確定・1分まとめ）は既にある。
+// だが入口が「週次レビュー → 日タブ → 未記録の時間帯」と4階層深く、
+// 実データでも週次レビューは13回スキップ・保存0回で、到達されていなかった。
+// 機能を足すのではなく、既にあるものへの入口をホームに1つ出す。
+//
+// 置き場所は「STARTのすぐ下（タイマーカードの中）」。
+//   ・#layer-today-always に置くと画面から1539px下＝2画面ぶん下で、
+//     常時表示なのに一度も目に入らなかった（実測して置き場所を変えた）
+//   ・ジャンルやタイマーの「上」に置くと START が下へ沈む。
+//     小さい画面で START が画面外に出た過去がある（guild-181）のでそこは避ける
+//   → STARTの位置を1pxも動かさず、同じ画面に入る場所がここだけだった
+function renderUnloggedBadge() {
+  const anchor = document.querySelector('#timer-card .timer-btns');
+  const holder = anchor && anchor.parentElement;
+  if (!holder) return;
+  let el = document.getElementById('tl-unlogged-badge');
+
+  // 解放前・記録が1件も無い日は出さない（何もしていない人を急かさない）
+  const unlocked = (typeof featUnlocks !== 'undefined') && featUnlocks.has('timelog');
+  const key = dkey(new Date());
+  const blocks = (dayLog[key] || []).slice();
+  if (!unlocked || !blocks.length) { if (el) el.remove(); return; }
+
+  // 今日ぶんの空白を合計（15分未満の細切れは無視。追いかけても意味がない）
+  const gaps = _tlFindGaps(blocks.sort((a,b) => _tlToMin(a.start) - _tlToMin(b.start)), 15);
+  const total = gaps.reduce((s, [a, z]) => s + (z - a), 0);
+  if (!total) { if (el) el.remove(); return; }
+
+  if (!el) {
+    el = document.createElement('button');
+    el.id = 'tl-unlogged-badge';
+    el.className = 'tl-unlogged-badge';
+    anchor.insertAdjacentElement('afterend', el);   // START のすぐ下
+  }
+  el.innerHTML = `<span class="tub-mark">⬜</span>` +
+    `<span class="tub-text">今日の未記録 <b>${_tlFmtH(total)}</b></span>` +
+    `<span class="tub-go">記録する ›</span>`;
+  el.onclick = () => {
+    openTimelogModal(key);
+    // 開いたら、いちばん長い空白の推測を先に出しておく（探させない）
+    const biggest = gaps.slice().sort((a, b) => (b[1]-b[0]) - (a[1]-a[0]))[0];
+    if (biggest) setTimeout(() => {
+      try {
+        _tlSetTime('tl-sh','tl-sm', _tlF(biggest[0]));
+        _tlSetTime('tl-eh','tl-em', biggest[1] >= 1440 ? '23:59' : _tlF(biggest[1]));
+        showGapSuggest(biggest[0], biggest[1]);
+      } catch (e) {}
+    }, 500);
+  };
+}
+
 function renderPunchBar() {
+  renderUnloggedBadge();
   const card   = document.getElementById('punch-card');
   const chips  = document.getElementById('tl-punch-chips');
   const status = document.getElementById('tl-punch-status');

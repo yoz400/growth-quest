@@ -4774,6 +4774,27 @@ body.eq-mood-galaxy    .anim-wrap::after {
   50%      { opacity: .55; box-shadow: 0 0 0 5px rgba(248,113,113,0); }
 }
 #tl-punch-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+/* ⬜ 今日の未記録バッジ（ホーム常時表示）。
+   既にある「妖精の推測 → ワンタップ確定」への入口。
+   カードではなく1行の帯にして、ホームの高さをほとんど増やさない
+   （カードを足すとSTARTが下へ沈む。guild-181 の反省） */
+.tl-unlogged-badge {
+  margin: 10px auto 0; max-width: 300px;
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  font-family: inherit; text-align: left; cursor: pointer;
+  padding: 9px 14px; border-radius: 12px;
+  background: rgba(255,255,255,.04);
+  border: 1px dashed var(--glass-border);
+  color: var(--text-dim); font-size: .76rem;
+  transition: background .15s, border-color .15s;
+}
+.tl-unlogged-badge:hover { background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.2); }
+.tl-unlogged-badge:active { transform: scale(.99); }
+.tub-mark { flex: none; opacity: .8; }
+.tub-text { flex: 1; }
+.tub-text b { color: var(--text); font-weight: 800; }
+.tub-go { flex: none; color: var(--cyan); font-weight: 700; font-size: .74rem; }
+
 .tl-punch-chip {
   padding: 6px 10px; border-radius: 99px;
   background: rgba(255,255,255,.04); border: 1.5px solid;
