@@ -710,12 +710,30 @@
   }
 
   // ── 孵化候補プールの決定（favors → 属性一致 → 全体）: hatch と共通 ──
+  //
+  // ⚠️ まだ仲間になっていない子を優先する。これが無いと同じ子ばかり孵る。
+  //    目覚めアイテム19種のうち11種は favors が1体しかなく、favors を
+  //    無条件に最優先すると **100%その子が出る**（2026-09-08 ヨージ報告）。
+  //    所持済みを外して1段広げることで、同じアイテムでも次は別の子に出会える。
+  //    全100体そろったときだけ、元のプールに戻して重複を許す（count が増える）。
+  function isOwned(id) { return !!otomonState.discovered[id]; }
+
   function candidatePoolIds(item) {
-    let ids = (item && item.favors || []).filter(id => OTOMON_BY_ID[id]);
-    if (!ids.length && item && item.attribute)
-      ids = OTOMON_MASTER.filter(o => o.attribute === item.attribute).map(o => o.id);
-    if (!ids.length) ids = OTOMON_MASTER.map(o => o.id);
-    return ids;
+    const favors = (item && item.favors || []).filter(id => OTOMON_BY_ID[id]);
+    const byAttr = (item && item.attribute)
+      ? OTOMON_MASTER.filter(o => o.attribute === item.attribute).map(o => o.id)
+      : [];
+    const all = OTOMON_MASTER.map(o => o.id);
+
+    // 未所持を優先して、favors → 属性 → 全体 の順に降りていく
+    for (const tier of [favors, byAttr, all]) {
+      const fresh = tier.filter(id => !isOwned(id));
+      if (fresh.length) return fresh;
+    }
+    // ここに来るのは「候補が全部そろっている」とき。従来どおりの優先順で返す
+    if (favors.length) return favors;
+    if (byAttr.length) return byAttr;
+    return all;
   }
   function candidateFor(item) { return pick(candidatePoolIds(item)); }
 
@@ -759,8 +777,14 @@
     const e = getEgg(eggUid); if (!e) return null;
     const item = WAKE_BY_ID[e.usedItem];
     // useWakeItem 時に確定した候補を最優先（クエスト帯と孵る子を一致させる）。
-    // 万一 pendingId が無い/欠番なら従来ロジックで再抽選。
-    const id = (e.pendingId && OTOMON_BY_ID[e.pendingId]) ? e.pendingId : pick(candidatePoolIds(item));
+    // ただし、その子が既に仲間になっているなら引き直す。
+    // この卵は重複対策（2026-09-08）より前に候補が決まっていた可能性があるため。
+    // pendingId は孵化するまで画面に出ないので、引き直しても体験は変わらない。
+    let id = (e.pendingId && OTOMON_BY_ID[e.pendingId]) ? e.pendingId : null;
+    if (!id || isOwned(id)) {
+      const retry = pick(candidatePoolIds(item));   // 未所持がいれば未所持だけが返る
+      if (retry && (!id || !isOwned(retry))) id = retry;
+    }
 
     const rec = otomonState.discovered[id] || makeRecord();  // 新規は統一スキーマで生成
     rec.count = (rec.count || 0) + 1;                          // 入手回数+1（既存も新規も）
