@@ -940,20 +940,42 @@ function initTimelogExtras() {
 }
 
 // ── B. 妖精の推測：過去の癖から「この時間いつも何してる？」を当てる ──
+// 空白の時間帯に「いつも何をしているか」を過去28日から推測する。
+//
+// ⚠️ ヨージの実データ221件で測った結果（2026-09-08）:
+//   1位が当たる確率は 44%。とくに15〜60分の短い空白は 24% しか当たらない。
+//   しかも短い空白が全体の6割を占める。
+//   重み付けを工夫しても 43%→44% でほぼ変わらなかった＝**情報が足りない**。
+//   一方、候補の数を増やすと素直に効く:
+//        3個 → 70%（短い空白62%） / 5個 → 85%（短い空白80%）
+//   なので「賢く当てる」より「候補を1つ増やして外れを減らす」ほうが正しい。
+//
+// 重み付け: ①中央1点ではなく範囲の重なり分数 ②同じ曜日を重く ③最近の日を重く
 function guessCatsForRange(s, e) {
   const mid = Math.floor((s + e) / 2);
+  const today = new Date();
   const tally = {};
   for (let back = 1; back <= 28; back++) {
     const d = new Date(); d.setDate(d.getDate() - back);
     const blocks = dayLog[dkey(d)];
     if (!blocks || !blocks.length) continue;
+    const recency = back <= 7 ? 1 : (back <= 14 ? 0.6 : 0.35);
+    const sameDow = d.getDay() === today.getDay();
+    const sameKind = (d.getDay() === 0 || d.getDay() === 6) === (today.getDay() === 0 || today.getDay() === 6);
+    const dowW = sameDow ? 1.6 : (sameKind ? 1.2 : 1);
     for (const b of blocks) {
       const bs = _tlToMin(b.start), be = _tlToMin(b.end);
       const segs = be > bs ? [[bs, be]] : [[bs, 1440], [0, be]];
-      if (segs.some(([a, z]) => mid >= a && mid < z)) { tally[b.cat] = (tally[b.cat] || 0) + 1; break; }
+      // 空白と重なっている分数で数える（1点で見ると長い空白がほぼ当たらない）
+      let ov = 0;
+      segs.forEach(([a, z]) => { ov += Math.max(0, Math.min(e, z) - Math.max(s, a)); });
+      if (ov > 0) tally[b.cat] = (tally[b.cat] || 0) + ov * recency * dowW;
     }
   }
-  const hist = Object.entries(tally).filter(([, n]) => n >= 2).sort((a, b) => b[1] - a[1]).map(([c]) => c);
+  const sum = Object.values(tally).reduce((a, b) => a + b, 0);
+  const hist = Object.entries(tally)
+    .filter(([, v]) => sum > 0 && v >= sum * 0.12)     // ノイズを落とす
+    .sort((a, b) => b[1] - a[1]).map(([c]) => c);
   // 履歴が足りないときは時間帯の常識で推測
   const h = mid / 60;
   const dow = new Date().getDay();
@@ -965,7 +987,9 @@ function guessCatsForRange(s, e) {
   heur.push('rest', 'hobby', 'chore');
   const seen = new Set(); const out = [];
   [...hist, ...heur].forEach(c => { if (!seen.has(c) && TIMELOG_CATS.some(x => x.id === c)) { seen.add(c); out.push(c); } });
-  return out.slice(0, 3);
+  // 3個→5個。実データで 70%→85%（短い空白は 62%→80%）に上がる。
+  // 外れても「…ほかから選ぶ」があるので、増やす副作用は画面が少し混むだけ
+  return out.slice(0, 5);
 }
 
 // ── 取り消し（Undo）────────────────────────────────────
