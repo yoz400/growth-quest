@@ -4823,6 +4823,14 @@ body.eq-mood-galaxy    .anim-wrap::after {
   padding: 10px 12px; margin: 6px 0;
 }
 .tl-sug-msg { font-size: .78rem; color: var(--text); margin-bottom: 8px; line-height: 1.6; }
+/* 記録した直後の「↩ 取り消す」。7秒だけ出て、静かに消える。
+   ワンタップ確定にしたので、押し間違いの逃げ道として必ず要る */
+.tl-sug-undo {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(74,222,128,.08); border-color: rgba(74,222,128,.32);
+}
+.tl-sug-undo .tl-sug-msg { margin-bottom: 0; flex: 1; }
+.tl-sug-undo .tl-sug-alt { flex: none; border-color: rgba(255,255,255,.28); }
 .tl-sug-actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 6px; }
 .tl-sug-main {
   padding: 7px 14px; border-radius: 10px; border: 1.5px solid;

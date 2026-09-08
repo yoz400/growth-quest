@@ -968,11 +968,55 @@ function guessCatsForRange(s, e) {
   return out.slice(0, 3);
 }
 
-function addGapBlock(cat, s, e) {
-  _tlPushBlock(_ltDateKey(tlAnchor), { cat, start: _tlF(s), end: e >= 1440 ? '00:00' : _tlF(e) });
+// ── 取り消し（Undo）────────────────────────────────────
+// ワンタップで即確定にしたぶん、押し間違えたときの逃げ道が要る。
+// 追加したブロックの「参照そのもの」を覚えておき、それを配列から取り除く。
+// 時刻や種類が同じ別ブロックを巻き添えにしないため、値の一致では消さない。
+let _tlUndo = null;        // { key, block, timer }
+
+function _tlShowUndo(cat, s, e) {
   const box = document.getElementById('tl-suggest');
-  if (box) box.innerHTML = '';
+  if (!box) return;
+  const c = _tlCat(cat);
+  const range = `${_tlF(s)}〜${e >= 1440 ? '24:00' : _tlF(e)}`;
+  box.innerHTML = `<div class="tl-sug tl-sug-undo">
+    <div class="tl-sug-msg">✓ ${c.emoji}${c.name} <b>${range}</b> を記録したよ</div>
+    <button class="tl-sug-alt" id="tl-undo-btn">↩ 取り消す</button>
+  </div>`;
+  document.getElementById('tl-undo-btn').addEventListener('click', undoLastGapBlock);
+  clearTimeout(_tlUndo && _tlUndo.timer);
+  const t = setTimeout(() => {
+    _tlUndo = null;
+    if (box.querySelector('.tl-sug-undo')) box.innerHTML = '';
+  }, 7000);
+  if (_tlUndo) _tlUndo.timer = t;
+}
+
+function undoLastGapBlock() {
+  if (!_tlUndo) return;
+  const { key, block } = _tlUndo;
+  const arr = dayLog[key];
+  if (arr) {
+    const i = arr.indexOf(block);         // 参照で探す（同じ内容の別ブロックを消さない）
+    if (i >= 0) { arr.splice(i, 1); saveDayLog(); }
+  }
+  clearTimeout(_tlUndo.timer);
+  _tlUndo = null;
+  const box = document.getElementById('tl-suggest');
+  if (box) box.innerHTML = `<div class="tl-sug tl-sug-undo">
+    <div class="tl-sug-msg">↩ 取り消しました。もう一度えらべるよ</div></div>`;
+  setTimeout(() => { const b = document.getElementById('tl-suggest');
+    if (b && b.querySelector('.tl-sug-undo')) b.innerHTML = ''; }, 2600);
   renderTimelog();
+}
+
+function addGapBlock(cat, s, e) {
+  const key = _ltDateKey(tlAnchor);
+  const block = { cat, start: _tlF(s), end: e >= 1440 ? '00:00' : _tlF(e) };
+  _tlPushBlock(key, block);
+  _tlUndo = { key, block, timer: null };
+  renderTimelog();          // 先に描き直す（この中で tl-suggest が空になる）
+  _tlShowUndo(cat, s, e);   // そのあとに取り消し行を出す
 }
 
 function showGapSuggest(s, e) {
