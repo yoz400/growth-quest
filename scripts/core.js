@@ -1155,6 +1155,30 @@ function sgGetStage(pos) {
   return Math.ceil(pos / 100);
 }
 
+// 🏮導きの灯が照らせる距離。盤面のアイテムマスは最大でも6マス間隔なので、
+// 6にすると「どこにいても必ず1つは見つかる」。狭めると弱く、広げると強くなる。
+const LANTERN_RANGE = 6;
+
+// 前方を照らして、一番近いアイテムマス（🎁item / ⭐rare）を探す。
+// ★出目には装備や🪙のボーナスが乗る。それを差し引いた歩数を返さないと
+//   「アイテムマスまで進む」と言いながら通り過ぎてしまう。
+// ★ステージの境（ゴール）を越える先は見ない。越えると到着マスの種類が
+//   'goal' に上書きされ、約束したアイテムがもらえないため。
+function findGuideTarget(range) {
+  const bonus = getEquipmentDiceBonus() + (itemBuffs.diceBonus || 0);
+  const from = sugorokuData.pos;
+  const fromStage = sgGetStage(from);
+  for (let d = bonus + 1; d <= range + bonus; d++) {
+    const p = from + d;
+    if (sgGetStage(p) > fromStage) break;          // ゴールを越える先は対象外
+    const t = BOARD_CELL_TYPES[sgGetCellNum(p)] || 'normal';
+    if (t === 'item' || t === 'rare') {
+      return { steps: d - bonus, dist: d, type: t, cellNum: sgGetCellNum(p) };
+    }
+  }
+  return null;
+}
+
 function rollDice(modeKey, mins, partial) {
   if (partial) {
     // 途中停止: 学習分数に応じて控えめに前進（完走時の最大出目より必ず1少なく）
@@ -1239,11 +1263,12 @@ function doSugorokuRoll(modeKey, mins, partial) {
     if (_b3)  { itemBuffs.bestOf3  = false; }
     if (_adv || _b3) saveItemBuffs();
     if (_adv && _b3) {
-      // 灯籠＋砂時計：3回振って最大（bestOf3が強い方なので合算）
+      // 3回振って最大（bestOf3が強い方なので合算）
       baseDice = Math.max(baseDice, rollDice(modeKey, mins, partial), rollDice(modeKey, mins, partial));
       usedBuff = 'bestOf3';
     } else if (_adv) {
-      // 🏮導きの灯：2回振って良い方
+      // 「2回振って良い方」。灯籠は導き型に作り替えたので、いまこれを付ける
+      // アイテムは無い。更新前に灯籠を使って持ち越した人のぶんを消化するために残す。
       baseDice = Math.max(baseDice, rollDice(modeKey, mins, partial));
       usedBuff = 'advantage';
     } else if (_b3) {
@@ -1869,7 +1894,7 @@ const ITEM_NEXT_HINTS = {
   crown:        ['👑 覇者の宣言',   '24時間クエスト達成XPが 2倍'],
   hourglass:    ['⏳ 時の砂',       '次のサイコロを3回振って最大'],
   shield:       ['🛡 週間保護',     '今週さぼった日をまとめて守ってくれる盾'],
-  lantern:      ['🏮 導きの灯',     '次のサイコロを2回振り良い方を採用'],
+  lantern:      ['🏮 導きの灯',     '一番近い🎁アイテムマスまで進む'],
   // ── レア ──
   legend_gem:   ['🌟 天運の輝き',   '+50 XP & 次のサイコロ +3'],
   dragon_scroll:['🐉 龍の覚醒',     '24時間すべてのXPが 2倍'],
@@ -1893,10 +1918,7 @@ const ITEM_EFFECTS = {
     confirm: '次のサイコロの出目に +2',
     apply() { itemBuffs.diceBonus += 2; saveItemBuffs(); return '🪄 次のサイコロに +2！'; },
   },
-  lantern: {
-    confirm: '次のサイコロを2回振って、良い方の出目を採用',
-    apply() { itemBuffs.advantage = true; saveItemBuffs(); return '🏮 次のサイコロは2回振り！良い方を採用'; },
-  },
+  // lantern（🏮導きの灯）は「サイコロ・移動系」へ移した（導き型に作り替えたため）
   focus_gem: {
     confirm: '次にセッションを完了したとき +20 XP ボーナス',
     apply() { itemBuffs.nextSessionXP += 20; saveItemBuffs(); return '💎 次のセッション完了で +20XP を予約！'; },
@@ -1973,6 +1995,25 @@ const ITEM_EFFECTS = {
   compass: {
     picker: true,                       // 専用の出目選択UIを開く（useItemで分岐）
     open() { openDicePicker(); },
+  },
+  // 🏮 導きの灯：前を照らして、一番近いアイテムマスまで導く。
+  // 以前は「2回振って大きい方」だったが、盤面のアイテムマスは35/100と密で、
+  // ただ大きく進んでも命中率は素で振るのと同じ35.8%だった（＝効果ゼロ）。
+  // 「遠くまで行ける」ではなく「狙って止まれる」に作り替えた。
+  lantern: {
+    unusable: `前方${LANTERN_RANGE}マス以内にアイテムのマスがありません。\n（ゴールの手前だと起こります。先に1回振ってから使ってください）`,
+    confirm() {
+      const g = findGuideTarget(LANTERN_RANGE);
+      return g
+        ? `前方${g.dist}マス先の ${g.type === 'rare' ? '⭐レアマス' : '🎁アイテムマス'}（${g.cellNum}マス目）まで進みます`
+        : null;   // 届く範囲にアイテムマスが無い＝使わせない（下で案内する）
+    },
+    apply() {
+      const g = findGuideTarget(LANTERN_RANGE);
+      if (!g) return null;                       // ここには来ない（confirm で止まる）
+      itemBuffs.fixedDice = g.steps; saveItemBuffs();
+      return `🏮 導きの灯！${g.type === 'rare' ? '⭐レアマス' : '🎁アイテムマス'}まで ${g.dist}マス進む`;
+    },
   },
   hourglass: {
     confirm: '次のサイコロを3回振って、一番大きい出目を採用',
@@ -2493,7 +2534,14 @@ function useItem(itemId) {
   // 🧭羅針盤など、専用の選択UIを持つアイテムはそちらに任せる（消費もUI側で行う）
   if (eff.picker) { eff.open(); return; }
 
-  if (!confirm(`${item.emoji}「${item.name}」を使いますか？\n\n効果：${eff.confirm}`)) return;
+  // confirm は文字列のほか、盤面の状況で文言が変わるアイテム用に関数も許す。
+  // null を返したら「いまは使えない」＝消費せず理由だけ伝える。
+  const desc = (typeof eff.confirm === 'function') ? eff.confirm() : eff.confirm;
+  if (desc === null || desc === undefined) {
+    alert(`${item.emoji}「${item.name}」は、いまは使えません。\n\n${eff.unusable || '条件がそろってから使ってください。'}`);
+    return;
+  }
+  if (!confirm(`${item.emoji}「${item.name}」を使いますか？\n\n効果：${desc}`)) return;
 
   const msg = eff.apply();            // 効果発動（戻り値はトースト文言／null可）
   recordItemUse(item.id);             // 📖図鑑に記録
@@ -2600,8 +2648,10 @@ document.getElementById('board-roll-btn')?.addEventListener('click', () => {
 
 // すごろく画面で振ったときの見せ方。
 // 以前はテキスト1行だけで、サイコロが1つも出なかった。そのため
-// 🏮学びの灯籠（2回振って良い方）を使っても、効いているのかどうか
+// 当時の🏮学びの灯籠（2回振って良い方）を使っても、効いているのかどうか
 // 利用者からはまったく分からなかった（2026-08-24 ヨージから報告）。
+// ※灯籠はその後「一番近いアイテムマスまで進む」に作り替えた。
+//   いまは fixedDice を使うので、ここは通常の出目表示になる。
 // 「刻」と同じ 3Dサイコロを、押したボタンのすぐ下で転がす。
 function showBoardRollResult(result) {
   const stage = document.getElementById('board-dice-stage');
@@ -2654,7 +2704,9 @@ const SG_FACE_ROT = { 1:[0,0], 2:[0,-90], 3:[-90,0], 4:[90,0], 5:[0,90], 6:[0,18
 //    ここを共通にしておかないと、片方だけ直して
 //    「刻では2個出るのに、すごろく画面では何も出ない」というズレが生まれる。
 //    実際それが起きた（2026-08-24 学びの灯籠を使っても2個出ない）。
-// advantage（🏮学びの灯籠）→2個 ／ bestOf3（⏳時の砂）→3個 ／ 通常→出目を分割
+// advantage →2個 ／ bestOf3（⏳時の砂）→3個 ／ 通常→出目を分割
+// ※advantage は旧・学びの灯籠の効果。灯籠を導き型に作り替えたので、
+//   いまこれを新しく付けるアイテムは無い（持ち越し分の消化用に残している）。
 function sgDiceValsFor(result) {
   if (result.usedBuff === 'advantage') {
     // 2回振って良い方 → 勝った目 ＋ 負けた目
