@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Growth Quest Tests</title>
+<style>
+  body {
+    margin: 0;
+    padding: 24px;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Noto Sans JP", sans-serif;
+    background: #10131a;
+    color: #f3f5f8;
+  }
+  h1 {
+    margin: 0 0 12px;
+    font-size: 24px;
+  }
+  #summary {
+    margin: 0 0 16px;
+    padding: 12px 14px;
+    border: 1px solid #3a4353;
+    background: #171c26;
+  }
+  #summary.pass {
+    border-color: #4bb774;
+  }
+  #summary.fail {
+    border-color: #d76565;
+  }
+  ol {
+    margin: 0;
+    padding-left: 22px;
+  }
+  li {
+    margin: 8px 0;
+    line-height: 1.5;
+  }
+  .pass {
+    color: #7be39b;
+  }
+  .fail {
+    color: #ff8d8d;
+  }
+  iframe {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+<h1>Growth Quest Tests</h1>
+<div id="summary">実行中...</div>
+<ol id="results"></ol>
+
+<script>
+(function () {
+  const summary = document.getElementById('summary');
+  const results = document.getElementById('results');
+  const snapshot = new Map();
+  const originalKeys = [];
+
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    originalKeys.push(key);
+    snapshot.set(key, localStorage.getItem(key));
+  }
+
+  const tests = [];
+  let pass = 0;
+  let fail = 0;
+
+  function addTest(name, fn) {
+    tests.push({ name, fn });
+  }
+
+  function assert(condition, message) {
+    if (!condition) throw new Error(message);
+  }
+
+  function assertEq(actual, expected, message) {
+    const a = JSON.stringify(actual);
+    const e = JSON.stringify(expected);
+    if (a !== e) throw new Error(`${message}: got ${a}, want ${e}`);
+  }
+
+  function show(ok, name, detail) {
+    const li = document.createElement('li');
+    li.className = ok ? 'pass' : 'fail';
+    li.textContent = `${ok ? 'PASS' : 'FAIL'}: ${name}${detail ? ' — ' + detail : ''}`;
+    results.appendChild(li);
+  }
+
+  function restoreStorage() {
+    const currentKeys = [];
+    for (let i = 0; i < localStorage.length; i++) currentKeys.push(localStorage.key(i));
+    currentKeys.forEach(key => {
+      if (!snapshot.has(key)) localStorage.removeItem(key);
+    });
+    originalKeys.forEach(key => {
+      localStorage.setItem(key, snapshot.get(key));
+    });
+  }
+
+  function wait(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  function openAppFrame() {
+    return new Promise((resolve, reject) => {
+      const frame = document.createElement('iframe');
+      const timer = setTimeout(() => reject(new Error('index.html の読み込みが時間切れ')), 8000);
+      frame.addEventListener('load', async () => {
+        clearTimeout(timer);
+        await wait(1600);
+        resolve(frame);
+      }, { once: true });
+      frame.src = 'index.html?test=' + Date.now();
+      document.body.appendChild(frame);
+    });
+  }
+
+  async function openFreshUserFrame() {
+    localStorage.clear();
+    const frame = await openAppFrame();
+    await wait(2200);
+    return frame;
+  }
+
+  async function captureExport(win) {
+    let captured = '';
+    const OriginalBlob = win.Blob;
+    const originalCreate = win.URL.createObjectURL;
+    const originalRevoke = win.URL.revokeObjectURL;
+    const originalClick = win.HTMLAnchorElement.prototype.click;
+
+    win.Blob = class TestBlob extends OriginalBlob {
+      constructor(parts, options) {
+        captured = parts.map(part => String(part)).join('');
+        super(parts, options);
+      }
+    };
+    win.URL.createObjectURL = () => 'blob:gq-test';
+    win.URL.revokeObjectURL = () => {};
+    win.HTMLAnchorElement.prototype.click = function () {};
+
+    try {
+      win.exportAllData();
+      await wait(50);
+      return JSON.parse(captured);
+    } finally {
+      win.Blob = OriginalBlob;
+      win.URL.createObjectURL = originalCreate;
+      win.URL.revokeObjectURL = originalRevoke;
+      win.HTMLAnchorElement.prototype.click = originalClick;
+    }
+  }
+
+  async function run() {
+    localStorage.setItem('gq_unlocks', JSON.stringify(['guild', 'board', 'skill', 'review']));
+    localStorage.setItem('gq_summoned', '1');
+    localStorage.setItem('gq_onboard_done', '1');
+
+    const frame = await openAppFrame();
+    const win = frame.contentWindow;
+    const doc = frame.contentDocument;
+
+    addTest('起動して白画面にならない', () => {
+      assert(doc.body.innerText.length > 200, 'body text が少なすぎます');
+      assert(!doc.getElementById('gq-fatal-error'), '起動エラー表示が出ています');
+    });
+
+    addTest('todayKey() は YYYY-MM-DD 形式の文字列を返す', () => {
+      assert(/^\d{4}-\d{2}-\d{2}$/.test(win.todayKey()), win.todayKey());
+    });
+
+    addTest('壊れた gq_data でも loadData() は初期値へ戻る', () => {
+      localStorage.setItem('gq_data', '{broken');
+      assertEq(win.loadData().xp, 0, 'xp');
+      assertEq(win.loadData().level, 1, 'level');
+    });
+
+    addTest('loadSettings() は保存済みの一部設定を初期値と合成する', () => {
+      localStorage.setItem('gq_settings', JSON.stringify({ goal: 77 }));
+      const settings = win.loadSettings();
+      assertEq(settings.goal, 77, 'goal');
+      assertEq(settings.defaultMode, 'pomodoro', 'defaultMode');
+    });
+
+    addTest('壊れた gq_genres でも loadGenres() は初期ジャンルへ戻る', () => {
+      localStorage.setItem('gq_genres', '{broken');
+      const genres = win.loadGenres();
+      assert(Array.isArray(genres), '配列ではありません');
+      assert(genres.length >= 1, '初期ジャンルが空です');
+    });
+
+    addTest('safeSetItem() は保存に成功すると true を返す', () => {
+      assertEq(win.safeSetItem('gq_test_safe_set_item', 'ok'), true, 'safeSetItem');
+      assertEq(localStorage.getItem('gq_test_safe_set_item'), 'ok', '保存値');
+    });
+
+    addTest('saveData() は保存後に data:changed を通知する', () => {
+      let seen = false;
+      const off = win.GQ.on('data:changed', payload => {
+        seen = payload && payload.reason === 'tests.html';
+      });
+      win.saveData(Object.assign({}, win.DEFAULT_DATA, { xp: 12 }), 'tests.html');
+      off();
+      assert(seen, 'data:changed が届いていません');
+    });
+
+    addTest('exportAllData() は gq_ キーと growthPraiseLogs を含める', async () => {
+      localStorage.setItem('gq_test_export', 'ok');
+      localStorage.setItem('growthPraiseLogs', JSON.stringify({ '2026-09-01': [{ text: 'ok' }] }));
+      const exported = await captureExport(win);
+      assertEq(exported.data.gq_test_export, 'ok', 'gq_ key');
+      assert(typeof exported.data.growthPraiseLogs === 'string', 'growthPraiseLogs がありません');
+    });
+
+    addTest('タイマー START/STOP が切り替わる', async () => {
+      const start = doc.getElementById('start-btn');
+      const stop = doc.getElementById('stop-btn');
+      start.click();
+      await wait(120);
+      assertEq(start.textContent.trim(), '一時停止', 'START後の表示');
+      assertEq(win.getComputedStyle(stop).display, 'flex', 'STOP表示');
+      stop.click();
+      await wait(120);
+      assertEq(start.textContent.trim(), 'START', 'STOP後の表示');
+      assertEq(win.getComputedStyle(stop).display, 'none', 'STOP非表示');
+    });
+
+    addTest('設定モーダルを開閉できる', async () => {
+      doc.getElementById('settings-btn').click();
+      await wait(100);
+      assert(doc.getElementById('settings-overlay').classList.contains('open'), '設定が開いていません');
+      doc.getElementById('settings-close-btn').click();
+      await wait(100);
+      assert(!doc.getElementById('settings-overlay').classList.contains('open'), '設定が閉じていません');
+    });
+
+    addTest('図鑑（バッジ）を開閉できる', async () => {
+      doc.getElementById('avatar-open-badges').click();
+      await wait(100);
+      assert(doc.getElementById('badges-overlay').classList.contains('open'), '図鑑が開いていません');
+      doc.getElementById('badges-close-btn').click();
+      await wait(100);
+      assert(!doc.getElementById('badges-overlay').classList.contains('open'), '図鑑が閉じていません');
+    });
+
+    addTest('カレンダー/週次レビューを開閉できる', async () => {
+      doc.getElementById('review-btn').click();
+      await wait(120);
+      assert(doc.getElementById('review-overlay').classList.contains('open'), 'レビューが開いていません');
+      doc.getElementById('review-close-btn').click();
+      await wait(100);
+      assert(!doc.getElementById('review-overlay').classList.contains('open'), 'レビューが閉じていません');
+    });
+
+    addTest('新規ユーザーでは召喚が自動表示される', async () => {
+      const fresh = await openFreshUserFrame();
+      const freshDoc = fresh.contentDocument;
+      assert(freshDoc.getElementById('summon-overlay').classList.contains('open'), '召喚が開いていません');
+    });
+
+    for (const test of tests) {
+      try {
+        await test.fn();
+        pass++;
+        show(true, test.name);
+      } catch (err) {
+        fail++;
+        show(false, test.name, err && err.message ? err.message : String(err));
+        console.error(err);
+      }
+    }
+  }
+
+  run()
+    .catch(err => {
+      fail++;
+      show(false, 'テスト実行', err && err.message ? err.message : String(err));
+      console.error(err);
+    })
+    .finally(() => {
+      restoreStorage();
+      summary.textContent = `${pass} passed, ${fail} failed`;
+      summary.className = fail ? 'fail' : 'pass';
+    });
+})();
+</script>
+</body>
+</html>

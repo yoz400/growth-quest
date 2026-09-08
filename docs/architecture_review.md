@@ -24,7 +24,7 @@
 │   8 boot.js        全イベント配線・INIT・段階解放・召喚     │
 │   9 otomon.js      オトモン（独自の window.Otomon 名前空間）│
 │                                                            │
-│  データ: localStorage 50キー（サーバー無し・端末内完結）    │
+│  データ: localStorage 56キー（サーバー無し・端末内完結）    │
 └────────────────────────────────────────────────────────────┘
 配信: GitHub Pages https://yoz400.github.io/growth-quest/
       main へ push → 1〜2分で自動デプロイ
@@ -98,14 +98,14 @@
 移動はキャッシュ・参照切れのリスクだけ生んで得るものが薄い。
 「構成の問題」の実体は上の弱点1〜3であり、フォルダではなくルール（§4）で解決する。
 
-## 6. localStorage キー台帳（2026-07-05時点・50キー）
+## 6. localStorage キー台帳（2026-09-01時点・56キー）
 
 新キー追加時はここに追記し、exportAllData() への追加を確認すること。
 
 | 分類 | キー |
 |------|------|
 | 本体データ | gq_data（レベル/XP/履歴/連続日数）, gq_settings, gq_unlocks |
-| プロフィール | gq_player_name, gq_av_type, gq_avatar, gq_summoned, gq_onboard_done, gq_tutorial_seen |
+| プロフィール | gq_player_name, gq_av_type, gq_avatar, gq_summoned, gq_onboard_done, gq_tutorial_seen, gq_guide_tutorial_seen |
 | タイマー | gq_timer_session（誤操作リロード復元用・完了時必ず削除） |
 | クエスト/使命 | gq_daily_quests, gq_mission, gq_mission_reset, gq_nudge_course, gq_nudge_done, gq_vows |
 | ジャンル/スキル | gq_genres, gq_current_genre（選択中ジャンル・リロードで「学習」に戻る事故の対策）, gq_skills, gq_skill_notes |
