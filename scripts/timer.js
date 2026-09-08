@@ -566,8 +566,12 @@ function showKoku(mins, breakMins, kind, equipBonusXp, firstTodayXp) {
     ${closingMsg}
   `;
 
-  // 🎲 すごろく：振るかどうかをここで選ぶ。
-  //    勝手には回さない（それが余韻を奪う）。でも「いま振りたい」人を歩かせもしない。
+  // 🎲 すごろく：ここでは振らせない。
+  //    集中した直後にいきなり盤面を回すと、いちばん余韻が残っている瞬間を
+  //    ゲームに持っていかれる。順番を「振り返り → 祝福」に変えた。
+  //    ・この告のあとに🌳世界樹の報告が出る
+  //    ・報告すると、その場で「祝福のサイコロ」が振れる（progression.js）
+  //    ・報告しなくてもチケットは貯まる（すごろく画面からいつでも振れる）＝損はしない
   const _ticketN = getSugorokuTicketCount();
   if (_ticketN > 0) {
     const choice = document.createElement('div');
@@ -582,23 +586,10 @@ function showKoku(mins, breakMins, kind, equipBonusXp, firstTodayXp) {
         ? `<div class="ktc-warn">あと${_max - _ticketN}回で上限（${_max}回）です</div>`
         : '');
     choice.innerHTML = `
-      <div class="ktc-lead">🎲 すごろくを振れます（あと ${_ticketN} 回）</div>
+      <div class="ktc-lead ktc-kept">🎲 すごろくを振れます（あと ${_ticketN} 回）</div>
       ${_warn}
-      <div class="ktc-btns">
-        <button class="ktc-btn ktc-roll"  id="koku-roll-btn">🎲 いま振る</button>
-        <button class="ktc-btn ktc-later" id="koku-later-btn">あとで</button>
-      </div>`;
+      <div class="ktc-lead ktc-kept">このあと🌳世界樹に報告すると、祝福として振れます</div>`;
     result.appendChild(choice);
-
-    document.getElementById('koku-roll-btn').addEventListener('click', () => {
-      const r = rollSugorokuFromTicket();
-      if (!r) { choice.remove(); return; }
-      choice.remove();
-      showSugorokuInKoku(r);
-    });
-    document.getElementById('koku-later-btn').addEventListener('click', () => {
-      choice.innerHTML = `<div class="ktc-lead ktc-kept">🎲 すごろくから、好きなときに振れます</div>`;
-    });
   }
 
   // 名言を選んで表示

@@ -40,7 +40,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles/app.css?v=guild-186">
+<link rel="stylesheet" href="styles/app.css?v=guild-187">
 </head>
 <body>
 
@@ -984,6 +984,16 @@
     </div>
     <!-- 持っているアイテムがある時だけ表示：すごろく盤面（アイテム使用）へジャンプ -->
     <button class="fairy-item-link" id="fairy-item-link" style="display:none"></button>
+    <!-- 🌟 報告したあとの祝福。ここでだけ「祝福のサイコロ」を渡す。
+         報告しなかった人もチケットは貯まっているので、損はしない -->
+    <div class="fairy-blessing" id="fairy-blessing" style="display:none">
+      <div class="fb-title">🌟 祝福</div>
+      <div class="fb-text" id="fairy-blessing-text"></div>
+      <div class="fb-actions">
+        <button class="fb-btn fb-roll"  id="fairy-blessing-roll">🎲 祝福のサイコロを振る</button>
+        <button class="fb-btn fb-later" id="fairy-blessing-later">あとで</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1140,17 +1150,17 @@
 })();
 </script>
 
-<script src="scripts/areas.js?v=guild-186"></script>
-<script src="scripts/core.js?v=guild-186"></script>
-<script src="scripts/home-layers.js?v=guild-186"></script>
-<script src="scripts/progression.js?v=guild-186"></script>
-<script src="scripts/quests.js?v=guild-186"></script>
-<script src="scripts/timer.js?v=guild-186"></script>
-<script src="scripts/settings-genre.js?v=guild-186"></script>
-<script src="scripts/calendar-review.js?v=guild-186"></script>
-<script src="scripts/features.js?v=guild-186"></script>
-<script src="scripts/boot.js?v=guild-186"></script>
-<script src="scripts/otomon.js?v=guild-186"></script>
+<script src="scripts/areas.js?v=guild-187"></script>
+<script src="scripts/core.js?v=guild-187"></script>
+<script src="scripts/home-layers.js?v=guild-187"></script>
+<script src="scripts/progression.js?v=guild-187"></script>
+<script src="scripts/quests.js?v=guild-187"></script>
+<script src="scripts/timer.js?v=guild-187"></script>
+<script src="scripts/settings-genre.js?v=guild-187"></script>
+<script src="scripts/calendar-review.js?v=guild-187"></script>
+<script src="scripts/features.js?v=guild-187"></script>
+<script src="scripts/boot.js?v=guild-187"></script>
+<script src="scripts/otomon.js?v=guild-187"></script>
 
 <script>
 // ── Service Worker 登録 ────────────────────────────────

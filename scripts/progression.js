@@ -405,6 +405,7 @@ function updateFairySave() {
 
 function closeFairyModal() {
   Overlay.close('fairy-overlay');
+  resetFairyBlessing();   // 次に開くとき入力画面に戻す（祝福のまま残さない）
 }
 
 function saveFairy() {
@@ -424,13 +425,55 @@ function saveFairy() {
   const gained = addDailyConfidenceOnce('praise_log', 2, 'praise_log', dateKey);
   completeQuest('praise_self');
 
-  closeFairyModal();
   // スキルツリーが開いていれば再描画
   if (document.getElementById('skill-overlay')?.classList.contains('open')) renderSkillTree();
 
   const t = SKILL_THRESHOLDS[_fairyStage];
   const g = genres.find(x => x.id === _fairyGenreId);
+
+  // 🌟 祝福：振り返った人にだけ、その場でサイコロを渡す。
+  //    報告せず閉じた人もチケットは貯まっている（すごろく画面から振れる）ので、
+  //    これは「取り上げ」ではなく「その場で振れる特典」。
+  const tickets = (typeof getSugorokuTicketCount === 'function') ? getSugorokuTicketCount() : 0;
+  if (tickets > 0) {
+    showFairyBlessing(t, g, tickets);
+    return;                     // モーダルは開いたまま。祝福の操作を待つ
+  }
+
+  closeFairyModal();
   setTimeout(() => showFairyToast(t, g), gained ? 5600 : 700);
+}
+
+// 報告のあと、妖精パネルの中身を「祝福」に差し替える。
+// 新しいモーダルは作らない（掟3：モーダルは OverlayManager 経由のみ）。
+function showFairyBlessing(stage, g, tickets) {
+  const box = document.getElementById('fairy-blessing');
+  if (!box) { closeFairyModal(); return; }
+
+  // 入力まわりを隠して、祝福だけを見せる
+  ['fairy-speech','fairy-genre','fairy-text','fairy-stages','fairy-item-link']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+  const label = document.querySelector('.fairy-stage-label');
+  if (label) label.style.display = 'none';
+  const acts = document.querySelector('.fairy-actions');
+  if (acts) acts.style.display = 'none';
+
+  document.getElementById('fairy-blessing-text').innerHTML =
+    `${g ? g.emoji + ' ' + g.name : ''} の樹に <b>${stage.emoji} ${stage.name}</b> が実った。<br>` +
+    `<span style="opacity:.85">よく向き合ったね。お祝いに1回どうぞ（あと ${tickets} 回）</span>`;
+  box.style.display = '';
+}
+
+// 祝福の後片付け。次に開いたとき入力画面に戻るよう、必ず元へ戻す
+function resetFairyBlessing() {
+  const box = document.getElementById('fairy-blessing');
+  if (box) box.style.display = 'none';
+  ['fairy-speech','fairy-genre','fairy-text','fairy-stages']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.style.display = ''; });
+  const label = document.querySelector('.fairy-stage-label');
+  if (label) label.style.display = '';
+  const acts = document.querySelector('.fairy-actions');
+  if (acts) acts.style.display = '';
 }
 
 function showFairyToast(stage, g) {
@@ -442,6 +485,26 @@ function showFairyToast(stage, g) {
 document.getElementById('fairy-text').addEventListener('input', updateFairySave);
 document.getElementById('fairy-save-btn').addEventListener('click', saveFairy);
 document.getElementById('fairy-skip-btn').addEventListener('click', closeFairyModal);
+
+// 🌟 祝福：ここで振る。演出は すごろく盤面の3Dサイコロをそのまま使う
+//    （告の中に別の演出を作ると、2か所を直す羽目になる。過去にそれで事故った）
+document.getElementById('fairy-blessing-roll')?.addEventListener('click', () => {
+  closeFairyModal();
+  setTimeout(() => {
+    if (typeof openBoardModal === 'function') openBoardModal();
+    // 盤面が開いてから振る（描画前に振るとコマの歩行アニメが出ない）
+    setTimeout(() => {
+      const btn = document.getElementById('board-roll-btn');
+      if (btn && !btn.disabled) btn.click();
+    }, 420);
+  }, 260);
+});
+document.getElementById('fairy-blessing-later')?.addEventListener('click', () => {
+  const t = SKILL_THRESHOLDS[_fairyStage];
+  const g = genres.find(x => x.id === _fairyGenreId);
+  closeFairyModal();
+  setTimeout(() => showFairyToast(t, g), 700);
+});
 document.getElementById('fairy-overlay').addEventListener('click', e => {
   if (e.target === document.getElementById('fairy-overlay')) closeFairyModal();
 });
