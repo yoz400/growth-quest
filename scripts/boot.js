@@ -314,8 +314,18 @@ function renderTimelogPalette() {
       ${c.emoji}${c.name}</button>`).join('');
   pal.querySelectorAll('.tl-pal-chip').forEach(chip => {
     chip.addEventListener('dragstart', e => { e.dataTransfer.setData('text/cat', chip.dataset.cat); e.dataTransfer.effectAllowed='copy'; });
-    // タップでもフォームのカテゴリにセット（ドラッグできない環境のフォールバック）
-    chip.addEventListener('click', () => { document.getElementById('tl-cat').value = chip.dataset.cat; });
+    // タップでもフォームのカテゴリにセット。
+    // ⚠️ スマホではドラッグが動かない（タッチから dragstart が出ない）ので、
+    //    実際にはこちらが本命の操作。以前は見た目が何も変わらず
+    //    「タップしても反応しない」と映っていた（2026-09-08 ヨージ報告）。
+    chip.addEventListener('click', () => {
+      const sel = document.getElementById('tl-cat');
+      if (sel) sel.value = chip.dataset.cat;
+      pal.querySelectorAll('.tl-pal-chip').forEach(x => x.classList.remove('picked'));
+      chip.classList.add('picked');
+      const hint = document.querySelector('.tl-palette-hint');
+      if (hint) hint.textContent = `✓ ${chip.textContent.trim()} を選択中 — 下の「時刻」を決めて追加`;
+    });
   });
 }
 
@@ -971,15 +981,30 @@ function showGapSuggest(s, e) {
   const tops = guessCatsForRange(s, e);
   const main = _tlCat(tops[0]);
   const range = `${_tlF(s)}〜${e >= 1440 ? '24:00' : _tlF(e)}`;
+  // 上位3つに無いカテゴリを選びたいとき、以前はパレットからのドラッグしか
+  // 道が無かった。ドラッグはスマホでは動かない（タッチから dragstart が出ない）ので
+  // 「反応しない」と映る（2026-09-08 ヨージ報告）。ここに全カテゴリの逃げ道を置く。
+  const others = TIMELOG_CATS.filter(c => !tops.includes(c.id));
   box.innerHTML = `<div class="tl-sug">
     <div class="tl-sug-msg">🧚 ${range}…… いつもは <b>${main.emoji}${main.name}</b> の時間かな？</div>
     <div class="tl-sug-actions">
       <button class="tl-sug-main" data-cat="${main.id}" style="border-color:${main.color}">${main.emoji} ${main.name}で記録</button>
       ${tops.slice(1).map(id => { const c = _tlCat(id); return `<button class="tl-sug-alt" data-cat="${c.id}" style="border-color:${c.color}66">${c.emoji}${c.name}</button>`; }).join('')}
+      ${others.length ? `<button class="tl-sug-alt tl-sug-more" id="tl-sug-more">…ほかから選ぶ</button>` : ''}
       <button class="tl-sug-close">✕</button>
     </div>
+    <div class="tl-sug-others" id="tl-sug-others" style="display:none">
+      ${others.map(c => `<button class="tl-sug-alt" data-cat="${c.id}" style="border-color:${c.color}66">${c.emoji}${c.name}</button>`).join('')}
+    </div>
   </div>`;
-  box.querySelectorAll('[data-cat]').forEach(b => b.addEventListener('click', () => addGapBlock(b.dataset.cat, s, e)));
+  const bind = () => box.querySelectorAll('[data-cat]').forEach(b => {
+    b.onclick = () => addGapBlock(b.dataset.cat, s, e);
+  });
+  bind();
+  document.getElementById('tl-sug-more')?.addEventListener('click', () => {
+    const o = document.getElementById('tl-sug-others');
+    if (o) { o.style.display = ''; document.getElementById('tl-sug-more').style.display = 'none'; }
+  });
   box.querySelector('.tl-sug-close').addEventListener('click', () => { box.innerHTML = ''; });
 }
 

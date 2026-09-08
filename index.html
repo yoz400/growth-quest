@@ -40,7 +40,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles/app.css?v=guild-189">
+<link rel="stylesheet" href="styles/app.css?v=guild-190">
 </head>
 <body>
 
@@ -613,7 +613,9 @@
     <div id="rv-day-panel">
       <div id="tl-timeline"></div>
       <div id="tl-suggest"></div>
-      <div class="tl-palette-hint">↓ カテゴリをバーにドラッグして追加</div>
+      <!-- ドラッグはPCのみ。スマホはタッチから dragstart が出ないので
+           「タップして選ぶ」を先に書く（できない操作を指示しない） -->
+      <div class="tl-palette-hint">↓ カテゴリをタップして選ぶ（PCならバーへドラッグでもOK）</div>
       <div id="tl-palette"></div>
       <div id="tl-summary"></div>
       <div id="tl-day-insights"></div>
@@ -1150,17 +1152,17 @@
 })();
 </script>
 
-<script src="scripts/areas.js?v=guild-189"></script>
-<script src="scripts/core.js?v=guild-189"></script>
-<script src="scripts/home-layers.js?v=guild-189"></script>
-<script src="scripts/progression.js?v=guild-189"></script>
-<script src="scripts/quests.js?v=guild-189"></script>
-<script src="scripts/timer.js?v=guild-189"></script>
-<script src="scripts/settings-genre.js?v=guild-189"></script>
-<script src="scripts/calendar-review.js?v=guild-189"></script>
-<script src="scripts/features.js?v=guild-189"></script>
-<script src="scripts/boot.js?v=guild-189"></script>
-<script src="scripts/otomon.js?v=guild-189"></script>
+<script src="scripts/areas.js?v=guild-190"></script>
+<script src="scripts/core.js?v=guild-190"></script>
+<script src="scripts/home-layers.js?v=guild-190"></script>
+<script src="scripts/progression.js?v=guild-190"></script>
+<script src="scripts/quests.js?v=guild-190"></script>
+<script src="scripts/timer.js?v=guild-190"></script>
+<script src="scripts/settings-genre.js?v=guild-190"></script>
+<script src="scripts/calendar-review.js?v=guild-190"></script>
+<script src="scripts/features.js?v=guild-190"></script>
+<script src="scripts/boot.js?v=guild-190"></script>
+<script src="scripts/otomon.js?v=guild-190"></script>
 
 <script>
 // ── Service Worker 登録 ────────────────────────────────
