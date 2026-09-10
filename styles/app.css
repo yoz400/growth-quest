@@ -2050,6 +2050,15 @@ header {
 /* アバター（現在地） */
 .rp-av { display:flex; align-items:flex-end; justify-content:center; width:100%; }
 .rp-av svg { width: 56px; height: 56px; }
+/* 歩いている最中のコマ：1マス進むたびに、ぴょこっと跳ねる。
+   マスからマスへは行が描き直されて移るので、跳ねる動きで「進んだ」と分かる。 */
+.rp-av.is-walking svg { animation: rpHop .26s ease-out; }
+@keyframes rpHop {
+  0%   { transform: translateY(0)     scaleY(1); }
+  35%  { transform: translateY(-9px)  scaleY(1.08); }
+  70%  { transform: translateY(0)     scaleY(.94); }
+  100% { transform: translateY(0)     scaleY(1); }
+}
 
 /* マス番号 */
 .rp-n {

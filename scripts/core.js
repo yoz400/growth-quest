@@ -16,6 +16,7 @@ let _sgSpinT2;
 let _sgAutoClose;
 let _sgWalkTimers;
 let sgAnimating;
+let sgAnimCell;      // 歩行アニメ中に「いまコマが居るマス」。null＝実際の位置を使う
 let sgPendingWalk;
 let _sgPendingReward;
 let _sgJustRolled;
@@ -618,6 +619,7 @@ _sgSpinT2 = null;
 _sgAutoClose = null;
 _sgWalkTimers = [];   // 告の中の冒険レーン（コマ歩行）用タイマー
 sgAnimating   = false;         // 歩行アニメ実行中フラグ
+sgAnimCell    = null;          // 歩行アニメ中に見せるマス番号（エリアビュー用）
 sgPendingWalk = null;          // { fromPos, rollTime } ─ 次の開放時にアニメ再生
 _sgPendingReward = null;       // 到着マスで出すGET演出（装備/アイテム）
 _sgJustRolled    = false;      // 今セッションでサイコロを振った→双六へ誘導
@@ -1558,7 +1560,7 @@ function getWalkerCellPos(n) {
 
 async function startWalkAnimation(fromPos, toPos) {
   const walkerEl = document.getElementById('sg-walker');
-  if (!walkerEl) { sgAnimating = false; return; }
+  if (!walkerEl) { sgAnimating = false; sgAnimCell = null; return; }
   // 選択中タイプの新ドット絵コマをそのまま歩かせる
   walkerEl.innerHTML = buildKomaSVG('100%', '100%');
 
@@ -1579,10 +1581,10 @@ async function startWalkAnimation(fromPos, toPos) {
     for (let n = 1; n <= toCellN; n++) path.push(n);
   }
 
-  if (path.length === 0) { sgAnimating = false; renderBoard(); return; }
+  if (path.length === 0) { sgAnimating = false; sgAnimCell = null; renderBoard(); return; }
 
   const startP = getWalkerCellPos(fromPos > 0 ? fromCellN : 1);
-  if (!startP) { sgAnimating = false; renderBoard(); return; }
+  if (!startP) { sgAnimating = false; sgAnimCell = null; renderBoard(); return; }
 
   const sz = startP.size;
   walkerEl.style.width  = sz + 'px';
@@ -1595,6 +1597,12 @@ async function startWalkAnimation(fromPos, toPos) {
 
   let prevN = fromPos > 0 ? fromCellN : 1;
   const totalSteps = path.length;
+
+  // エリアビュー（常に見えている横一列）も、同じ歩調で1マスずつ進める。
+  // #sg-walker は「マス目を見る」の折りたたみの中にいて普段は見えないので、
+  // 見えている側でも動かさないと「移動アニメが無い」ことになる。
+  sgAnimCell = prevN;
+  buildAreaView();
 
   for (let si = 0; si < totalSteps; si++) {
     const nextN = path[si];
@@ -1630,6 +1638,8 @@ async function startWalkAnimation(fromPos, toPos) {
     else if (_ct === 'event')      spawnSgBurst(nextN, '#ff8a93', 'event');
     else if (_ct === 'checkpoint') spawnSgBurst(nextN, '#ffb46a', 'checkpoint');
     prevN = nextN;
+    sgAnimCell = nextN;      // エリアビューのコマも1マス進める
+    buildAreaView();
   }
 
   // 到着：正面向きに戻してホップ停止→着地バウンド→祝福バースト
@@ -1661,6 +1671,7 @@ async function startWalkAnimation(fromPos, toPos) {
   await new Promise(r => setTimeout(r, 280));
 
   sgAnimating = false;
+  sgAnimCell = null;              // 実際の位置に戻す（以後は本物の pos を描く）
   walkerEl.style.display = 'none';
   renderBoard(); // ドット絵アバターを表示して再描画
 
@@ -2124,7 +2135,11 @@ function pickFixedDice(n) {
 
 // ── RPG冒険マップ エリアビュー ──
 function buildAreaView() {
-  const cur = sugorokuData.pos > 0 ? sgGetCellNum(sugorokuData.pos) : 0;
+  // 歩行アニメ中は「いま歩いている途中のマス」を描く。
+  // これが無いと、振った瞬間にコマが着地点へワープして見える（移動が見えない）。
+  const cur = (sgAnimCell !== null && sgAnimCell !== undefined)
+    ? sgAnimCell
+    : (sugorokuData.pos > 0 ? sgGetCellNum(sugorokuData.pos) : 0);
   const zi  = cur > 0 ? Math.floor((cur - 1) / 10) : 0;
   const zone = SG_ZONES[zi];
 
@@ -2216,8 +2231,11 @@ function buildAreaView() {
 
     let inner = `<span class="rp-n">${n}</span>`;
 
-    if (isCur && !sgAnimating) {
-      inner += `<div class="rp-av">${avatar}</div>`;
+    // 歩行中もコマを出す。以前は `!sgAnimating` で隠していたが、
+    // 実際に歩いて見えるコマ（#sg-walker）は折りたたまれた「マス目を見る」の
+    // 中にあり、開かない限り誰にも見えない。結果「移動アニメが無い」状態だった。
+    if (isCur) {
+      inner += `<div class="rp-av${sgAnimCell !== null ? ' is-walking' : ''}">${avatar}</div>`;
     } else if (isPast) {
       inner += `<div class="rp-ic rp-ic-done">✓</div>`;
     } else {
@@ -2562,6 +2580,10 @@ function renderBoard() {
     if (Date.now() - rollTime < 60000) {
       animFromPos = fromPos;
       sgAnimating = true;
+      // 歩き出す前に、まず出発点を描いておく。これが無いと、この直後の
+      // buildAreaView() が実際の位置（＝到着点）を描いてしまい、
+      // 「一瞬ゴールに着いてから、戻って歩き直す」ように見える。
+      sgAnimCell = fromPos > 0 ? sgGetCellNum(fromPos) : 1;
     }
     sgPendingWalk = null;
   }
@@ -2682,7 +2704,14 @@ function showBoardRollResult(result) {
   // すごろく画面が閉じられたら演出をやめる
   const alive = () => !!document.getElementById('board-dice-stage')
                    && document.getElementById('board-overlay')?.classList.contains('open');
+  // ⚠️ 必ず1回しか通さない。以前は保険のタイマーが `if (sgAnimating)` で判定して
+  //    いたが、サイコロが着地したあとは renderBoard が歩行アニメを始めて
+  //    sgAnimating を true に戻す。そのため保険が歩行の最中に発火し、
+  //    フラグを折って盤面を描き直し、移動アニメを潰していた。
+  let finished = false;
   const finish = () => {
+    if (finished) return;
+    finished = true;
     sgAnimating = false;
     document.getElementById(`${id}-sum`)?.classList.add('show');
     if (message) message.innerHTML = `<strong>🎲 ${result.roll}</strong> ${quietMessage}`;
@@ -2690,7 +2719,7 @@ function showBoardRollResult(result) {
   };
   sgRollDice3D(cubes, vals, alive, finish);
   // 演出が途中で止まっても結果は必ず出す（閉じて開き直したときの取りこぼし防止）
-  setTimeout(() => { if (sgAnimating) finish(); }, 2600);
+  setTimeout(finish, 2600);
 }
 
 // ── 桃鉄風 3Dサイコロ ──────────────────────────────────
