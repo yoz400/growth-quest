@@ -369,12 +369,7 @@ function showFairyGuide() {
   // アクション：⏱ タイマーへ誘導（閉じて、STARTをぽわんと光らせる）
   document.getElementById('fairy-act-start')?.addEventListener('click', () => {
     Overlay.close('skill-overlay');
-    const startBtn = document.getElementById('start-btn');
-    document.getElementById('timer-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    if (startBtn) {
-      startBtn.classList.add('first-glow');
-      setTimeout(() => startBtn.classList.remove('first-glow'), 6000);
-    }
+    startFiveMinuteSession();
   });
   // アクション：🧚 そのまま妖精の問いへ（答えると樹が即更新される）
   document.getElementById('fairy-act-answer')?.addEventListener('click', () => {
@@ -397,13 +392,13 @@ const FG_CATEGORIES = [
   { emoji:'⏱', name:'タイマー', key:null, nav:'timer',
     desc:'集中する時間をはかる基本の道具です。STARTを押して勉強や作業をして、終わったら止めるだけ。集中した分がXP（経験値）になって、あなたが育ちます。' },
   { emoji:'🎯', name:'モード（ポモドーロ／ディープ／フロー）', key:null, nav:'timer',
-    desc:'「ポモドーロ」は25分集中＋5分休憩のリズム。「ディープ」は50分のじっくり型。「フロー」は時間無制限で、自分で止めるまで集中できます。気分で選んでOK。' },
+    desc:'「まず5分」は5分で自動記録。「ポモドーロ」は25分集中＋5分休憩。「ディープ」は50分のじっくり型。「フロー」は時間無制限です。途中でも「終了して記録」で終えられます（1分未満は記録されません）。' },
   { emoji:'🏰', name:'冒険者ギルド', key:'guild', nav:'guild',
     desc:'「今日なにすればいい？」に答えてくれる依頼（クエスト）の掲示板です。やさしい依頼から挑戦まで並んでいて、こなすと名声や報酬がもらえます。' },
   { emoji:'⛩️', name:'誓いの祠', key:'guild', nav:'guild',
     desc:'「これをやる」と目標を石碑に刻む場所です（人に宣言すると頑張れる、という心理を使います）。果たすと妖精が祝福してくれます。期限を過ぎても、やさしく見守ります。' },
   { emoji:'🎲', name:'すごろく', key:'board', nav:'board',
-    desc:'集中を終えるとサイコロを振れます。進んだマスで、装備やアイテムに出会えます。何が出るかはお楽しみ。' },
+    desc:'集中を終えて世界樹にひとこと報告すると、祝福のサイコロを振れます。旅先ではアイテムやオトモンの卵に出会えます。' },
   { emoji:'🥚', name:'オトモン図鑑', key:null, nav:'otomon',
     desc:'すごろくの旅先で「卵」を拾い、「目覚めアイテム」で現実の小さな行動クエストを起こすと、卵が孵って相棒（オトモン）が生まれます。生まれた子は図鑑に集まり、あなたをそっと応援してくれます。' },
   { emoji:'🌳', name:'スキルツリー（世界樹）', key:'skill', nav:'skill',
@@ -432,11 +427,12 @@ function buildFairyOracle() {
     if (b) { b.classList.add('first-glow'); setTimeout(() => b.classList.remove('first-glow'), 6000); }
   };
   const goFeature = (btnId) => () => { closeFairyGuideModal(); document.getElementById(btnId)?.click(); };
+  const goFiveMinutes = () => { closeFairyGuideModal(); startFiveMinuteSession(); };
 
   // ① まだ一度も集中していない（超初心者）
   if ((data.sessions || 0) === 0) {
     return { icon:'🌱', msg:'ようこそ。むずかしいことは無し。まず ⏱ で5分だけ、机に向かってみない？ そこから全部はじまるよ。',
-      action:{ label:'⏱ 5分だけ始める', go: goTimer } };
+      action:{ label:'⏱ 5分だけ始める', go: goFiveMinutes } };
   }
   // ② 連続記録が途切れた直後 → おかえり
   if (data.streakWasBroken) {
@@ -448,7 +444,7 @@ function buildFairyOracle() {
   // ③ 今日まだ集中していない
   if (!studiedToday) {
     return { icon:'⏱', msg:'今日はまだ樹に水をあげてないみたい。5分の集中が、いちばんの栄養なんだよ。',
-      action:{ label:'⏱ 今日のはじめの5分', go: goTimer } };
+      action:{ label:'⏱ 今日のはじめの5分', go: goFiveMinutes } };
   }
   // 🥚 オトモン：進行中のクエスト or 起こせる卵があれば案内する
   if (typeof window !== 'undefined' && window.Otomon) {
@@ -778,6 +774,8 @@ window.resetGuideTutorial = resetGuideTutorial;
 
 function maybeStartGuideTutorial() {
   clearTimeout(guideTutorialRetry);
+  // 初回は短い召喚とホームの案内だけ。詳しいガイドは設定から開ける。
+  if ((data.sessions || 0) === 0) return;
   if (localStorage.getItem(GUIDE_TUTORIAL_KEY) === '1') return;
   const summoned = localStorage.getItem('gq_summoned') === '1';
   const summonOpen = document.getElementById('summon-overlay')?.classList.contains('open');

@@ -361,6 +361,7 @@ const GQ = (() => {
 })();
 
 const MODES = {
+  quick:    { focus: 5, break: 0 },
   pomodoro: { focus: 25, break: 5 },
   deep:     { focus: 50, break: 10 },
   flow:     { focus: null, break: 0 },
@@ -380,7 +381,7 @@ const DEFAULT_DATA = {
 };
 
 const DEFAULT_SETTINGS = {
-  defaultMode: 'pomodoro',
+  defaultMode: 'quick',
   kokuStyle: 'fude',
   hideTime: false,
   anim: 'random',

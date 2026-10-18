@@ -40,7 +40,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles/app.css?v=guild-194">
+<link rel="stylesheet" href="styles/app.css?v=guild-196">
 </head>
 <body>
 
@@ -130,30 +130,36 @@
         <div id="timer-display">25:00</div>
       </div>
     </div>
-    <!-- ③ スタート / リセット（アニメ下） -->
+    <!-- ③ スタート / 終了して記録（アニメ下） -->
     <div class="timer-btns">
       <button id="start-btn" data-guide="start-timer">START</button>
-      <button id="stop-btn" style="display:none">■ リセット</button>
+      <button id="stop-btn" style="display:none">終了して記録</button>
     </div>
+    <p class="timer-help">途中でも「終了して記録」で残せます。1分未満は記録されません。</p>
     <button id="pip-btn" title="小窓で表示 (PiP)" style="display:none">⧉ PiP</button>
     <!-- ④ タイマーモード（最下部） -->
     <div class="mode-label">タイマーモード</div>
     <div class="mode-tabs">
-      <div class="mode-tab active" data-mode="pomodoro">
-        <div class="mode-fill"></div>
+      <button type="button" class="mode-tab active" data-mode="quick">
+        <span class="mode-fill"></span>
+        <span class="mode-name">🌱 まず5分</span>
+        <span class="mode-desc">5分で完了・休憩なし</span>
+      </button>
+      <button type="button" class="mode-tab" data-mode="pomodoro">
+        <span class="mode-fill"></span>
         <span class="mode-name">🍅 ポモドーロ</span>
         <span class="mode-desc">25 + 5 分</span>
-      </div>
-      <div class="mode-tab" data-mode="deep">
-        <div class="mode-fill"></div>
+      </button>
+      <button type="button" class="mode-tab" data-mode="deep">
+        <span class="mode-fill"></span>
         <span class="mode-name">🔵 ディープ</span>
         <span class="mode-desc">50 + 10 分</span>
-      </div>
-      <div class="mode-tab" data-mode="flow">
-        <div class="mode-fill"></div>
+      </button>
+      <button type="button" class="mode-tab" data-mode="flow">
+        <span class="mode-fill"></span>
         <span class="mode-name">🌊 フロー</span>
         <span class="mode-desc">∞ 自由時間</span>
-      </div>
+      </button>
     </div>
   </div>
 
@@ -176,7 +182,7 @@
       </div>
     </div>
     <div class="onboard-steps" id="onboard-steps"></div>
-    <div class="onboard-hint" id="onboard-hint">1→2→3 の順にやると、自動で ✓ に変わるよ。まずは上の光ってる START を押してね。</div>
+    <div class="onboard-hint" id="onboard-hint">「🌱 まず5分」を選んで START。5分たつと自動で記録されるよ。途中で終えても大丈夫。</div>
   </div>
 
   <!-- ⚔ あなたの使命（召喚で決めた目標・育てる/断つ） -->
@@ -742,6 +748,7 @@
       <div class="setting-row">
         <span class="setting-row-label">起動時のモード</span>
         <select class="setting-select" id="set-default-mode">
+          <option value="quick">まず5分（休憩なし）</option>
           <option value="pomodoro">ポモドーロ (25+5)</option>
           <option value="deep">ディープ (50+10)</option>
           <option value="flow">フロー (∞)</option>
@@ -1152,17 +1159,17 @@
 })();
 </script>
 
-<script src="scripts/areas.js?v=guild-194"></script>
-<script src="scripts/core.js?v=guild-194"></script>
-<script src="scripts/home-layers.js?v=guild-194"></script>
-<script src="scripts/progression.js?v=guild-194"></script>
-<script src="scripts/quests.js?v=guild-194"></script>
-<script src="scripts/timer.js?v=guild-194"></script>
-<script src="scripts/settings-genre.js?v=guild-194"></script>
-<script src="scripts/calendar-review.js?v=guild-194"></script>
-<script src="scripts/features.js?v=guild-194"></script>
-<script src="scripts/boot.js?v=guild-194"></script>
-<script src="scripts/otomon.js?v=guild-194"></script>
+<script src="scripts/areas.js?v=guild-196"></script>
+<script src="scripts/core.js?v=guild-196"></script>
+<script src="scripts/home-layers.js?v=guild-196"></script>
+<script src="scripts/progression.js?v=guild-196"></script>
+<script src="scripts/quests.js?v=guild-196"></script>
+<script src="scripts/timer.js?v=guild-196"></script>
+<script src="scripts/settings-genre.js?v=guild-196"></script>
+<script src="scripts/calendar-review.js?v=guild-196"></script>
+<script src="scripts/features.js?v=guild-196"></script>
+<script src="scripts/boot.js?v=guild-196"></script>
+<script src="scripts/otomon.js?v=guild-196"></script>
 
 <script>
 // ── Service Worker 登録 ────────────────────────────────

@@ -112,7 +112,7 @@ function setTimerForMode(mode) {
   } else {
     remaining = cfg.focus * 60;
     timerDisplay.textContent = fmtTime(remaining);
-    phaseLabel.textContent = '集中タイム';
+    phaseLabel.textContent = mode === 'quick' ? 'まず5分・終わったら自動で記録' : '集中タイム';
   }
   updateModeFill(0);   // モードを切り替えたらゲージをリセット
 }
@@ -120,7 +120,7 @@ function setTimerForMode(mode) {
 // 3つのモードボタンを「連続したエネルギーゲージ」として描画。
 // 経過分で 左(〜25分)→中(〜50分)→右(〜90分) と順に満タン。
 // 120分で“破裂寸前”、180分で“虹色”オーバーチャージ。
-const MODE_GAUGE_SEGS = [['pomodoro',0,25],['deep',25,50],['flow',50,90]];
+const MODE_GAUGE_SEGS = [['quick',0,5],['pomodoro',0,25],['deep',25,50],['flow',50,90]];
 function updateModeFill(elapsedSec) {
   const m = (elapsedSec || 0) / 60;
   MODE_GAUGE_SEGS.forEach(([mode, lo, hi]) => {
@@ -266,7 +266,8 @@ function resolveOverlongSession(rawMins) {
 }
 
 function stopTimer() {
-  // ── RESET ── (リセットボタン用)
+  if (timerState === 'idle') return;
+  // 手動終了。1分以上なら実際に集中した時間を記録する。
   clearTimerSession();
   sessionMinutes = getTimerElapsedSec(); // 実経過秒を確定
   timerStartWall = null;
@@ -1047,6 +1048,17 @@ document.querySelectorAll('.mode-tab').forEach(tab => {
 });
 
 startBtn.addEventListener('click', startTimer);
+
+// 妖精の「5分」案内も、表示だけでなく実際の5分タイマーにつなぐ。
+window.startFiveMinuteSession = () => {
+  if (timerState === 'idle') {
+    currentMode = 'quick';
+    document.querySelectorAll('.mode-tab').forEach(t => t.classList.toggle('active', t.dataset.mode === currentMode));
+    setTimerForMode(currentMode);
+    startTimer();
+  }
+  document.getElementById('timer-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
 
 // PiP ボタン（ブラウザ対応時のみ表示）
 (function() {

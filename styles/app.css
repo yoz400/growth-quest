@@ -196,9 +196,10 @@ header {
 #mode-panel { padding: 16px 20px; }
 .mode-label { font-size: .7rem; color: var(--text-dim); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 10px; }
 .mode-tabs {
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;
 }
 .mode-tab {
+  font: inherit;
   background: rgba(255,255,255,0.03);
   border: 1px solid var(--glass-border);
   border-radius: 12px; padding: 10px 6px;
@@ -389,9 +390,11 @@ header {
 .timer-btns {
   display: flex; gap: 10px; align-items: center; justify-content: center;
 }
+.timer-btns #start-btn { min-width: 0; flex-shrink: 1; }
+.timer-help { color: var(--text-dim); font-size: .75rem; line-height: 1.7; text-align: center; margin: 10px 0; }
 
 #stop-btn {
-  height: 54px; padding: 0 22px;
+  height: 54px; padding: 0 12px; flex-shrink: 0;
   display: inline-flex; align-items: center; justify-content: center;
   background: rgba(255,255,255,0.06);
   border: 1px solid rgba(255,255,255,0.15);
@@ -1733,6 +1736,7 @@ header {
 }
 
 #review-prompt {
+  visibility: hidden; opacity: 0; pointer-events: none;
   position: fixed; top: -90px; left: 50%; transform: translateX(-50%);
   z-index: 200;
   background: linear-gradient(135deg,#13132b,#1c1c34);
@@ -1743,7 +1747,7 @@ header {
   transition: top .45s cubic-bezier(.175,.885,.32,1.275);
   min-width: 250px; max-width: 330px;
 }
-#review-prompt.show { top: 14px; }
+#review-prompt.show { top: 14px; visibility: visible; opacity: 1; pointer-events: auto; }
 .review-prompt-text { flex: 1; font-size: .78rem; line-height: 1.55; }
 .review-prompt-text strong { color: var(--cyan); display: block; font-size: .82rem; }
 .review-prompt-open-btn {

@@ -1395,7 +1395,7 @@ const TUTORIAL_STEPS = [
   { icon:'⏱', title:'STARTを押して冒険開始',
     body:'5分でもOK。始めた時点で、もう一歩前進です。' },
   { icon:'✨', title:'完了すると成長',
-    body:'XP、すごろく、装備、バッジなどで努力が見える形になります。' },
+    body:'経験値、すごろく、オトモン、バッジなどで努力が見える形になります。' },
   { icon:'🌱', title:'自信は証拠から育つ',
     body:'小さな行動の積み重ねが、未来の自分を作ります。' },
 ];
@@ -1563,11 +1563,15 @@ const SUMMON_STEPS = [
   { key:'quit',    icon:'🔥', img:'assets/guide-fairy-think.webp', title:'使命 ③　断ちたい習慣',
     body:'逆に、<b>やめたい・減らしたい習慣</b> はありますか？<br><span style="opacity:.7;font-size:.82em">例：「寝る前のだらだらスマホ」。無ければ空でOK。</span>' },
   { key:'creed',   icon:'🌟', img:'assets/guide-fairy-calm.webp', title:'冒険者の心得',
-    body:'・5分でもOK。<b>始めた時点で前進</b> です。<br>・完了すると XP・すごろく・装備・バッジで成長が見えます。<br>・<b>自信は、小さな行動の積み重ね</b> から育ちます。' },
+    body:'・5分でもOK。<b>始めた時点で前進</b> です。<br>・完了すると経験値・すごろく・バッジで成長が見えます。<br>・<b>自信は、小さな行動の積み重ね</b> から育ちます。' },
   { key:'start',   icon:'⚔',  img:'assets/guide-fairy-joy.webp', title:'', body:'準備は整いました。<br>あなたの冒険を、始めましょう！' },  // title は名前から動的生成
 ];
 
 // 召喚背景の星を生成（初回のみ）
+function summonSteps() {
+  return summonReviewMode ? SUMMON_STEPS : SUMMON_STEPS.filter(s => ['char', 'name', 'genre'].includes(s.key));
+}
+
 function buildSummonStars() {
   const wrap = document.getElementById('summon-stars');
   if (!wrap || wrap.childElementCount) return;
@@ -1638,7 +1642,7 @@ function renderSummonSlot(step) {
 
 // 名前入力など、画面遷移時に入力値を draft へ取り込む
 function captureSummonInputs() {
-  const step = SUMMON_STEPS[summonStep];
+  const step = summonSteps()[summonStep];
   if (!step) return;
   if (step.key === 'name') {
     const el = document.getElementById('summon-name-input');
@@ -1648,7 +1652,7 @@ function captureSummonInputs() {
 
 // メイン描画（ドット・アイコン・タイトル・本文・ボタン状態）
 function renderSummon() {
-  const step = SUMMON_STEPS[summonStep];
+  const step = summonSteps()[summonStep];
   if (!step || !summonDraft) return;
   const nm = (summonDraft.name || '').trim();
   const summonName = nm || adventurerName(summonDraft.avType);
@@ -1666,6 +1670,13 @@ function renderSummon() {
   }
 
   let title = step.title, body = step.body;
+  if (!summonReviewMode && step.key === 'char') {
+    title = 'ようこそ。冒険者を選ぼう';
+    body = 'あなたの小さな一歩が、冒険になります。<br>あとから設定で変えられるので、気軽に選んでね。';
+  } else if (!summonReviewMode && step.key === 'genre') {
+    title = 'まず、何に取り組む？';
+    body = 'テーマを選んだら、最初の5分へ。<br>選ばず進んでもOK。習慣や目標はホームで後から追加できます。';
+  }
   if (step.key === 'ritual') {
     body = `<b>${escHtml(summonName)}</b> よ。<br>`
       + 'Growth Quest の世界へ、ようこそ。<br>いま、あなたに3つの <b>使命</b> を授けます。';
@@ -1678,16 +1689,16 @@ function renderSummon() {
   renderSummonSlot(step);
   document.getElementById('summon-panel').classList.toggle('ritual', step.key === 'ritual');
 
-  document.getElementById('summon-dots').innerHTML = SUMMON_STEPS.map((_, i) =>
+  document.getElementById('summon-dots').innerHTML = summonSteps().map((_, i) =>
     `<span class="summon-dot${i === summonStep ? ' active' : i < summonStep ? ' passed' : ''}"></span>`).join('');
 
   document.getElementById('summon-prev-btn').disabled = (summonStep === 0);
 
   const nextBtn = document.getElementById('summon-next-btn');
-  const isLast  = summonStep === SUMMON_STEPS.length - 1;
+  const isLast  = summonStep === summonSteps().length - 1;
   nextBtn.classList.toggle('start', isLast);
-  nextBtn.textContent = isLast ? '⚔ 冒険を始める' : (step.key === 'ritual' ? '使命を授かる →' : '次へ →');
-  nextBtn.disabled = (step.key === 'genre' && summonDraft.genres.length === 0);
+  nextBtn.textContent = isLast ? (summonReviewMode ? '⚔ 冒険を始める' : '🌱 最初の5分へ') : (step.key === 'ritual' ? '使命を授かる →' : '次へ →');
+  nextBtn.disabled = (summonReviewMode && step.key === 'genre' && summonDraft.genres.length === 0);
 
   document.getElementById('summon-panel').scrollTop = 0;
 }
@@ -1720,6 +1731,10 @@ function finishSummon() {
     }
   });
   saveGenres();
+  if (!summonReviewMode && summonDraft.genres.length) {
+    const selected = genres.find(g => g.name === summonDraft.genres[0].name);
+    if (selected) setCurrentGenre(selected.id);
+  }
   if (typeof renderGenreSelector === 'function') renderGenreSelector();
   // 使命（既存に追記）
   summonDraft.build.forEach(t => mission.build.push({ id: 'mb' + Date.now() + Math.random().toString(36).slice(2, 5), text: t, done: false }));
@@ -1734,22 +1749,14 @@ function finishSummon() {
 }
 
 function skipSummon() {
-  captureSummonInputs();
-  if (summonDraft) {
-    playerName = (summonDraft.name || '').trim(); savePlayerName(playerName);
-    avatarType = summonDraft.avType || avatarType; saveAvatarType(); renderAvatarBtn();
-  }
-  safeSetItem('gq_summoned', '1');
-  safeSetItem('gq_tutorial_seen', '1');
-  closeSummon();
-  setTimeout(() => { if (typeof maybeStartGuideTutorial === 'function') maybeStartGuideTutorial(); }, 500);
+  finishSummon();
 }
 
 function summonNext() {
   captureSummonInputs();
-  const step = SUMMON_STEPS[summonStep];
-  if (step.key === 'genre' && summonDraft.genres.length === 0) return;
-  if (summonStep < SUMMON_STEPS.length - 1) { summonStep++; renderSummon(); }
+  const step = summonSteps()[summonStep];
+  if (summonReviewMode && step.key === 'genre' && summonDraft.genres.length === 0) return;
+  if (summonStep < summonSteps().length - 1) { summonStep++; renderSummon(); }
   else finishSummon();
 }
 function summonPrev() {
@@ -1765,7 +1772,7 @@ document.getElementById('summon-skip-btn').addEventListener('click', skipSummon)
 // slot 内の操作（イベント委譲）
 document.getElementById('summon-slot').addEventListener('click', e => {
   const charBtn = e.target.closest('[data-summon-char]');
-  if (charBtn) { summonDraft.avType = charBtn.dataset.summonChar; renderSummonSlot(SUMMON_STEPS[summonStep]); return; }
+  if (charBtn) { summonDraft.avType = charBtn.dataset.summonChar; renderSummonSlot(summonSteps()[summonStep]); return; }
 
   const gChip = e.target.closest('[data-summon-genre]');
   if (gChip) {
@@ -1790,7 +1797,7 @@ document.getElementById('summon-slot').addEventListener('click', e => {
     const kind = mAdd.dataset.summonMadd;
     const inp = document.getElementById('summon-m-' + kind);
     const v = (inp?.value || '').trim();
-    if (v) { summonDraft[kind].push(v); renderSummonSlot(SUMMON_STEPS[summonStep]);
+    if (v) { summonDraft[kind].push(v); renderSummonSlot(summonSteps()[summonStep]);
       setTimeout(() => document.getElementById('summon-m-' + kind)?.focus(), 30); }
     return;
   }
@@ -1798,14 +1805,14 @@ document.getElementById('summon-slot').addEventListener('click', e => {
   if (mDel) {
     const [kind, i] = mDel.dataset.summonMdel.split(':');
     summonDraft[kind].splice(+i, 1);
-    renderSummonSlot(SUMMON_STEPS[summonStep]);
+    renderSummonSlot(summonSteps()[summonStep]);
     return;
   }
 });
 
 // Enter キーで「追加」または「次へ」
 document.getElementById('summon-slot').addEventListener('keydown', e => {
-  if (e.key !== 'Enter') return;
+  if (e.key !== 'Enter' || e.target.tagName !== 'INPUT') return;
   e.preventDefault();
   const id = e.target.id;
   if (id === 'summon-genre-custom') document.querySelector('[data-summon-genre-add]')?.click();

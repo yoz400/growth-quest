@@ -2261,13 +2261,15 @@ function checkWeeklyReviewTrigger() {
     const unlocked = JSON.parse(localStorage.getItem('gq_unlocks') || '[]');
     if (!unlocked.includes('review')) return;
   } catch (e) { return; }
+  if (localStorage.getItem('gq_summoned') !== '1') return;
   // 通知ドット: 前の週がまだ未レビューなら表示
   const prevD = new Date(); prevD.setDate(prevD.getDate()-7);
   const prevWk = getWeekKey(prevD);
-  if (!weeklyReviews[prevWk]) setReviewDot(true);
+  setReviewDot(hasReviewRecords(prevWk) && !weeklyReviews[prevWk]);
 
   const target = getReviewTarget();
   if (!target) return;
+  if (!hasReviewRecords(target)) return;
   if (weeklyReviews[target]) { setReviewDot(false); return; }
 
   const isForced = (reviewStatus.skips || 0) >= 4;
@@ -2291,12 +2293,24 @@ let _reviewPromptWk        = null;   // 出したい週。null = もう出さな
 
 function _reviewPromptEl() { return document.getElementById('review-prompt'); }
 
+function hasReviewRecords(wk) {
+  return getWeekDates(wk).some(date => (data.history[dkey(date)] || 0) > 0);
+}
+
+function canPromptReview(wk) {
+  try {
+    return localStorage.getItem('gq_summoned') === '1'
+      && JSON.parse(localStorage.getItem('gq_unlocks') || '[]').includes('review')
+      && hasReviewRecords(wk);
+  } catch (e) { return false; }
+}
+
 // 「出したい状態」と「いまモーダルが開いているか」を突き合わせて出し入れする
 function _syncReviewPrompt() {
   const prompt = _reviewPromptEl();
   if (!prompt) return;
   const open    = (typeof Overlay !== 'undefined' && Overlay.topId) ? !!Overlay.topId() : false;
-  const want    = !!_reviewPromptWk && !open;
+  const want    = !!_reviewPromptWk && canPromptReview(_reviewPromptWk) && !open;
   const visible = prompt.classList.contains('show');
   if (want === visible) return;
 
@@ -2331,7 +2345,7 @@ function _endReviewPrompt() {
 
 function showReviewAutoPrompt(wk) {
   const prompt = _reviewPromptEl();
-  if (!prompt) return;
+  if (!prompt || !canPromptReview(wk)) return;
 
   const now = new Date();
   const msg = now.getDay()===0 ? '今週の学習を振り返りませんか？' : '先週の学習を振り返りませんか？';
