@@ -1735,31 +1735,40 @@ header {
   background: var(--red); box-shadow: 0 0 6px var(--red); pointer-events: none;
 }
 
+/* 週次レビューのお誘い。ヘッダーの直下に「帯」として出す。
+   ・幅は #app の中身と同じ（max-width:480px - padding:16px*2 = 448px）。
+     箱で浮かせると下のカードに食い込み、文字も変な位置で折り返していた。
+   ・縦位置は CSS で決めない。ヘッダーの高さは端末で変わるので、出す瞬間に
+     core.js の topBelowHeader() で測って style.top に入れる（2026-08-28 の事故）。
+   ・色は金（--gold）。週の区切り＝節目の色に揃える。地は不透明にする
+     （半透明だと下のカードが透けて文字が読めない）。 */
 #review-prompt {
   visibility: hidden; opacity: 0; pointer-events: none;
-  position: fixed; top: -90px; left: 50%; transform: translateX(-50%);
+  position: fixed; top: -120px; left: 50%; transform: translateX(-50%);
   z-index: 200;
-  background: linear-gradient(135deg,#13132b,#1c1c34);
-  border: 1px solid rgba(6,182,212,.3); border-radius: 16px;
-  padding: 12px 32px 12px 16px;
+  width: calc(100% - 32px); max-width: 448px;
+  background: linear-gradient(135deg,#2a2016,#1b1710);
+  border: 1px solid rgba(244,162,97,.42); border-radius: 16px;
+  padding: 12px 36px 12px 16px;
   display: flex; align-items: center; gap: 10px;
-  box-shadow: 0 14px 50px rgba(0,0,0,.85);
+  box-shadow: 0 14px 50px rgba(0,0,0,.85), 0 0 26px rgba(244,162,97,.16);
   transition: top .45s cubic-bezier(.175,.885,.32,1.275);
-  min-width: 250px; max-width: 330px;
 }
 #review-prompt.show { top: 14px; visibility: visible; opacity: 1; pointer-events: auto; }
 .review-prompt-text { flex: 1; font-size: .78rem; line-height: 1.55; }
-.review-prompt-text strong { color: var(--cyan); display: block; font-size: .82rem; }
+.review-prompt-text strong { color: var(--gold); display: block; font-size: .82rem; }
 .review-prompt-open-btn {
-  background: var(--cyan); border: none; border-radius: 9px; padding: 7px 13px;
-  color: #000; font-family: 'Noto Sans JP',sans-serif; font-size: .73rem; font-weight: 700;
+  background: var(--gold); border: none; border-radius: 9px; padding: 8px 15px;
+  color: #0a0a0f; font-family: 'Noto Sans JP',sans-serif; font-size: .73rem; font-weight: 700;
   cursor: pointer; flex-shrink: 0; white-space: nowrap;
+  box-shadow: 0 2px 10px rgba(244,162,97,.3);
 }
 .review-prompt-x {
   position: absolute; top: 7px; right: 9px;
   background: none; border: none; color: var(--text-dim);
   font-size: .78rem; cursor: pointer; padding: 2px 5px; line-height: 1;
 }
+.review-prompt-x:hover { color: var(--gold); }
 
 /* ── 新しい版のお知らせ帯（画面下）──
    上には週次レビューの帯が出るので、ぶつからないよう下に置く。
@@ -2762,6 +2771,9 @@ header {
   #avatar-btn { width: 34px; height: 34px; }
   /* 狭い画面でも余白は詰めるが、セーフエリア分は必ず確保する（上の #app と同じ意図） */
   #app { padding: 10px; gap: 10px; }
+  /* 週次レビューの帯は #app の中身と同じ幅に揃える。
+     ↑の padding を変えたら、この 20px（=10px*2）も一緒に直すこと */
+  #review-prompt { width: calc(100% - 20px); }
   #app {
     padding:
       calc(10px + env(safe-area-inset-top,    0px))
