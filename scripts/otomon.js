@@ -598,10 +598,29 @@
   //  app.js の item マスから呼ぶ。当たれば在庫に1個足し、到着演出用の説明を返す。
   const SUGOROKU_WAKE_RATE = 0.5;   // アイテムマスの約半分で目覚めアイテム
   // 確定で目覚めアイテムを1つ渡す（すごろくの装備報酬置換などから使う）
+  // いま持っている卵が受け付ける種類を集める（accepts の和集合）。
+  //  卵が1つも無ければ空を返し、呼び出し側は従来どおり全体から配る。
+  function wantedWakeIds() {
+    const want = new Set();
+    eggs.forEach(e => {
+      const def = EGG_BY_ID[e.eggId];
+      (def && Array.isArray(def.accepts) ? def.accepts : []).forEach(id => want.add(id));
+    });
+    return want;
+  }
+
+  // ⚠️ 手持ちの卵が「使える種類」を優先して配る。これが無いと、持っていても
+  //    使えないアイテムばかり出る（2026-10-23 実測：卵1個のとき82%が無駄。
+  //    まよけ/ねむりの卵は受け付けが1種しかなく、孵すのに292セッション相当だった）。
+  //    孵る側の candidatePoolIds に入っている「未所持を優先」と同じ発想を、
+  //    配る側にも入れる。**もらえる個数は増やさない**（無駄を減らすだけなので、
+  //    判断基準1「努力を要求しない報酬を与えない」に触れない）。
   function grantRandomWakeItem() {
     const pool = WAKE_ITEM_MASTER.filter(w => !w.special && w.questPool);
     if (!pool.length) return null;
-    const it = pick(pool);
+    const want      = wantedWakeIds();
+    const preferred = pool.filter(w => want.has(w.id));
+    const it = pick(preferred.length ? preferred : pool);   // 使える種が無ければ従来どおり
     grantWakeItem(it.id, 1);
     return {
       name: it.name, emoji: it.emoji, rarity: 'common',
