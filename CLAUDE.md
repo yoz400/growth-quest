@@ -50,12 +50,14 @@ claude-practice/
   「ナッジコースを選んでいる人」にしか出ず、`localStorage.clear()` から始める
   プレビューでは一度も再現しなかった。**条件付きで走る経路は、条件を作らないと踏めない**
 - 本番確認: `curl -s https://yoz400.github.io/growth-quest/ | grep v=guild-` でデプロイ確認
-- MCPは現状構成（Claude Preview / claude-in-chrome）で十分。追加不要と判断済み
+- MCPは Claude Preview / claude-in-chrome。**Codexは MCP では繋がらない**ので Bash から呼ぶ
+  （下の「Codex / チャッピー連携ルール」参照）
 
 ## 分担体制
 
 - **クロ（Claude）**: 設計・仕様書作成（docs/spec_*.md）・レビュー・小さな修正
-- **Codex**: 仕様書ベースの実装量産。各spec末尾の「依頼文」をヨージがコピペして発注
+- **Codex**: 仕様書ベースの実装量産。各spec末尾の「依頼文」を、クロが `codex exec` で直接発注してよい
+  （ヨージがコピペしてもよい。下の「Codex / チャッピー連携ルール」参照）
 - 仕様書には必ず「受け入れ基準」「テスト手順」「迷ったら止まって報告」を書く。
   レビュー合格時は受け入れ基準にチェックを入れ、レビュー記録を仕様書末尾に追記する
 - Codexと同時にコードを触らない。ドキュメント作業は常に安全
@@ -128,3 +130,53 @@ docs/spec_*.md               対象の仕様書のみ
 - `CURRENT.md`（**60行以内**に保つ。書き足すのではなく減らす）
 - `DECISIONS.md`（重要な判断があれば追記）
 - `FAILURES.md`（事故・つまずきがあれば追記。掟が増えたなら必ず残す）
+
+## Codex / チャッピー連携ルール（Bashから呼ぶ）
+
+**⚠️ CodexはMCPでは繋がらない。`mcp__codex__*` と `chappy` サブエージェントは使えない。**
+`.mcp.json` は `codex mcp-server` を指しているが、いまの codex-cli 0.163.0 にその命令は無い
+（`mcp` は「Codexが外部MCPを使う」ための命令で、逆向き。2026-10-23 に2か所のインストールで確認）。
+**セッション開始時に毎回「codex: CONNECTION_CLOSED」と出るが、これは既知で無視してよい。**
+
+呼ぶときは Bash から `codex exec` を使う。`codex` は PATH 上にあり、ChatGPTでログイン済み
+（`codex login status` → `Logged in using ChatGPT`）。これまでヨージがコピペしていた
+発注・相談を、クロが直接行ってよい。
+
+### 相談モード（チャッピー）— `-s read-only`
+
+```bash
+codex exec --skip-git-repo-check -s read-only "相談内容"
+```
+
+次のときは、ヨージに確認せず自分から相談してよい:
+- 同じバグの修正に2回失敗したとき
+- localStorage のキー・意味を変える前
+- 3ファイル以上にまたがる変更の後のレビュー
+- 設計の選択肢が2つ以上あって迷ったとき
+
+※企画・優先順位・文言など「コード不要の相談」は従来どおりヨージ経由で ChatGPT へ回す
+
+### 実行モード（Codex）— `-s workspace-write`
+
+```bash
+codex exec -C /Users/hapiyopi/Desktop/claude-practice -s workspace-write "依頼文"
+```
+
+- 仕様書（docs/spec_*.md）末尾の「依頼文」を、クロが直接渡して発注してよい
+- 依頼文には必ず「git commit / push はしない。終わったら変更ファイルと受け入れ基準の結果を報告」を加える
+- `-s danger-full-access` と `--dangerously-bypass-approvals-and-sandbox` は使わない
+- Codex の作業中、クロは同じファイルを触らない
+- 終わったら従来どおり差分だけでレビュー → 合格ならクロが commit / push
+
+### 使えるオプション（実測で確認済み）
+
+| オプション | 意味 |
+|---|---|
+| `-s read-only` / `workspace-write` / `danger-full-access` | 書き込みをどこまで許すか |
+| `-C <フォルダ>` | 作業フォルダを指定（`--cd` と同じ） |
+| `--skip-git-repo-check` | gitリポジトリ外でも動かす |
+
+### 最終判断
+- チャッピーとクロの意見が割れたら、両案と理由をヨージに短く報告して判断を仰ぐ
+- 「努力の記録を消さない」が最優先。保存データが消える・壊れる可能性がある変更は、どちらが提案してもヨージの確認を取る
+- Codex を使ったときは、完了報告の Decisions に「相談/発注した内容と結論」を1〜2行で書く
