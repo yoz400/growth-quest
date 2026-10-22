@@ -122,6 +122,19 @@ def blank_out_callbacks(code):
         if DEFERRED.search(code[max(0, m.start() - 60):m.start()]):
             blank(m.end(), match_brace(code, m.end() - 1))
 
+    # window.foo = function(){…} / window.foo = () => {…}
+    #   プロパティに代入された関数は、代入の時点では実行されない（呼ばれたときに動く）。
+    #   GQは外部へ公開する入口をこの形で書くので、中身を読み込み時として数えると
+    #   その関数が呼ぶ先まで芋づるで誤検出になる。
+    #   （実例: window.startFiveMinuteSession = () => { startTimer() } を読み込み時と見なし、
+    #    startTimer の中の closeGuideTutorial() を誤って警告していた・2026-10-23）
+    #   ⚠️ 即時実行 `window.foo = (function(){…})()` は **対象外**。= の直後に関数が
+    #      来る形だけを潰す（間に ( が入る形は一致しない）ので、その場で動くものは残る。
+    for m in re.finditer(
+            r'\bwindow\.\w+\s*=\s*(?:async\s+)?'
+            r'(?:function\s*\w*\s*\([^)]*\)|\([^)]*\)\s*=>|\w+\s*=>)\s*\{', code):
+        blank(m.end(), match_brace(code, m.end() - 1))
+
     for m in re.finditer(r'=>\s*', code):
         if not DEFERRED.search(code[max(0, m.start() - 60):m.start()]):
             continue
