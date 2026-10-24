@@ -57,6 +57,7 @@ const Overlay = (() => {
     'fairy-guide-overlay':    { openClass: 'open', dismissible: true },
     'tutorial-overlay':       { openClass: 'open', dismissible: true },
     'summon-overlay':         { openClass: 'open', dismissible: false },
+    'urgent-overlay':         { openClass: 'open', dismissible: true },
     'otomon-overlay':         { openClass: 'open', dismissible: true },
     'otomon-birth-overlay':   { openClass: 'open', dismissible: true },
     'otomon-bondup-overlay':  { openClass: 'open', dismissible: true },
@@ -1355,13 +1356,24 @@ function doSugorokuRoll(modeKey, mins, partial) {
   } else if (cellType === 'event') {
     bonusXP = 20;
     evClass = 'ev-event';
-    // 🥚 オトモンの卵を拾う（otomon.js 未読込でも落ちないよう存在チェック）
-    const eggReward = window.Otomon ? window.Otomon.maybeDropEgg(sugorokuData.stage) : null;
-    if (eggReward) {
-      _sgPendingReward = eggReward;   // 到着マスのGET演出に流す
-      message = `🥚 オトモンの卵「${eggReward.name}」を見つけた！ ボーナス +${bonusXP} XP`;
+    // ⚠ まれに緊急依頼。受注中なら発生しない（常に1件だけ）。
+    //   boot.js は core.js より後に読まれるので window 経由で存在確認してから呼ぶ（掟2）。
+    //   typeof は宣言前の let に無力で、起動フリーズ3回の原因になった書き方。
+    const urgentStarted = window.maybeStartUrgentQuest ? window.maybeStartUrgentQuest() : null;
+    if (urgentStarted) {
+      // ⚠️ ここで return しないこと。この関数の戻り値は
+      //    { roll, prevPos, newPos, cellNum, cellType, bonusXP, message, evClass, usedBuff, baseDice }
+      //    で、途中で抜けると移動アニメ側が壊れる。message を差し替えるだけにする。
+      message = `⚠ 緊急依頼が発生した！ ボーナス +${bonusXP} XP`;
     } else {
-      message = `✨ イベントマス！特別な学びの場。 ボーナス +${bonusXP} XP`;
+      // 🥚 オトモンの卵を拾う（otomon.js 未読込でも落ちないよう存在チェック）
+      const eggReward = window.Otomon ? window.Otomon.maybeDropEgg(sugorokuData.stage) : null;
+      if (eggReward) {
+        _sgPendingReward = eggReward;   // 到着マスのGET演出に流す
+        message = `🥚 オトモンの卵「${eggReward.name}」を見つけた！ ボーナス +${bonusXP} XP`;
+      } else {
+        message = `✨ イベントマス！特別な学びの場。 ボーナス +${bonusXP} XP`;
+      }
     }
   } else if (cellType === 'checkpoint') {
     bonusXP = 15;

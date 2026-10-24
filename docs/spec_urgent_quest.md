@@ -306,3 +306,41 @@ Growth Quest（/Users/hapiyopi/Desktop/claude-practice）に「⚠ 緊急依頼�
 - 終わったら、変更したファイルと受け入れ基準の結果を報告する
 - 仕様書 §7 に当たったら、進めずに報告する
 ```
+
+
+---
+
+## 9. 実装記録（2026-10-24・guild-202）
+
+**実装者はCodexではなくクロ。** Codex に発注したが、実行環境が壊れていて着手できなかった。
+
+```
+failed to spawn code-mode host /Users/hapiyopi/.local/bin/codex-code-mode-host:
+No such file or directory
+```
+
+`--disable code_mode` でも回避できず、ファイルの読み書きが一切できない状態。
+ヨージが実機確認中で待たせられないため、仕様書どおりクロが実装した。
+**Codexの実行環境が直ったら、次の発注から通常どおり使える**（相談モードは影響なし＝
+テキスト応答だけなら動く）。
+
+### 受け入れ基準の結果
+
+- [x] イベントマスで約1/3で発生（実測 **32.2%**／600回）。残りは従来どおり卵
+- [x] 受注中は発生しない（40回試して0回）
+- [x] 「受ける」でカードが出る。**リロードしても残る**
+- [x] 「見送る」で XP・アイテムとも増減ゼロ、受注も残らない
+- [x] 「✓ 達成した」で ★3=+80XP/アイテム×2、★1=+30XP/アイテム0
+- [x] `session_mins` の自動達成（45分の依頼に50分で達成／20分では未達成）
+- [x] 期限切れは「依頼は取り下げられました。また声がかかります。」＝責める語を含まない
+- [x] `prefers-reduced-motion` でアニメ停止（CSSで対応）
+- [x] `check_load_order.py` ✅ ／ jsc 構文 ✅ ／ bump_version 実行（guild-202）
+- [x] 320px／1024px ではみ出さない。カードはタイマーより下（基準2）
+
+### 実装中に気づいた落とし穴
+
+**すごろくの着地処理で早期 return してはいけない。**
+`doSugorokuRoll` の戻り値は
+`{ roll, prevPos, newPos, cellNum, cellType, bonusXP, message, evClass, usedBuff, baseDice }`
+で、移動アニメ側がこれを使う。最初 `return { message, bonusXP, ... }` と書いて
+`roll`/`prevPos` を落としかけた。**message を差し替えるだけ**にすること。

@@ -3057,6 +3057,173 @@ function maybeShowLoginBonus() {
 }
 maybeShowLoginBonus();
 
+// ═══════════════════════════════════════════════════════
+//  ⚠ 緊急依頼（すごろくのイベントマス）  docs/spec_urgent_quest.md
+// ═══════════════════════════════════════════════════════
+//  特別感は「演出」で出し、「プレッシャー」では出さない。
+//  ・いつでも断れる。断っても何も減らない（判断基準4）
+//  ・期限は切れても何も失わない。責める文言を出さない
+//  ・完了は全画面を奪わずToastで出す。セッション直後の祝福渋滞を避ける（判断基準3）
+const URGENT_RATE  = 1 / 3;      // イベントマスで発生する割合。残りは従来どおり卵
+const URGENT_DAYS  = 3;          // 受注から何日で取り下げるか
+const URGENT_REWARD = { 1:{ xp:30, wake:0 }, 2:{ xp:50, wake:1 }, 3:{ xp:80, wake:2 } };
+
+const URGENT_QUESTS = [
+  { id:'uq_deep45',  star:3, kind:'session_mins',  need:45,
+    title:'長考の試練',     desc:'45分の集中を1本やりきる',          flavor:'腰を据えるほど、見える景色が変わる。' },
+  { id:'uq_deep30',  star:2, kind:'session_mins',  need:30,
+    title:'静寂の狩り',     desc:'30分の集中を1本やりきる',          flavor:'音のない時間が、いちばん濃い。' },
+  { id:'uq_twice',   star:2, kind:'session_count', need:2,
+    title:'二度の挑戦',     desc:'今日のうちに2回学習する',          flavor:'一度で終わらせない日が、力になる。' },
+  { id:'uq_morning', star:2, kind:null,
+    title:'暁の出立',       desc:'朝10時までに学習を始める',          flavor:'朝の一歩は、一日ぶんの重さがある。' },
+  { id:'uq_weak',    star:3, kind:null,
+    title:'苦手との対峙',   desc:'いちばん手がのびないジャンルを15分', flavor:'逃げ続けたものほど、倒したとき大きい。' },
+  { id:'uq_teach',   star:3, kind:null,
+    title:'継承の儀',       desc:'学んだことを誰かに一言説明する',     flavor:'人に渡せた知識だけが、自分のものになる。' },
+  { id:'uq_tidy',    star:1, kind:null,
+    title:'拠点の整備',     desc:'机の上を60秒で片づける',            flavor:'狩りの前に、拠点を整える。' },
+  { id:'uq_plan',    star:1, kind:null,
+    title:'進路の見定め',   desc:'明日やることを1つだけ決める',        flavor:'決めておくと、明日の自分が速い。' },
+  { id:'uq_review',  star:2, kind:null,
+    title:'記録の読み返し', desc:'先週の自分の記録を見返す',          flavor:'積み上げは、振り返って初めて見える。' },
+  { id:'uq_restart', star:1, kind:null,
+    title:'再起の狼煙',     desc:'まず1分だけ机に向かう',             flavor:'小さく始めた者が、遠くまで行く。' },
+];
+const URGENT_BY_ID = Object.fromEntries(URGENT_QUESTS.map(q => [q.id, q]));
+
+function loadUrgentQuest() {
+  try { return JSON.parse(localStorage.getItem('gq_urgent_quest') || 'null'); }
+  catch (e) { return null; }
+}
+function saveUrgentQuest(u) { safeSetItem('gq_urgent_quest', JSON.stringify(u)); }
+function clearUrgentQuest()  { try { localStorage.removeItem('gq_urgent_quest'); } catch (e) {} }
+
+function urgentDueDate(days) {
+  const d = new Date(); d.setDate(d.getDate() + days);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function urgentDaysLeft(u) {
+  if (!u || !u.dueDate) return 0;
+  const due = new Date(u.dueDate + 'T23:59:59');
+  return Math.max(0, Math.ceil((due - Date.now()) / 86400000));
+}
+function urgentStars(n) {
+  return '<span class="uq-s on">★</span>'.repeat(n) + '<span class="uq-s">★</span>'.repeat(3 - n);
+}
+function urgentRewardText(star) {
+  const r = URGENT_REWARD[star] || URGENT_REWARD[1];
+  return `報酬 +${r.xp} XP` + (r.wake ? ` ／ 🔆 目覚めアイテム ×${r.wake}` : '');
+}
+
+// すごろくのイベントマスから呼ばれる。発生させたら true を返す（core.js が文言を変える）
+function maybeStartUrgentQuest() {
+  if (loadUrgentQuest()) return null;              // 受注中は出さない＝常に1件
+  if (Math.random() > URGENT_RATE) return null;
+  const q = URGENT_QUESTS[Math.floor(Math.random() * URGENT_QUESTS.length)];
+  showUrgentOverlay(q);
+  return q;
+}
+
+function showUrgentOverlay(q) {
+  const panel = document.getElementById('urgent-panel');
+  if (!panel) return;
+  document.getElementById('uq-star').innerHTML   = urgentStars(q.star);
+  document.getElementById('uq-title').textContent  = q.title;
+  document.getElementById('uq-desc').textContent   = q.desc;
+  document.getElementById('uq-flavor').textContent = `「${q.flavor}」`;
+  document.getElementById('uq-reward').textContent = urgentRewardText(q.star);
+  document.getElementById('uq-accept-btn').onclick = () => {
+    saveUrgentQuest({ id:q.id, acceptedAt:Date.now(), dueDate:urgentDueDate(URGENT_DAYS), done:false });
+    Overlay.close('urgent-overlay');
+    renderUrgentCard();
+    Toast.show('⚔ 依頼を受けた。ホームに書き付けを貼っておく。', { ms:2600, priority:55 });
+  };
+  // 断っても何も減らさない。記録も残さない（基準4）
+  document.getElementById('uq-decline-btn').onclick = () => Overlay.close('urgent-overlay');
+  Overlay.open('urgent-overlay');
+}
+
+// ── ホームのカード（オトモンクエストカードと同じ作り方）──
+function injectUrgentCard() {
+  if (document.getElementById('urgent-quest-card')) return;
+  const card = document.createElement('div');
+  card.className = 'glass';
+  card.id = 'urgent-quest-card';
+  card.style.display = 'none';
+  card.innerHTML = '<div class="quest-header">⚠ 緊急依頼</div><div id="urgent-quest-body"></div>';
+  // 「きょう」層の常設枠へ。⚠️ #layer-now には入れない（STARTまでの秒数を伸ばさない・基準2）
+  const holder = document.getElementById('layer-today-always');
+  if (holder) holder.prepend(card);
+  else (document.querySelector('main') || document.body).appendChild(card);
+}
+
+function renderUrgentCard() {
+  injectUrgentCard();
+  const card = document.getElementById('urgent-quest-card');
+  if (!card) return;
+  const u = loadUrgentQuest();
+  const q = u && URGENT_BY_ID[u.id];
+  if (!u || !q) { card.style.display = 'none'; return; }
+  card.style.display = '';
+  const left = urgentDaysLeft(u);
+  document.getElementById('urgent-quest-body').innerHTML =
+    `<div class="uq-card-star">${urgentStars(q.star)}</div>` +
+    `<div class="uq-card-title">${q.title}</div>` +
+    `<div class="uq-card-desc">${q.desc}</div>` +
+    `<div class="uq-card-meta">${urgentRewardText(q.star)}　／　あと${left}日</div>` +
+    `<button class="uq-card-btn" id="uq-done-btn">✓ 達成した</button>`;
+  const btn = document.getElementById('uq-done-btn');
+  if (btn) btn.onclick = () => completeUrgentQuest();
+}
+
+function completeUrgentQuest() {
+  const u = loadUrgentQuest();
+  const q = u && URGENT_BY_ID[u.id];
+  if (!u || !q || u.done) return;
+  const r = URGENT_REWARD[q.star] || URGENT_REWARD[1];
+  clearUrgentQuest();
+  renderUrgentCard();
+  addBonusXP(r.xp);
+  // 目覚めアイテム（otomon.js は後から読まれるので存在確認してから・掟2）
+  const got = [];
+  for (let i = 0; i < r.wake; i++) {
+    if (!(window.Otomon && window.Otomon.grantRandomWakeItem)) break;
+    try { const g = window.Otomon.grantRandomWakeItem(); if (g) got.push(`${g.emoji}${g.name}`); } catch (e) {}
+  }
+  Toast.show(`⚔ 緊急依頼 達成！<br><span style="opacity:.85;font-weight:400">${q.title}</span>` +
+    `<br><span style="opacity:.75;font-weight:400">+${r.xp} XP` +
+    (got.length ? ` ／ 🔆 ${got.join(' ')}` : '') + '</span>',
+    { kind:'multiline', ms:3600, priority:70 });
+}
+
+// 期限切れ：静かに取り下げる。❌「失敗」「達成できませんでした」は使わない（基準4）
+function checkUrgentExpiry() {
+  const u = loadUrgentQuest();
+  if (!u) return;
+  if (urgentDaysLeft(u) > 0) return;
+  clearUrgentQuest();
+  renderUrgentCard();
+  Toast.show('依頼は取り下げられました。また声がかかります。', { ms:3000, priority:40 });
+}
+
+// 自動達成（時間・回数の条件だけ。それ以外は手動の「✓ 達成した」のみ）
+GQ.on('session:complete', ({ mins }) => {
+  const u = loadUrgentQuest();
+  const q = u && URGENT_BY_ID[u.id];
+  if (!u || !q || !q.kind) return;
+  if (q.kind === 'session_mins' && (mins || 0) >= q.need) { completeUrgentQuest(); return; }
+  if (q.kind === 'session_count') {
+    const today = (data.historyDetails && data.historyDetails[todayKey()]) || null;
+    const n = today && today.sessions ? today.sessions : 0;
+    if (n >= q.need) completeUrgentQuest();
+  }
+});
+GQ.on('day:changed', () => setTimeout(checkUrgentExpiry, 0));
+
+renderUrgentCard();
+checkUrgentExpiry();
+
 window.handleBoardClose = handleBoardClose;
 window.UNLOCK_DEFS = UNLOCK_DEFS;
 window.evaluateUnlocks = evaluateUnlocks;
@@ -3077,6 +3244,9 @@ window.initTimelogExtras = initTimelogExtras;
 window.renderEquipmentModal = renderEquipmentModal;
 window.showEquipmentGetModal = showEquipmentGetModal;
 window.guildPickRecommended = guildPickRecommended;
+window.maybeStartUrgentQuest = maybeStartUrgentQuest;
+window.renderUrgentCard = renderUrgentCard;
+window.completeUrgentQuest = completeUrgentQuest;
 
 // ═══════════════════════════════════════════════════════
 //  新しい版が出ていないか確認する

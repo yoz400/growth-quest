@@ -5738,7 +5738,7 @@ body.eq-mood-galaxy    .anim-wrap::after {
 #praise-overlay, #guide-tutorial-overlay, #guild-overlay,
 #vow-blessing-overlay, #fairy-overlay, #fairy-guide-overlay,
 #tutorial-overlay, #summon-overlay, #otomon-overlay,
-#otomon-birth-overlay, #otomon-bondup-overlay, #item-dex-overlay {
+#otomon-birth-overlay, #otomon-bondup-overlay, #item-dex-overlay, #urgent-overlay {
   visibility: hidden;
   transition-property: opacity, visibility;
 }
@@ -5749,7 +5749,8 @@ body.eq-mood-galaxy    .anim-wrap::after {
 #praise-overlay.open, #guide-tutorial-overlay.open, #guild-overlay.open,
 #vow-blessing-overlay.open, #fairy-overlay.open, #fairy-guide-overlay.open,
 #tutorial-overlay.open, #summon-overlay.open, #otomon-overlay.open,
-#otomon-birth-overlay.open, #otomon-bondup-overlay.open, #item-dex-overlay.open {
+#otomon-birth-overlay.open, #otomon-bondup-overlay.open, #item-dex-overlay.open,
+#urgent-overlay.open {
   visibility: visible;
 }
 
@@ -5771,4 +5772,88 @@ body.eq-mood-galaxy    .anim-wrap::after {
     animation-iteration-count: 1 !important;
     transition-duration: .01ms !important;
   }
+}
+
+
+/* ═══════════════════════════════════════
+   ⚠ 緊急依頼（docs/spec_urgent_quest.md）
+   ⚠️ 赤(--red)を主役にする画面はGQでここだけ。
+      「普段と違う」を色の希少性で出している。他へ広げると特別感が薄まる。
+   ⚠️ パネルの出現は .gq-panel の共通transformに任せる（[id$="-overlay"].open）。
+      ここで transform を上書きすると、その共通ルールと競合して固まる。
+═══════════════════════════════════════ */
+#urgent-overlay {
+  position: fixed; inset: 0; z-index: 95;     /* すごろく盤(93)より上・誕生演出(96)より下 */
+  background: rgba(0,0,0,.86); backdrop-filter: blur(10px);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity .3s;
+}
+#urgent-overlay.open { opacity: 1; pointer-events: auto; }
+#urgent-panel {
+  width: min(400px, calc(100vw - 32px)); max-height: 92vh; overflow-y: auto;
+  padding: 0 24px 22px; text-align: center;
+  background: radial-gradient(circle at 50% 0%, #2a1016, #120d12);
+  border: 1px solid rgba(230,57,70,.42); border-radius: 24px;
+  box-shadow: 0 24px 80px rgba(0,0,0,.9), 0 0 60px rgba(230,57,70,.14);
+}
+/* 上下から赤い帯が伸びる＝「何かが起きた」の合図 */
+.uq-alertbar {
+  margin: 0 -24px 18px; padding: 9px 0;
+  background: linear-gradient(90deg, rgba(230,57,70,.15), var(--red), rgba(230,57,70,.15));
+  color: #fff; font-weight: 900; font-size: .96rem; letter-spacing: .22em;
+  border-radius: 24px 24px 0 0;
+  transform: scaleX(0); transform-origin: center;
+  animation: uq-bar .35s cubic-bezier(.2,1,.3,1) forwards;
+}
+.uq-alertbar span { opacity: .85; }
+@keyframes uq-bar { to { transform: scaleX(1); } }
+
+.uq-star { font-size: 1.5rem; letter-spacing: .14em; margin-bottom: 6px; }
+.uq-star .uq-s { color: rgba(255,255,255,.18); }
+.uq-star .uq-s.on {
+  color: var(--gold); text-shadow: 0 0 12px rgba(244,162,97,.75);
+  animation: uq-star-pop .3s ease both;
+}
+.uq-star .uq-s.on:nth-child(1) { animation-delay: .30s; }
+.uq-star .uq-s.on:nth-child(2) { animation-delay: .38s; }
+.uq-star .uq-s.on:nth-child(3) { animation-delay: .46s; }
+@keyframes uq-star-pop { from { transform: scale(.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+.uq-title  { font-size: 1.22rem; font-weight: 900; color: var(--text); }
+.uq-desc   { font-size: .94rem; color: var(--text); margin-top: 8px; line-height: 1.6; }
+.uq-flavor { font-size: .82rem; color: var(--text-dim); margin-top: 10px; line-height: 1.6; }
+.uq-reward {
+  margin-top: 14px; padding: 9px 12px; border-radius: 12px;
+  background: rgba(244,162,97,.12); border: 1px solid rgba(244,162,97,.28);
+  color: var(--gold); font-size: .84rem; font-weight: 700;
+}
+.uq-actions { display: flex; gap: 10px; margin-top: 18px; }
+.uq-accept, .uq-decline {
+  flex: 1; padding: 13px 10px; border-radius: 14px; cursor: pointer;
+  font-family: 'Noto Sans JP', sans-serif; font-size: .92rem; font-weight: 800;
+}
+.uq-accept  { border: none; background: var(--red); color: #fff; box-shadow: 0 4px 18px rgba(230,57,70,.35); }
+.uq-accept:hover { filter: brightness(1.1); }
+.uq-decline { border: 1px solid var(--glass-border); background: var(--glass); color: var(--text-dim); }
+.uq-decline:hover { color: var(--text); }
+.uq-note { margin-top: 11px; font-size: .74rem; color: var(--text-dim); }
+
+/* ホームのカード */
+#urgent-quest-card .uq-card-star  { font-size: 1rem; letter-spacing: .1em; }
+#urgent-quest-card .uq-card-star .uq-s    { color: rgba(255,255,255,.18); }
+#urgent-quest-card .uq-card-star .uq-s.on { color: var(--gold); }
+#urgent-quest-card .uq-card-title { font-size: 1rem; font-weight: 800; color: var(--text); margin-top: 2px; }
+#urgent-quest-card .uq-card-desc  { font-size: .88rem; color: var(--text); margin-top: 4px; line-height: 1.5; }
+#urgent-quest-card .uq-card-meta  { font-size: .74rem; color: var(--text-dim); margin-top: 6px; }
+#urgent-quest-card .uq-card-btn {
+  margin-top: 11px; width: 100%; padding: 11px; border: none; border-radius: 12px; cursor: pointer;
+  background: rgba(230,57,70,.18); color: #ff8a93;
+  font-family: 'Noto Sans JP', sans-serif; font-size: .9rem; font-weight: 800;
+}
+#urgent-quest-card .uq-card-btn:hover { background: rgba(230,57,70,.3); }
+
+/* 動きを減らす設定の人には、アニメ無しで最初から見える状態にする */
+@media (prefers-reduced-motion: reduce) {
+  .uq-alertbar { transform: none; animation: none; }
+  .uq-star .uq-s.on { animation: none; }
 }

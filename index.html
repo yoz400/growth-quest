@@ -40,7 +40,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles/app.css?v=guild-201">
+<link rel="stylesheet" href="styles/app.css?v=guild-202">
 </head>
 <body>
 
@@ -573,6 +573,26 @@
         </div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- ─── URGENT QUEST ───
+     すごろくのイベントマスで、まれに発生する緊急依頼。
+     ⚠️ 赤を主役にする画面はGQでここだけ。「普段と違う」を色の希少性で出している。
+        ほかの画面に赤を広げると、この特別感が薄まる。 -->
+<div id="urgent-overlay">
+  <div id="urgent-panel" class="gq-panel">
+    <div class="uq-alertbar"><span>⚠</span> 緊急依頼 <span>⚠</span></div>
+    <div class="uq-star" id="uq-star"></div>
+    <div class="uq-title" id="uq-title"></div>
+    <div class="uq-desc" id="uq-desc"></div>
+    <div class="uq-flavor" id="uq-flavor"></div>
+    <div class="uq-reward" id="uq-reward"></div>
+    <div class="uq-actions">
+      <button class="uq-accept" id="uq-accept-btn">受ける</button>
+      <button class="uq-decline" id="uq-decline-btn">今回は見送る</button>
+    </div>
+    <div class="uq-note">見送っても失うものはありません</div>
   </div>
 </div>
 
@@ -1159,17 +1179,17 @@
 })();
 </script>
 
-<script src="scripts/areas.js?v=guild-201"></script>
-<script src="scripts/core.js?v=guild-201"></script>
-<script src="scripts/home-layers.js?v=guild-201"></script>
-<script src="scripts/progression.js?v=guild-201"></script>
-<script src="scripts/quests.js?v=guild-201"></script>
-<script src="scripts/timer.js?v=guild-201"></script>
-<script src="scripts/settings-genre.js?v=guild-201"></script>
-<script src="scripts/calendar-review.js?v=guild-201"></script>
-<script src="scripts/features.js?v=guild-201"></script>
-<script src="scripts/boot.js?v=guild-201"></script>
-<script src="scripts/otomon.js?v=guild-201"></script>
+<script src="scripts/areas.js?v=guild-202"></script>
+<script src="scripts/core.js?v=guild-202"></script>
+<script src="scripts/home-layers.js?v=guild-202"></script>
+<script src="scripts/progression.js?v=guild-202"></script>
+<script src="scripts/quests.js?v=guild-202"></script>
+<script src="scripts/timer.js?v=guild-202"></script>
+<script src="scripts/settings-genre.js?v=guild-202"></script>
+<script src="scripts/calendar-review.js?v=guild-202"></script>
+<script src="scripts/features.js?v=guild-202"></script>
+<script src="scripts/boot.js?v=guild-202"></script>
+<script src="scripts/otomon.js?v=guild-202"></script>
 
 <script>
 // ── Service Worker 登録 ────────────────────────────────
