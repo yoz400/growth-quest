@@ -2320,6 +2320,20 @@ function spawnVowSparkles() {
   }
 }
 
+// 依頼を一定数こなすごとに、オトモンの目覚めアイテムを1つ渡す。
+//  ⚠️ 確率ではなく「○件ごとに必ず」にする。運で配ると努力の対価でなくなり、
+//     「あと1件で届く」も見えないので目標にならない（判断基準1）。
+//  ⚠️ 保存するものは増やさない。達成した瞬間にだけ判定するので、
+//     既存の guild.completions の合計が倍数になった回に渡せば足りる
+//     （起動のたびに数え直すと、過去の分を何度も配ってしまう）。
+const GUILD_WAKE_EVERY = 3;
+
+function showWakeGiftToast(got) {
+  Toast.show(`🔆 ${got.emoji} ${got.name} を受け取った<br>` +
+    `<span style="opacity:.75;font-weight:400">依頼${GUILD_WAKE_EVERY}件ごとに届く。オトモンの卵を起こせる</span>`,
+    { kind: 'multiline', ms: 3400, priority: 60 });
+}
+
 // 累積達成回数の合計（pred でクエストを絞れる）
 function guildCompletedTotal(pred) {
   return GUILD_QUESTS.reduce(
@@ -2486,6 +2500,14 @@ function completeGuildQuest(id, note) {
   addBonusXP(q.xp);
   const leveledUpTo = addGuildConfidenceReward(q.conf);
 
+  // 依頼を重ねたしるしとして目覚めアイテム。
+  //  otomon.js は boot.js より後に読まれるので、存在を確かめてから呼ぶ（掟2）。
+  let wakeGot = null;
+  if (guildCompletedTotal() % GUILD_WAKE_EVERY === 0 &&
+      window.Otomon && window.Otomon.grantRandomWakeItem) {
+    try { wakeGot = window.Otomon.grantRandomWakeItem(); } catch (e) { wakeGot = null; }
+  }
+
   const newRank = guildFameInfo().name;
   if (leveledUpTo) {
     // 自信レベルアップした回は、その節目のお祝いを最優先で出す（NPC/昇格トーストは譲る）
@@ -2493,6 +2515,7 @@ function completeGuildQuest(id, note) {
   } else {
     showGuildToast(q, newRank !== prevRank ? newRank : null);
   }
+  if (wakeGot) showWakeGiftToast(wakeGot);   // 他の祝福と重なってもToastの順番待ちに乗る
   renderGuild();
   evaluateUnlocks(false);   // XP増でレベルが上がっていれば新機能解放をチェック
 }
