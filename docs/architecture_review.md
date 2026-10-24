@@ -111,7 +111,7 @@
 | ジャンル/スキル | gq_genres, gq_current_genre（選択中ジャンル・リロードで「学習」に戻る事故の対策）, gq_skills, gq_skill_notes |
 | 褒め/妖精/名言 | growthPraiseLogs（⚠️唯一の命名違反・既存データのため改名不可）, gq_words, gq_words_favs, gq_words_hist |
 | すごろく/装備 | gq_sugoroku, gq_inventory, gq_equipped, gq_item_buffs, gq_active_buffs, gq_item_dex, gq_item_memories, gq_streak_shield_protected, gq_world_seen_cell |
-| オトモン | gq_otomon, gq_eggs, gq_wake_items, gq_hatch_quest |
+| オトモン | gq_otomon, gq_eggs, gq_wake_items, gq_hatch_quest, gq_milestone_rewards（節目の特別報酬を配ったか。バッジは再発火しないので遡って1回だけ配るために要る） |
 | ギルド | gq_guild |
 | 手帳/タイムログ | gq_planner, gq_planner_fired, gq_day_log, gq_day_templates, gq_tl_punch, gq_tl_routine, gq_tl_routine_days |
 | レビュー | gq_reviews, gq_rv_status |

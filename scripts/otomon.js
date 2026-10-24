@@ -633,6 +633,44 @@
     return grantRandomWakeItem();
   }
 
+  // ═══ 節目の特別報酬（特別卵＝SSRを起こすための唯一の入手経路）═══
+  //  「特別卵」が受け付ける 自信のしおり / にじいろの雫 は、どちらも special 扱いで
+  //  随時ドロップから外してある（＝ばらまかない）。その代わり、本当に積み上げた
+  //  節目にだけ渡す。合計5個＝特別卵1個ぶん（HATCH_GOAL.SSR）にそろえてある。
+  //
+  //  ⚠️ バッジ側（settings-genre.js）から配らないこと。checkBadges() は boot.js の
+  //     読み込み時にも走るが、その時点で otomon.js はまだ読み込まれていない（掟2）。
+  //     最後に読まれるこちらから gq_badges を直読みして判定する。
+  //  ⚠️ バッジは一度取ると再発火しないので、すでに達成済みの人にも1回だけ遡って配る。
+  //     配ったかどうかは gq_milestone_rewards に残す（gq_ 接頭辞なのでバックアップ対象）。
+  const MILESTONE_REWARDS = [
+    { badge:'sk_10',  item:'confidence_bookmark', n:2, label:'世界樹に実を10個ならせた' },
+    { badge:'st_30',  item:'rainbow_drop',        n:2, label:'30日つづけた' },
+    { badge:'st_100', item:'rainbow_drop',        n:1, label:'100日つづけた' },
+  ];
+  function loadMilestoneClaims() {
+    try { return JSON.parse(localStorage.getItem('gq_milestone_rewards') || '{}') || {}; }
+    catch (e) { return {}; }
+  }
+  //  受け取っていない節目の報酬を配る。配った分を配列で返す（空なら何も起きていない）。
+  function claimMilestoneRewards() {
+    let badges;
+    try { badges = JSON.parse(localStorage.getItem('gq_badges') || '{}') || {}; }
+    catch (e) { return [];  }
+    const claimed = loadMilestoneClaims();
+    const got = [];
+    MILESTONE_REWARDS.forEach(m => {
+      if (!badges[m.badge] || claimed[m.badge]) return;   // 未達成／配布済みは飛ばす
+      grantWakeItem(m.item, m.n);
+      claimed[m.badge] = Date.now();
+      const def = WAKE_BY_ID[m.item] || {};
+      got.push({ badge:m.badge, item:m.item, n:m.n, label:m.label,
+                 name:def.name || m.item, emoji:def.emoji || '🎁' });
+    });
+    if (got.length) safeSetItem('gq_milestone_rewards', JSON.stringify(claimed));
+    return got;
+  }
+
   // ── 誕生時フック（UI層が「誕生演出」を出すために使う。未設定なら何もしない）──
   let _onHatch = null;
   function setOnHatch(fn)        { _onHatch = (typeof fn === 'function') ? fn : null; }
@@ -1065,6 +1103,8 @@
     useWakeItem, getActiveQuest,
     // 目覚めアイテムの在庫
     getWakeInventory, getWakeCount, grantWakeItem, maybeGrantWakeItem, grantRandomWakeItem,
+    // 節目の特別報酬（特別卵むけ）
+    claimMilestoneRewards,
     // ④⑤ 達成→ゲージ→誕生
     completeActiveQuest, hatch, sleepStaleEggs,
     // ⑦ フック（app.js から接続）
@@ -3052,6 +3092,22 @@
     return r;
   };
 
+  // 節目の報酬をもらったときの知らせ。
+  //  受け取っても何に使うか分からないと意味がないので、**使い道を必ず添える**。
+  //  特別卵を持っていれば残り回数まで出す（集める目標になる）。
+  function milestoneHintText(got) {
+    const items = got.map(g => g.emoji + g.name + ' ×' + g.n).join(' / ');
+    const why   = got.length === 1 ? got[0].label + '人だけに届くもの。' : '積み重ねた人だけに届くもの。';
+    let use;
+    try {
+      const egg = O.listEggs().find(e => e.eggId === 'special_egg');
+      use = egg
+        ? '「特別卵」を起こすのに使える（あと' + Math.max(1, (egg.goal || 5) - (egg.gauge || 0)) + '回で誕生）'
+        : 'ギルドの旅先で見つかる「特別卵」を起こせる';
+    } catch (e) { use = '「特別卵」を起こすのに使える'; }
+    return items + ' を受け取った！ ' + why + use;
+  }
+
   function init() {
     injectAll();
     O.setOnChange(refreshHome);   // データ変更で 卵カード＋クエストカード を自動更新
@@ -3061,7 +3117,14 @@
     O.renderHomeEggCard = renderHomeEggCard; O.renderQuestCard = renderQuestCard;
     O.renderHomeBuddyCard = renderHomeBuddyCard; O.refreshHome = refreshHome;
     O.renderPanel = renderPanel; O.showBirth = showBirth; O.fireNudge = fireNudge;
-    setTimeout(() => { fireNudge('home_open'); }, 1200);   // 起動時にそっと挨拶
+    // 節目の報酬は起動時に受け取る。セッション直後に出すと祝福が渋滞するため
+    // （判断基準3「集中直後の余韻を奪わない」）、次に開いたときに知らせる。
+    let _mileGot = [];
+    try { _mileGot = O.claimMilestoneRewards() || []; } catch (e) {}
+    setTimeout(() => {
+      if (_mileGot.length) showNudge('🌈', milestoneHintText(_mileGot));   // 挨拶より優先
+      else                 fireNudge('home_open');                        // 起動時にそっと挨拶
+    }, 1200);
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
