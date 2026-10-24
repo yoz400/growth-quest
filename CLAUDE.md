@@ -138,14 +138,33 @@ docs/spec_*.md               対象の仕様書のみ
 （`mcp` は「Codexが外部MCPを使う」ための命令で、逆向き。2026-10-23 に2か所のインストールで確認）。
 **セッション開始時に毎回「codex: CONNECTION_CLOSED」と出るが、これは既知で無視してよい。**
 
-呼ぶときは Bash から `codex exec` を使う。`codex` は PATH 上にあり、ChatGPTでログイン済み
+呼ぶときは Bash から `codex exec` を使う。ChatGPTでログイン済み
 （`codex login status` → `Logged in using ChatGPT`）。これまでヨージがコピペしていた
 発注・相談を、クロが直接行ってよい。
+
+### ⚠️ 必ず **アプリ同梱のCLI** をフルパスで呼ぶこと
+
+```bash
+/Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/codex
+```
+
+**`codex` と素で打たない**（PATH が通っているのは `~/.local/bin/codex` のほう）。
+CLIが2つ入っていて、`~/.local/bin` 側には実行ホスト `codex-code-mode-host` が
+**同梱されていない**。そちらで発注すると、こうなる:
+
+```text
+failed to spawn code-mode host ~/.local/bin/codex-code-mode-host: No such file or directory
+```
+
+このとき Codex は**ファイルを1つも読めず**、「実装できません」とだけ返す。
+テキストを返すだけの相談は通ってしまうので、**壊れていることに気づきにくい**
+（2026-10-24 に緊急依頼の発注で実際に踏んだ。FAILURES.md 参照）。
+`--disable code_mode` でも回避できない。
 
 ### 相談モード（チャッピー）— `-s read-only`
 
 ```bash
-codex exec --skip-git-repo-check -s read-only "相談内容"
+/Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/codex exec --skip-git-repo-check -s read-only "相談内容"
 ```
 
 次のときは、ヨージに確認せず自分から相談してよい:
@@ -159,7 +178,7 @@ codex exec --skip-git-repo-check -s read-only "相談内容"
 ### 実行モード（Codex）— `-s workspace-write`
 
 ```bash
-codex exec -C /Users/hapiyopi/Desktop/claude-practice -s workspace-write "依頼文"
+/Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/codex exec -C /Users/hapiyopi/Desktop/claude-practice -s workspace-write "依頼文"
 ```
 
 - 仕様書（docs/spec_*.md）末尾の「依頼文」を、クロが直接渡して発注してよい

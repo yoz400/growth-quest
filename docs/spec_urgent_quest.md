@@ -312,17 +312,18 @@ Growth Quest（/Users/hapiyopi/Desktop/claude-practice）に「⚠ 緊急依頼�
 
 ## 9. 実装記録（2026-10-24・guild-202）
 
-**実装者はCodexではなくクロ。** Codex に発注したが、実行環境が壊れていて着手できなかった。
+**実装者はCodexではなくクロ。** Codex に発注したが、**呼ぶCLIを間違えていて**着手できなかった。
+（2026-10-24 追記: 当初「環境が壊れている」と書いたが誤り。詳細は FAILURES.md 同日）
 
 ```
 failed to spawn code-mode host /Users/hapiyopi/.local/bin/codex-code-mode-host:
 No such file or directory
 ```
 
-`--disable code_mode` でも回避できず、ファイルの読み書きが一切できない状態。
-ヨージが実機確認中で待たせられないため、仕様書どおりクロが実装した。
-**Codexの実行環境が直ったら、次の発注から通常どおり使える**（相談モードは影響なし＝
-テキスト応答だけなら動く）。
+原因は `~/.local/bin/codex`（実行ホストが同梱されていない方）を呼んだこと。
+**アプリ同梱の `/Applications/ChatGPT.app/.../codex-cli/bin/codex` は正常に動く**
+（後日ファイルを読ませて確認済み）。ヨージが実機確認中で待たせられないため、
+このときは仕様書どおりクロが実装した。次の発注からは正しいパスで Codex に出せる。
 
 ### 受け入れ基準の結果
 
