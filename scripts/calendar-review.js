@@ -700,9 +700,11 @@ function renderCalStats(y, m) {
   const daysInMonth = new Date(y, m + 1, 0).getDate();
   let totalMins = 0, studyDays = 0, bestMins = 0, bestDate = '';
 
+  let elapsed = 0;                 // その月で「もう過ぎた日」の数＝学習日数の分母
   for (let d = 1; d <= daysInMonth; d++) {
     const date = new Date(y, m, d);
     if (date > todayStart) break;
+    elapsed++;
     const k = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const mins = data.history[k] || 0;
     if (mins > 0) {
@@ -712,9 +714,12 @@ function renderCalStats(y, m) {
     }
   }
 
+  // 「18日」だけでは多いのか少ないのか読めないので、分母（経過日数）を添える。
+  //  ⚠️ 達成率のバーや「あと○日」は出さない。埋まっていない所を責める作りにしない
+  //     （判断基準4「サボった人を迎えるか、責めるか」）。事実を並べるだけに留める。
   const el = document.getElementById('cal-stats');
   el.innerHTML = `
-    <div class="cal-stat-item">この月の学習日数: <strong>${studyDays}日</strong></div>
+    <div class="cal-stat-item">この月の学習日数: <strong>${studyDays}日</strong>${elapsed ? ` / ${elapsed}日経過` : ''}</div>
     <div class="cal-stat-item">この月の学習時間: <strong>${totalMins}分</strong></div>
     ${bestDate ? `<div class="cal-stat-item">ベスト: <strong>${bestDate}（${bestMins}分）</strong></div>` : ''}
   `;
