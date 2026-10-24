@@ -1308,14 +1308,27 @@
       .otomon-flow .ofl-arrow { color:var(--text-dim); font-size:.8rem; }
       .otomon-flow .ofl-hint { font-size:.78rem; color:var(--text); margin-top:11px; line-height:1.55; padding-top:9px; border-top:1px solid rgba(255,255,255,.06); }
       /* お供オトモンのナッジ（応援トースト） */
-      #otomon-nudge { position:fixed; left:50%; bottom:22px; transform:translate(-50%, 30px);
-        max-width:min(420px, calc(100vw - 32px)); display:flex; align-items:center; gap:10px;
-        padding:11px 16px; border-radius:16px; background:#11131f; border:1px solid rgba(6,182,212,.35);
-        box-shadow:0 12px 40px rgba(0,0,0,.6); z-index:90; opacity:0; pointer-events:none;
-        transition:opacity .35s, transform .35s; }
-      #otomon-nudge.show { opacity:1; transform:translate(-50%, 0); }
-      #otomon-nudge .ong-emoji { font-size:1.6rem; flex-shrink:0; }
-      #otomon-nudge .ong-text { font-size:.86rem; color:var(--text); line-height:1.4; }
+      /* お供の声。⚠️ 画面下ではなくヘッダー直下に出す。
+         下端だと見落とされるうえ、以前は画面からはみ出していた。
+         縦位置はCSSで固定せず、出す瞬間に _nudgeTop() で実測して style.top に入れる
+         （ヘッダーの高さは端末で変わる。core.js の topBelowHeader と同じ考え方）。 */
+      #otomon-nudge { position:fixed; left:50%; top:14px; transform:translate(-50%, -12px) scale(.94);
+        width:min(420px, calc(100vw - 32px)); display:flex; align-items:center; gap:13px;
+        padding:12px 16px; border-radius:18px;
+        background:linear-gradient(135deg,#141a2e,#11131f); border:1px solid rgba(6,182,212,.4);
+        box-shadow:0 16px 48px rgba(0,0,0,.7), 0 0 28px rgba(6,182,212,.14);
+        z-index:90; opacity:0; pointer-events:none; cursor:pointer;
+        transition:opacity .4s, transform .4s cubic-bezier(.2,1.2,.4,1), top .3s; }
+      #otomon-nudge.show { opacity:1; transform:translate(-50%, 0) scale(1); pointer-events:auto; }
+      /* その子の「絵」を出す枠。絵が無い子は絵文字に落ちる（otomonFace の仕様） */
+      #otomon-nudge .ong-emoji { flex:0 0 auto; width:62px; height:62px; font-size:2.1rem;
+        display:flex; align-items:center; justify-content:center;
+        background:rgba(255,255,255,.05); border-radius:14px; }
+      #otomon-nudge .ong-emoji .otomon-face-img { width:56px; height:56px; }
+      #otomon-nudge .ong-text { font-size:.9rem; color:var(--text); line-height:1.5; }
+      @media (prefers-reduced-motion: reduce) {
+        #otomon-nudge { transition:opacity .2s; transform:translate(-50%, 0) scale(1); }
+      }
     `;
     document.head.appendChild(el);
   }
@@ -1851,20 +1864,73 @@
     if (document.getElementById('otomon-nudge')) return;
     const el = document.createElement('div');
     el.id = 'otomon-nudge';
-    el.innerHTML = '<span class="ong-emoji" id="otomon-nudge-emoji"></span><span class="ong-text" id="otomon-nudge-text"></span>';
+    el.innerHTML = '<span class="ong-emoji" id="otomon-nudge-emoji"></span>' +
+                   '<span class="ong-text" id="otomon-nudge-text"></span>';
+    el.addEventListener('click', () => el.classList.remove('show'));   // 押せば早く消せる
     document.body.appendChild(el);
+  }
+
+  // いま何かモーダルが開いているか。開いている間は挨拶を出さない。
+  //  ⚠️ ナッジは z-index 90、ログインボーナスは 130。ログイン直後にそのまま出すと
+  //     モーダルの裏で誰にも見られないまま4.8秒で消えていた（2026-10-24 実測）。
+  function _anyOverlayOpen() {
+    try { return !!(typeof Overlay !== 'undefined' && Overlay.topId && Overlay.topId()); }
+    catch (e) { return false; }
+  }
+
+  // 置く高さ。ヘッダーは端末で高さが変わるので core.js の topBelowHeader で実測する。
+  //  週次レビューの帯が出ているときは、その下にずらす（同じ場所を取り合わない）。
+  function _nudgeTop() {
+    const base = window.topBelowHeader ? window.topBelowHeader() : 14;
+    let t = base;
+    const rp = document.getElementById('review-prompt');
+    if (rp && rp.classList.contains('show')) {
+      const r = rp.getBoundingClientRect();
+      if (r.height) t = Math.round(r.bottom) + 10;
+    }
+    // ⚠️ レビューの帯は .45s かけて降りてくる。その途中の座標（画面外のマイナス）を
+    //    そのまま使うと、挨拶がヘッダーの上や画面外に出る。base より上には行かせない。
+    return Math.min(Math.max(t, base), 300);
   }
   let _nudgeTimer = null;
   const _lastNudge = {};   // trigger → 最後に出した時刻（連発防止）
-  function showNudge(emoji, text) {
+  let _nudgePending = null;   // モーダルが閉じるのを待っている挨拶
+  let _nudgeWatch   = null;
+
+  //  第3引数にオトモンを渡すと、絵文字ではなく**その子の絵**で出す。
+  //  渡さない呼び出し（節目の報酬・連続ふれあいの祝福など）は従来どおり絵文字。
+  function showNudge(emoji, text, otomon) {
     injectNudge();
+    if (!document.getElementById('otomon-nudge')) return;
+    if (_anyOverlayOpen()) {
+      // 閉じたら出す。90秒待っても閉じなければあきらめる（延々と残さない）
+      _nudgePending = { emoji, text, otomon, until: Date.now() + 90000 };
+      if (!_nudgeWatch) _nudgeWatch = setInterval(_flushNudge, 600);
+      return;
+    }
+    _renderNudge(emoji, text, otomon);
+  }
+
+  function _flushNudge() {
+    const stop = () => { clearInterval(_nudgeWatch); _nudgeWatch = null; };
+    if (!_nudgePending) { stop(); return; }
+    if (Date.now() > _nudgePending.until) { _nudgePending = null; stop(); return; }
+    if (_anyOverlayOpen()) return;
+    const p = _nudgePending; _nudgePending = null; stop();
+    _renderNudge(p.emoji, p.text, p.otomon);
+  }
+
+  function _renderNudge(emoji, text, otomon) {
     const el = document.getElementById('otomon-nudge');
     if (!el) return;
-    document.getElementById('otomon-nudge-emoji').textContent = emoji || '🥚';
-    document.getElementById('otomon-nudge-text').textContent  = text || '';
+    const face = document.getElementById('otomon-nudge-emoji');
+    if (otomon) face.innerHTML = otomonFace(otomon, 'medium');   // その子の絵で出す
+    else        face.textContent = emoji || '🥚';
+    document.getElementById('otomon-nudge-text').textContent = text || '';
+    el.style.top = _nudgeTop() + 'px';
     el.classList.add('show');
     if (_nudgeTimer) clearTimeout(_nudgeTimer);
-    _nudgeTimer = setTimeout(() => el.classList.remove('show'), 4800);
+    _nudgeTimer = setTimeout(() => el.classList.remove('show'), 5600);
   }
   // ── bond段階別の共通応援トーン（home_open の汎用挨拶に使う）──
   //  案1：個体固有の nudge が優先。nudge を持たない/汎用挨拶に落ちる体だけ、
@@ -3040,7 +3106,7 @@
     }
     if (!text) return;
     _lastNudge[trigger] = now;
-    showNudge(a.emoji, text);
+    showNudge(a.emoji, text, a);   // 第3引数＝その子。絵文字ではなく絵で出る
   }
 
   // ── なつき段階の昇格トースト（既存 showNudge を流用）──
