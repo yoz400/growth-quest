@@ -388,6 +388,36 @@
       }
     });
 
+    addTest('成長星図: 現在値・過去境界・欠損・レベル・保存不変', async () => {
+      const frame = await openAppFrame(375, 750);
+      try {
+        const w = frame.contentWindow, api = w.GQGrowth;
+        assertEq([0,99,100,299,300].map(api.level), [1,1,2,2,3], 'レベル境界');
+        const gs = [{id:'test', name:'長いジャンル名',xp:150,minutes:150}];
+        const history = {'2026-07-01':{genres:{test:50}},'2026-09-30':{genres:{test:40}},'2026-10-30':{genres:{test:60}}};
+        const now = new Date(2026,9,30);
+        assertEq(api.stats(gs,history,now,30).rows[0].past,90,'30日前の終了時点');
+        assertEq(api.stats(gs,history,now,90).rows[0].past,50,'90日前');
+        assertEq(api.stats(gs,{},now,30).rows[0].past,null,'履歴なし');
+        assertEq(api.stats([{...gs[0],xp:151}],history,now,30).rows[0].past,null,'不一致');
+        assertEq(api.stats(gs,{'2026-10-30':{genres:{test:150}}},now,30).rows[0].past,null,'新しい記録のみ');
+        assertEq(api.stats(gs,history,new Date(2027,0,1),30).rows[0].xp,150,'休止で減衰しない');
+        w.Overlay.closeAll();
+        const before = JSON.stringify({...w.localStorage});
+        for (const count of [0,1,2,6,7,20]) {
+          w.eval('genres = ' + JSON.stringify(Array.from({length:count},(_,i)=>({id:'test'+i,name:'長いジャンル名'+i,xp:i*100,minutes:i*100}))));
+          w.document.getElementById('avatar-btn').click();
+          const host = w.document.getElementById('avatar-growth');
+          assertEq(host.querySelectorAll('.growth-choices button').length,Math.min(count,6),'表示ジャンル数');
+          assert(host.getBoundingClientRect().right <= 375,'375px内に収まる');
+          if(count>6){const old = host.querySelector('.growth-choices').textContent;Array.from(host.querySelectorAll('button')).find(b=>b.textContent==='次 →').click();assert(host.querySelector('.growth-choices').textContent !== old,'次ページ');}
+          const select=host.querySelector('select');select.value='90';select.dispatchEvent(new w.Event('change'));
+          if(count) host.querySelector('.growth-choices button').click();
+        }
+        assertEq(JSON.stringify({...w.localStorage}),before,'描画と選択で保存データ不変');
+      } finally { frame.remove(); }
+    });
+
     for (const test of tests) {
       try {
         await test.fn();

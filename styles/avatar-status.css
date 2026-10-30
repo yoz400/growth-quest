@@ -1,0 +1,95 @@
+/* 冒険者の記録帳。アバター画面だけに閉じた意匠。 */
+#avatar-panel {
+  --cyan:#b8a0dd; --gold:#c7ab70; --text:#f0e5ce; --text-dim:#c6b99b;
+  width:min(1180px,calc(100vw - 40px)); max-height:94vh;
+  padding:22px 26px 12px; border:1px solid #ab8d54; border-radius:3px;
+  background:linear-gradient(100deg,rgba(25,22,19,.97),rgba(28,25,27,.86) 52%,rgba(18,17,22,.97)),url('../assets/worldmap.webp') center/cover;
+  box-shadow:0 0 0 4px #16130f,0 0 0 5px #6c5735,0 24px 90px #000b,inset 0 0 70px #0009;
+  font-family:'Yu Mincho','Hiragino Mincho ProN','Noto Serif JP',serif;
+}
+#avatar-panel .settings-header { border-bottom:1px solid #9f8450; padding-bottom:13px; margin-bottom:20px; }
+#avatar-panel .settings-title { color:#f0e0b9; letter-spacing:.2em; font-size:1.4rem; font-weight:500; }
+#avatar-panel .settings-title small { display:inline-block; font-family:Georgia,serif; font-size:.56rem; color:#b59a64; letter-spacing:.18em; margin-left:12px; }
+#avatar-panel .icon-btn { color:#e0cca2; border:1px solid #846d43; border-radius:0; }
+.avatar-status-layout { display:grid; grid-template-columns:minmax(0,1fr); gap:20px; align-items:start; }
+.avatar-status-profile { position:static; min-width:0; }
+.avatar-status-portrait { position:relative; align-self:stretch; display:flex; flex-direction:column; justify-content:center; min-width:0; grid-row:1; }
+.av-portrait-ornament { text-align:center; color:#b9a071; font-size:2rem; text-shadow:0 0 20px #cfb07166; }
+#avatar-display-large { min-height:320px; padding:0; position:relative; }
+#avatar-display-large::before { content:''; position:absolute; width:95%; height:85%; border-radius:50%; background:radial-gradient(ellipse,#cbb38326,transparent 68%); }
+#avatar-display-large .av-char-img-wrap { min-height:320px; padding:0; }
+#avatar-display-large .av-char-canvas { width:min(100%,330px); }
+#avatar-display-large .av-char-img { filter:drop-shadow(0 0 22px #e6d6ac30) drop-shadow(0 16px 14px #000a); }
+#avatar-display-large .av-char-img-wrap::after { background:radial-gradient(ellipse,#b39d6b44,transparent 70%); }
+.av-portrait-caption { color:#d7c69f; text-align:center; letter-spacing:.16em; font-size:.72rem; line-height:1.8; padding:18px 0; margin:0; }
+#avatar-type-selector { padding:0; }
+#avatar-panel .av-current-card,#avatar-stage-info {
+  color:#382d20; border:1px solid #b89a61; border-radius:1px; padding:19px;
+  background:repeating-linear-gradient(2deg,#92713d08 0 1px,transparent 1px 4px),radial-gradient(ellipse at 30% 20%,#f2e4c8,#c4b18b);
+  box-shadow:inset 0 0 0 3px #dfcda633,inset 0 0 32px #6e4b262b,0 3px 8px #0005;
+}
+#avatar-panel .av-current-card { text-align:left; border-bottom:3px double #806644; }
+#avatar-panel .av-type-label,.av-record-label { color:#695235; letter-spacing:.2em; font-size:.65rem; margin-bottom:12px; }
+#avatar-panel .av-current-name { font-size:1.7rem; color:#34271a; border-bottom:1px solid #8e7553; padding-bottom:12px; letter-spacing:.12em; }
+#avatar-panel .av-current-title { color:#453520; font-size:.95rem; margin-top:14px; }
+#avatar-panel .av-current-desc { color:#57452d; font-size:.78rem; line-height:1.9; margin-top:10px; }
+#avatar-stage-info { margin-top:12px; }
+#avatar-panel .av-title { color:#4a3823; text-shadow:none; font-size:1.1rem; text-align:left; font-weight:500; margin:0 0 16px; }
+#avatar-panel .av-subtitle { color:#3b2d1e; text-align:left; display:flex; align-items:baseline; gap:6px; font-size:.9rem; }
+#avatar-panel .av-subtitle strong { font-size:1.7rem; font-weight:500; }
+#avatar-panel .av-subtitle span { font-family:Georgia,serif; font-size:.68rem; margin-left:auto; }
+.av-status-exp { width:100%; height:10px; accent-color:#587b99; display:block; margin:6px 0 15px; }
+#avatar-panel .av-next-hint { color:#5c482e; text-align:left; font-size:.68rem; line-height:1.9; }
+#avatar-panel .av-stat-row { background:none; padding:12px 0 0; border:0; border-top:1px solid #a58c63; border-radius:0; margin-top:16px; gap:12px; }
+#avatar-panel .av-stat-val { color:#403020 !important; font-size:1.3rem; font-weight:500; }
+#avatar-panel .av-stat-lbl { color:#665034; font-size:.66rem; }
+#avatar-panel #avatar-actions { margin:14px 0; }
+#avatar-panel .av-action-btn { width:100%; border:1px solid #947b4a; border-radius:0; background:#28231c; color:#e1c99b; padding:11px; }
+#avatar-panel .av-journey-label { color:#c5aa73; border-color:#7b643e; }
+#avatar-panel .av-journey-title { color:#e3d3b2 !important; font-size:.8rem; font-weight:500; }
+#avatar-panel .av-journey-cur { color:#bca170; }
+#avatar-panel #avatar-growth { margin:0; padding:16px; border:0; border-top:3px double #a68a53; border-bottom:3px double #a68a53; border-radius:0; background:linear-gradient(#18171dcc,#18171d66); }
+#avatar-growth h3 { text-align:center; font-weight:500; letter-spacing:.16em; font-size:1.15rem; margin:0 0 12px; }
+#avatar-growth h3::before { content:'✧'; display:block; color:#a88a50; font-size:1.7rem; margin-bottom:6px; }
+#avatar-growth p { line-height:1.8; }
+#avatar-growth svg { max-width:310px; }
+#avatar-growth .growth-now { fill:#a48bce4d; stroke:#b9a0e3; stroke-width:1.5; }
+#avatar-growth .growth-dot { fill:#cfb8f1; }
+#avatar-growth .growth-grid { stroke:#d2c5ae; stroke-opacity:.35; }
+#avatar-growth .growth-axis { fill:#e4d7bc; font-family:'Yu Mincho','Hiragino Mincho ProN',serif; font-size:12px; }
+#avatar-growth .growth-past { stroke:#d5b974; }
+#avatar-growth .growth-muted { font-size:.68rem; color:#bbae93; }
+#avatar-growth .growth-legend { font-size:.68rem; color:#c7afd7; }
+#avatar-growth .growth-controls,#avatar-growth .growth-choices { margin:8px 0; gap:6px; }
+#avatar-growth .growth-controls { font-size:.75rem; }
+#avatar-growth button,#avatar-growth select { background:#221e22; color:#e2d4b7; border:1px solid #7b684a; border-radius:1px; font-size:.73rem; padding:6px 9px; min-height:38px; }
+#avatar-growth button[aria-pressed='true'] { background:#75603c44; color:#f3db9f; border-color:#ceb278; box-shadow:inset 0 0 0 1px #b69b5e55; }
+#avatar-growth .growth-detail { border-top:1px solid #7b684a; padding-top:12px; margin-top:14px; }
+#avatar-growth .growth-detail h4 { color:#d7bb7d; font-size:.95rem; font-weight:500; }
+#avatar-growth .growth-detail p { font-size:.76rem; }
+.avatar-status-footer { display:flex; flex-wrap:wrap; gap:8px; justify-content:space-between; margin-top:20px; padding-top:10px; border-top:1px solid #705c39; color:#bca67b; font-size:.64rem; letter-spacing:.08em; }
+@media(min-width:680px) {
+  .avatar-status-layout { grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr); }
+  .avatar-status-portrait { grid-column:2; grid-row:1; }
+  .avatar-status-profile { grid-column:1; grid-row:1; }
+  #avatar-growth { grid-column:1/-1; }
+}
+@media(min-width:940px) {
+  .avatar-status-layout { grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr) minmax(0,1fr); gap:22px; }
+  #avatar-growth { grid-column:3; grid-row:1; }
+  .avatar-status-portrait { min-height:610px; }
+  #avatar-display-large .av-char-canvas { width:min(440px,112%); max-width:112%; flex-shrink:0; }
+  #avatar-display-large .av-char-img-wrap { min-height:470px; }
+  #avatar-display-large { min-height:470px; }
+}
+@media(max-width:679px) {
+  #avatar-panel { width:calc(100vw - 24px); padding:18px 15px 12px; }
+  #avatar-panel .settings-title { font-size:1.2rem; }
+  #avatar-panel .settings-title small { display:block; margin:5px 0 0; font-size:.5rem; }
+  #avatar-growth button,#avatar-growth select { min-height:44px; }
+  #avatar-panel .av-current-card,#avatar-stage-info { padding:16px; }
+}
+#avatar-display-large .av-char-canvas .av-char-img { display:block; width:100%; max-width:100%; height:auto; }
+#avatar-display-large .av-char-canvas { filter:drop-shadow(0 12px 24px #0008); }
+
+.avatar-status-portrait { pointer-events:none; }

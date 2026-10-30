@@ -1396,6 +1396,7 @@ function openAvatarModal() {
 }
 
 function renderAvatarModal() {
+  window.GQGrowth?.render();
   const si       = getAvatarStageIndex(data.level);
   const stage    = AVATAR_STAGES[si];
   const next     = AVATAR_STAGES[si + 1];
@@ -1427,8 +1428,10 @@ function renderAvatarModal() {
   const earnedCount = Object.keys(earnedBadges).length;
 
   document.getElementById('avatar-stage-info').innerHTML = `
-    <div class="av-title" style="color:${stage.c1};text-shadow:0 0 20px ${stage.c1}60">${stage.title}</div>
-    <div class="av-subtitle">Lv ${data.level} &nbsp;·&nbsp; ${data.xp} / ${xpForLevel(data.level)} XP</div>
+    <div class="av-record-label">成長の記録</div>
+    <div class="av-title">${stage.title}</div>
+    <div class="av-subtitle">Lv <strong>${data.level}</strong> <span>EXP ${data.xp} / ${xpForLevel(data.level)}</span></div>
+    <meter class="av-status-exp" min="0" max="${xpForLevel(data.level)}" value="${data.xp}" aria-label="現在のレベルの経験値"></meter>
     <div class="av-next-hint">${
       next
         ? `🌟 次の進化「${next.title}」まであと <strong>${fmtMinsHint(minsToNext)}</strong>の学習`

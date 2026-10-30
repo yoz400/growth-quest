@@ -5857,3 +5857,34 @@ body.eq-mood-galaxy    .anim-wrap::after {
   .uq-alertbar { transform: none; animation: none; }
   .uq-star .uq-s.on { animation: none; }
 }
+
+/* 学習の成長星図（既存アバターパネル内） */
+#avatar-growth { margin:20px 0; padding:16px; border:1px solid var(--gold); border-radius:16px; background:rgba(20,25,38,.5); text-align:left; min-width:0; }
+#avatar-growth h3 { color:var(--gold); margin:0 0 8px; font-size:1rem; }
+#avatar-growth h4 { margin:0 0 8px; overflow-wrap:anywhere; }
+#avatar-growth p { line-height:1.7; margin:8px 0; overflow-wrap:anywhere; }
+#avatar-growth svg { display:block; width:100%; max-width:420px; margin:auto; overflow:visible; }
+.growth-muted { font-size:.75rem; color:var(--text-dim); }
+.growth-legend { font-size:.8rem; color:var(--cyan); }
+.growth-grid { fill:none; stroke:var(--text-dim); stroke-opacity:.25; }
+.growth-now { fill:rgba(6,182,212,.22); stroke:var(--cyan); stroke-width:2; }
+.growth-dot { fill:var(--cyan); }
+.growth-past { fill:none; stroke:var(--gold); stroke-width:2; stroke-dasharray:4 3; }
+.growth-axis { fill:var(--text); font-size:11px; cursor:pointer; }
+.growth-controls,.growth-choices { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:12px 0; }
+#avatar-growth button,#avatar-growth select { font:inherit; color:var(--text); background:var(--bg); border:1px solid var(--text-dim); border-radius:8px; min-height:44px; padding:8px 10px; max-width:100%; overflow-wrap:anywhere; }
+#avatar-growth button[aria-pressed="true"] { color:var(--gold); border-color:var(--gold); }
+#avatar-growth button:disabled { opacity:.4; }
+#avatar-growth :focus-visible { outline:2px solid var(--cyan); outline-offset:3px; }
+.growth-detail { border-top:1px solid var(--text-dim); padding-top:12px; }
+.growth-bar { display:grid; gap:6px; margin:16px 0; overflow-wrap:anywhere; }
+.growth-bar meter { width:100%; height:18px; accent-color:var(--cyan); }
+
+/* アバターの右側で成長を確認。狭い画面では読みやすい縦配置。 */
+.avatar-status-layout, .avatar-status-profile { min-width:0; }
+@media (min-width: 680px) {
+  #avatar-panel { width:min(820px, calc(100vw - 48px)); }
+  .avatar-status-layout { display:grid; grid-template-columns:minmax(0, .9fr) minmax(0, 1.1fr); gap:24px; align-items:start; }
+  .avatar-status-layout #avatar-growth { margin:0; }
+  .avatar-status-profile { position:sticky; top:0; }
+}

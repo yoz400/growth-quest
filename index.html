@@ -40,7 +40,8 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles/app.css?v=guild-203">
+<link rel="stylesheet" href="styles/app.css?v=guild-207">
+<link rel="stylesheet" href="styles/avatar-status.css?v=guild-207">
 </head>
 <body>
 
@@ -692,12 +693,25 @@
 <div id="avatar-overlay">
   <div id="avatar-panel" class="gq-panel">
     <div class="settings-header">
-      <span class="settings-title">⚔ アバター</span>
+      <span class="settings-title">ステータス <small>ADVENTURER RECORD</small></span>
       <button class="icon-btn" id="avatar-close-btn">✕</button>
     </div>
-    <div id="avatar-display-large"></div>
-    <div id="avatar-type-selector"></div>
-    <div id="avatar-stage-info"></div>
+    <div class="avatar-status-layout">
+      <div class="avatar-status-profile">
+        <div id="avatar-type-selector"></div>
+        <div id="avatar-stage-info"></div>
+        <div id="avatar-actions">
+          <button class="av-action-btn" id="avatar-open-badges">🏅 バッジを見る</button>
+        </div>
+        <div id="avatar-journey"></div>
+      </div>
+      <div class="avatar-status-portrait">
+        <div class="av-portrait-ornament" aria-hidden="true">✧</div>
+        <div id="avatar-display-large"></div>
+        <p class="av-portrait-caption">一歩ずつ、あなたの物語になる。</p>
+      </div>
+      <section id="avatar-growth" aria-label="学習ジャンル別の成長"></section>
+    </div>
     <!-- ⚠️ ここにボタンを足す前に読むこと（過去に2回、復活させかけた）
          ・🎒装備 … 81358c9 で意図的に引退。装備画像が未完成でアバターに
            重ねると絵が崩れたため。入手経路も de40443 でオトモンに置換済み。
@@ -705,10 +719,7 @@
            （renderWordsList が QUOTES を丸ごと表示）だったので削除。
            直すなら gq_words_hist で「出会った言葉だけ」に絞るのが先。
          どちらも「繋ぎ忘れ」ではなく、ヨージの判断による撤去。 -->
-    <div id="avatar-actions">
-      <button class="av-action-btn" id="avatar-open-badges">🏅 バッジを見る</button>
-    </div>
-    <div id="avatar-journey"></div>
+    <div class="avatar-status-footer"><span>GROWTH QUEST</span><span>積み重ねた学びを、冒険の記録に。</span></div>
   </div>
 </div>
 
@@ -1179,17 +1190,18 @@
 })();
 </script>
 
-<script src="scripts/areas.js?v=guild-203"></script>
-<script src="scripts/core.js?v=guild-203"></script>
-<script src="scripts/home-layers.js?v=guild-203"></script>
-<script src="scripts/progression.js?v=guild-203"></script>
-<script src="scripts/quests.js?v=guild-203"></script>
-<script src="scripts/timer.js?v=guild-203"></script>
-<script src="scripts/settings-genre.js?v=guild-203"></script>
-<script src="scripts/calendar-review.js?v=guild-203"></script>
-<script src="scripts/features.js?v=guild-203"></script>
-<script src="scripts/boot.js?v=guild-203"></script>
-<script src="scripts/otomon.js?v=guild-203"></script>
+<script src="scripts/areas.js?v=guild-207"></script>
+<script src="scripts/core.js?v=guild-207"></script>
+<script src="scripts/home-layers.js?v=guild-207"></script>
+<script src="scripts/progression.js?v=guild-207"></script>
+<script src="scripts/quests.js?v=guild-207"></script>
+<script src="scripts/timer.js?v=guild-207"></script>
+<script src="scripts/settings-genre.js?v=guild-207"></script>
+<script src="scripts/calendar-review.js?v=guild-207"></script>
+<script src="scripts/features.js?v=guild-207"></script>
+<script src="scripts/growth-radar.js?v=guild-207"></script>
+<script src="scripts/boot.js?v=guild-207"></script>
+<script src="scripts/otomon.js?v=guild-207"></script>
 
 <script>
 // ── Service Worker 登録 ────────────────────────────────
