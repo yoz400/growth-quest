@@ -466,12 +466,9 @@ function completeSession() {
   _praiseSessionDate   = _today;
   _praiseSessionGenre  = currentGenreId;
 
-  // break
-  if (cfg.break > 0) {
-    startBreak(cfg.break);
-  } else {
-    setTimerForMode(currentMode);
-  }
+  // 休憩は勝手に始めない。告の「☕ N分の休憩をはじめる」を押した人だけ始まる
+  //   （以前は自動で始まっていたが、告の裏に隠れて誰にも見えていなかった）
+  setTimerForMode(currentMode);
   GQ.emit('session:complete', { mins, mode: currentMode, genreId: currentGenreId });
 }
 
@@ -546,7 +543,9 @@ function showKoku(mins, breakMins, kind, equipBonusXp, firstTodayXp) {
     : `${genreLabel} — セッション完了`;
   const closingMsg = isPartial
     ? 'ここまで向き合えたね。途中でも、机に向かえた時間は確かな一歩。'
-    : (breakMins > 0 ? `推奨：${breakMins}分の休憩` : '今日もお疲れ様！');
+    : (breakMins > 0
+      ? `<button type="button" class="ktc-btn koku-break-btn" id="koku-break-btn">☕ ${breakMins}分の休憩をはじめる</button>`
+      : '今日もお疲れ様！');
 
   // 装備ボーナス行（bonus > 0 のときだけ表示）
   const equipLine = equipBonusXp > 0
@@ -571,6 +570,16 @@ function showKoku(mins, breakMins, kind, equipBonusXp, firstTodayXp) {
     <span class="result-divider">────────────────</span>
     ${closingMsg}
   `;
+
+  // ☕ 推奨の休憩：押すと休憩タイマーが始まり、告を閉じる（世界樹の報告はそのまま出る）
+  const breakBtn = result.querySelector('#koku-break-btn');
+  if (breakBtn) breakBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    if (breakInterval) clearInterval(breakInterval);
+    startBreak(breakMins);
+    closeKoku();
+    breakBanner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
 
   // 🎲 すごろく：勝手には振らない。振るかどうかは本人が選ぶ。
   //    集中した直後にいきなり盤面を回すと、いちばん余韻が残っている瞬間を
