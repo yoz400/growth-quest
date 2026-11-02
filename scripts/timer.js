@@ -49,6 +49,24 @@ function getBreakRemainSec() {
   return Math.max(0, breakStartRemain - Math.floor((Date.now() - breakStartWall) / 1000));
 }
 
+// 固定表示の時間も壁時計から計算し、停止・再開やバックグラウンド復帰に追従する。
+function syncFloatingTimer() {
+  const banner = document.getElementById('focus-timer-floating');
+  if (!banner) return;
+  const active = timerState !== 'idle';
+  banner.classList.toggle('visible', active && !Overlay.topId());
+  banner.classList.toggle('paused', timerState === 'paused');
+  document.body.classList.toggle('has-focus-timer', active);
+  if (!active) return;
+  const sec = getTimerElapsedSec();
+  const flow = currentMode === 'flow';
+  const time = flow ? sec : Math.max(0, MODES[currentMode].focus * 60 - sec);
+  document.getElementById('focus-floating-status').textContent =
+    timerState === 'paused' ? '一時停止中' : '集中中';
+  document.getElementById('focus-floating-label').textContent = flow ? '経過' : '残り';
+  document.getElementById('focus-floating-time').textContent = fmtTime(time);
+}
+
 // ── タブタイトル ──────────────────────────────────────────
 function updateTabTitle(t) { document.title = `(${t}) Growth Quest`; }
 function resetTabTitle()    { document.title = 'Growth Quest'; }
@@ -239,6 +257,7 @@ function startTimer() {
     intervalId = setInterval(tick, 1000);
     saveTimerSession();
   }
+  syncFloatingTimer();
 }
 
 // ── 🛡 止め忘れ防止：長すぎるセッションは確認する ───────────
@@ -278,6 +297,7 @@ function stopTimer() {
   clearInterval(intervalId);
   intervalId = null;
   timerState = 'idle';
+  syncFloatingTimer();
   startBtn.textContent = 'START';
   startBtn.classList.remove('running');
   stopBtn.style.display = 'none';
@@ -338,6 +358,7 @@ stopBtn.addEventListener('click', stopTimer);
 function tick() {
   const sec = getTimerElapsedSec();
   sessionMinutes = sec;
+  syncFloatingTimer();
 
   if (currentMode === 'flow') {
     elapsed = sec;
@@ -372,6 +393,7 @@ function tick() {
     clearInterval(intervalId);
     intervalId = null;
     timerState = 'idle';
+    syncFloatingTimer();
     startBtn.textContent = 'START';
     startBtn.classList.remove('running');
     stopBtn.style.display = 'none';
@@ -519,6 +541,7 @@ document.getElementById('break-skip-btn').addEventListener('click', () => {
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState !== 'visible') return;
   if (timerState === 'running') tick();
+  else syncFloatingTimer();
   if (breakInterval) {
     const rem = getBreakRemainSec();
     breakTimerDisplay.textContent = fmtTime(rem);
@@ -1116,6 +1139,9 @@ window.startFiveMinuteSession = () => {
     pipBtn.addEventListener('click', openPiP);
   }
 })();
+
+// 一時停止中もモーダルの開閉に追従する（inertのCSSで開いた瞬間から隠す）。
+setInterval(() => syncFloatingTimer(), 800);
 
 window.playChime = playChime;
 window.setTimerForMode = setTimerForMode;

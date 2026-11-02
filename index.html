@@ -40,8 +40,8 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles/app.css?v=guild-215">
-<link rel="stylesheet" href="styles/avatar-status.css?v=guild-215">
+<link rel="stylesheet" href="styles/app.css?v=guild-216">
+<link rel="stylesheet" href="styles/avatar-status.css?v=guild-216">
 </head>
 <body>
 
@@ -108,24 +108,21 @@
     <div id="login-bonus-card"></div>
   </div>
 
-  <!-- ⚠️ ここから下の「ジャンル → タイマー」の2枚は、このアプリの本体です。
-       ジャンルを選ぶ → STARTを押す → 25分たつ、が「学習が続く」の全部。
-       他のカードをこの2枚より上に入れないこと（STARTが画面外に沈むため）。 -->
+  <!-- ジャンル選択とタイマーを1枚にまとめた、学習の中心となるカード -->
 
   <section class="home-layer" id="layer-now">
   <h2 class="layer-title">🎯 いま</h2>
 
-  <!-- GENRE SELECTOR -->
-  <div class="glass" id="genre-card">
-    <div class="genre-section-label">学習ジャンル</div>
-    <div class="genre-tabs" id="genre-tabs"></div>
-  </div>
-
   <!-- TIMER CARD（タイマー＝上 / アニメ / ボタン / モード選択＝下 に統合） -->
   <div class="glass" id="timer-card">
-    <!-- アニメーションの中央にタイマーを重ねて表示 -->
+    <!-- アニメーションの余白に全ジャンルと時間をまとめて表示 -->
     <div class="anim-wrap">
-      <div id="anim-stage"></div>
+      <div id="anim-stage" aria-hidden="true"></div>
+      <!-- 全ジャンルを省略せず表示 -->
+      <div id="genre-card">
+        <div class="genre-section-label">学習ジャンル</div>
+        <div class="genre-tabs" id="genre-tabs"></div>
+      </div>
       <div class="time-wrapper" id="time-wrapper">
         <div class="phase-label" id="phase-label">集中タイム</div>
         <div id="timer-display">25:00</div>
@@ -281,6 +278,15 @@
   </section>
 
 </div><!-- #app -->
+
+<!-- 集中中の固定表示。通常モードは残り時間、フローは経過時間 -->
+<div id="focus-timer-floating" role="region" aria-label="使用中の学習タイマー">
+  <div class="focus-floating-status" id="focus-floating-status">集中中</div>
+  <div class="focus-floating-clock">
+    <span class="focus-floating-label" id="focus-floating-label">残り</span>
+    <span id="focus-floating-time" role="timer" aria-label="学習時間">25:00</span>
+  </div>
+</div>
 
 <!-- 休憩中の固定表示。スクロールしても状態と残り時間が分かる -->
 <div id="break-banner" role="region" aria-label="休憩タイマー">
@@ -1192,18 +1198,18 @@
 })();
 </script>
 
-<script src="scripts/areas.js?v=guild-215"></script>
-<script src="scripts/core.js?v=guild-215"></script>
-<script src="scripts/home-layers.js?v=guild-215"></script>
-<script src="scripts/progression.js?v=guild-215"></script>
-<script src="scripts/quests.js?v=guild-215"></script>
-<script src="scripts/timer.js?v=guild-215"></script>
-<script src="scripts/settings-genre.js?v=guild-215"></script>
-<script src="scripts/calendar-review.js?v=guild-215"></script>
-<script src="scripts/features.js?v=guild-215"></script>
-<script src="scripts/growth-radar.js?v=guild-215"></script>
-<script src="scripts/boot.js?v=guild-215"></script>
-<script src="scripts/otomon.js?v=guild-215"></script>
+<script src="scripts/areas.js?v=guild-216"></script>
+<script src="scripts/core.js?v=guild-216"></script>
+<script src="scripts/home-layers.js?v=guild-216"></script>
+<script src="scripts/progression.js?v=guild-216"></script>
+<script src="scripts/quests.js?v=guild-216"></script>
+<script src="scripts/timer.js?v=guild-216"></script>
+<script src="scripts/settings-genre.js?v=guild-216"></script>
+<script src="scripts/calendar-review.js?v=guild-216"></script>
+<script src="scripts/features.js?v=guild-216"></script>
+<script src="scripts/growth-radar.js?v=guild-216"></script>
+<script src="scripts/boot.js?v=guild-216"></script>
+<script src="scripts/otomon.js?v=guild-216"></script>
 
 <script>
 // ── Service Worker 登録 ────────────────────────────────

@@ -275,9 +275,6 @@ let selectedEmoji = EMOJI_OPTIONS[0];
 let selectedColor = COLOR_OPTIONS[0];
 
 let genreQuickAdd = false;  // ダッシュボードの簡易追加フォーム表示中フラグ
-// ジャンル一覧を開いているか。保存しない＝起動のたび畳んだ状態から始まる。
-// ホームは「STARTが見えていること」が最優先なので、既定は畳む
-let genreListOpen = false;
 let genreQuickEmoji = EMOJI_OPTIONS[0];  // 簡易追加で選択中の絵文字
 let genreQuickImage = null;              // 簡易追加で選んだ写真（dataURL）
 
@@ -309,32 +306,8 @@ function _readGenreImage(file, cb) {
 function renderGenreSelector() {
   const container = document.getElementById('genre-tabs');
 
-  // ⚠️ ジャンルが増えるとこのカードが折り返して背が伸び、そのぶん
-  //    STARTが下へ沈む。実測: 1個=103px→START 580px ／ 7個=205px→START 714px。
-  //    画面667pxの端末では 7個で START が画面外に出ていた（2026-08-28 実機）。
-  //    4個以上のときは選択中の1つだけ見せ、タップで開く形にする。
-  //    3個以下は1行に収まるので従来どおり全部見せる（新規ユーザーの邪魔をしない）。
-  const collapsible = genres.length >= 4 && !genreQuickAdd;
-  const collapsed   = collapsible && !genreListOpen;
-
-  let html;
-  if (collapsed) {
-    const cur = genres.find(g => g.id === currentGenreId) || genres[0];
-    html = `
-      <span class="genre-tab-wrap">
-        <button class="genre-tab active" data-open-list="1"
-          style="border-color:${cur.color};color:${cur.color};background:${cur.color}22">
-          ${genreIcon(cur)} ${cur.name}
-        </button>
-      </span>
-      <button class="genre-more-chip" data-open-list="1">▾ ほか${genres.length - 1}件</button>`;
-    container.innerHTML = html;
-    container.querySelectorAll('[data-open-list]').forEach(b =>
-      b.addEventListener('click', () => { genreListOpen = true; renderGenreSelector(); }));
-    return;
-  }
-
-  html = genres.map(g => `
+  // タイマーカード内で、件数に関係なく全ジャンルを表示する。
+  let html = genres.map(g => `
     <span class="genre-tab-wrap">
       <button class="genre-tab ${g.id === currentGenreId ? 'active' : ''}"
         data-gid="${g.id}"
@@ -344,7 +317,6 @@ function renderGenreSelector() {
       ${genres.length > 1 ? `<button class="genre-tab-del" data-del="${g.id}" title="削除">×</button>` : ''}
     </span>
   `).join('');
-  if (collapsible) html += `<button class="genre-more-chip" data-close-list="1">▴ 閉じる</button>`;
 
   // 簡易追加（インライン入力 or ＋チップ）
   if (genreQuickAdd) {
@@ -375,15 +347,10 @@ function renderGenreSelector() {
   }
   container.innerHTML = html;
 
-  // 一覧を閉じる
-  container.querySelectorAll('[data-close-list]').forEach(b =>
-    b.addEventListener('click', () => { genreListOpen = false; renderGenreSelector(); }));
-  // 選択（選んだら畳んで、STARTの位置を元に戻す）
+  // 選択後も全ジャンルを表示したままにする。
   container.querySelectorAll('.genre-tab').forEach(btn => {
-    if (!btn.dataset.gid) return;   // 畳んだ状態の「開く」用チップは対象外
     btn.addEventListener('click', () => {
       setCurrentGenre(btn.dataset.gid);
-      genreListOpen = false;
       renderGenreSelector();
     });
   });
