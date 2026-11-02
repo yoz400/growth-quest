@@ -12,6 +12,9 @@ let elapsed = 0;
 // ここを増減させると「学習した日」の手応えが直接変わる調整つまみ。
 const FIRST_SESSION_XP = 80;
 
+// 告の「🎲 いま振る」が押されたか。告を閉じた後に盤面を開いて振るために使う
+let _kokuRollNow = false;
+
 let timerState = 'idle'; // idle | running | paused
 let intervalId = null;
 let sessionMinutes = 0;
@@ -567,12 +570,14 @@ function showKoku(mins, breakMins, kind, equipBonusXp, firstTodayXp) {
     ${closingMsg}
   `;
 
-  // 🎲 すごろく：ここでは振らせない。
+  // 🎲 すごろく：勝手には振らない。振るかどうかは本人が選ぶ。
   //    集中した直後にいきなり盤面を回すと、いちばん余韻が残っている瞬間を
-  //    ゲームに持っていかれる。順番を「振り返り → 祝福」に変えた。
+  //    ゲームに持っていかれる。順番の基本は「振り返り → 祝福」。
   //    ・この告のあとに🌳世界樹の報告が出る
   //    ・報告すると、その場で「祝福のサイコロ」が振れる（progression.js）
   //    ・報告しなくてもチケットは貯まる（すごろく画面からいつでも振れる）＝損はしない
+  //    ・2026-11-02 ヨージの判断で「🎲 いま振る」を選べるようにした。押した人だけ
+  //      先に盤面で振り、盤面を閉じたら世界樹の報告が出る（handleBoardClose）
   const _ticketN = getSugorokuTicketCount();
   if (_ticketN > 0) {
     const choice = document.createElement('div');
@@ -589,8 +594,14 @@ function showKoku(mins, breakMins, kind, equipBonusXp, firstTodayXp) {
     choice.innerHTML = `
       <div class="ktc-lead ktc-kept">🎲 すごろくを振れます（あと ${_ticketN} 回）</div>
       ${_warn}
-      <div class="ktc-lead ktc-kept">このあと🌳世界樹に報告すると、祝福として振れます</div>`;
+      <div class="ktc-btns"><button type="button" class="ktc-btn ktc-roll" id="koku-roll-now">🎲 いま振る</button></div>
+      <div class="ktc-lead ktc-kept">振らずに閉じて🌳世界樹に報告すると、祝福として振れます</div>`;
     result.appendChild(choice);
+    choice.querySelector('#koku-roll-now').addEventListener('click', e => {
+      e.stopPropagation();
+      _kokuRollNow = true;
+      closeKoku();
+    });
   }
 
   // 名言を選んで表示
@@ -651,6 +662,19 @@ function handleKokuClose() {
   // GET報酬は告の中にインライン表示済み。残っていれば破棄。
   _sgJustRolled = false;
   _sgPendingReward = null;
+  if (_kokuRollNow) {
+    // 「いま振る」：世界樹の報告は盤面を閉じるまで待たせる（_pendingPraisePrompt は残す）。
+    // 盤面が開いてから振る（描画前に振るとコマの歩行アニメが出ない）。祝福と同じ間合い
+    _kokuRollNow = false;
+    setTimeout(() => {
+      openBoardModal();
+      setTimeout(() => {
+        const btn = document.getElementById('board-roll-btn');
+        if (btn && !btn.disabled) btn.click();
+      }, 420);
+    }, 260);
+    return;
+  }
   if (_pendingPraisePrompt) {
     _pendingPraisePrompt = false;
     setTimeout(() => openFairyModal(_praiseSessionGenre, _praiseSessionDate), 420);
