@@ -1018,12 +1018,7 @@ document.getElementById('dq-refresh-btn')?.addEventListener('click', () => {
   updateDQFavBtn();
 });
 
-// Koku quote buttons（♡お気に入りは 2026-08-23 に撤去。index.html のメモ参照）
-document.getElementById('koku-share-btn').addEventListener('click', () => {
-  copyQuoteToClipboard(currentKokuQuote);
-  const btn = document.getElementById('koku-share-btn');
-  btn.textContent = '✓ コピー済み'; setTimeout(() => { btn.textContent = '📤 コピー'; }, 1800);
-});
+// 告の名言のボタンは無し（♡お気に入り 2026-08-23・📤コピー 2026-11-02 に撤去。index.html のメモ参照）
 
 // ── Words Collection モーダル ──────────────────────────
 let wordsFilter   = 'all';

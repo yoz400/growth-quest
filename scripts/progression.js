@@ -7,6 +7,8 @@ let _confPending;
 let _confFlushTimer;
 let praiseLogs;
 let _pendingPraisePrompt;
+// セッション直後の報告に💧雫と祝福のおまけが付くか。告で「🎲 いま振る」を押したら false（timer.js）
+let _praiseRewardReady;
 let _praiseSessionDate;
 let _praiseSessionGenre;
 
@@ -404,6 +406,7 @@ function updateFairySave() {
 }
 
 function closeFairyModal() {
+  _praiseRewardReady = false;   // 報告せず閉じたら、このセッションの雫の権利は終わり
   Overlay.close('fairy-overlay');
   resetFairyBlessing();   // 次に開くとき入力画面に戻す（祝福のまま残さない）
 }
@@ -431,22 +434,60 @@ function saveFairy() {
   const t = SKILL_THRESHOLDS[_fairyStage];
   const g = genres.find(x => x.id === _fairyGenreId);
 
-  // 🌟 祝福：振り返った人にだけ、その場でサイコロを渡す。
-  //    報告せず閉じた人もチケットは貯まっている（すごろく画面から振れる）ので、
-  //    これは「取り上げ」ではなく「その場で振れる特典」。
+  // 🌟 祝福：セッション直後に「いま振る」を押さずに報告した人にだけ渡す（2026-11-02 ヨージ設計）
+  //    告で いま振る        → サイコロ1回のみ（報告しても雫・おまけなし）
+  //    振らずに報告 → あとで → 💧雫1つ
+  //    振らずに報告 → 振る   → 💧雫1つ ＋ サイコロ ＋ 祝福のおまけ1回
+  //    世界樹を別の入口から開いた報告には付けない（何度も書いて雫を集められないように）
+  const rewarded = !!_praiseRewardReady;
+  _praiseRewardReady = false;
+  _blessingBonus = false;
   const tickets = (typeof getSugorokuTicketCount === 'function') ? getSugorokuTicketCount() : 0;
-  if (tickets > 0) {
-    showFairyBlessing(t, g, tickets);
-    return;                     // モーダルは開いたまま。祝福の操作を待つ
+  if (rewarded) {
+    const drop = addTreeDrop();
+    if (tickets > 0) {
+      _blessingBonus = true;
+      showFairyBlessing(t, g, tickets, drop);
+      return;                   // モーダルは開いたまま。祝福の操作を待つ
+    }
+    closeFairyModal();
+    setTimeout(() => showFairyToast(t, g, drop), gained ? 5600 : 700);
+    return;
   }
 
   closeFairyModal();
   setTimeout(() => showFairyToast(t, g), gained ? 5600 : 700);
 }
 
+// ── 💧 世界樹の雫：振り返りを貯めると、目覚めアイテムになる ──
+const TREE_DROP_KEY  = 'gq_tree_drops';
+const TREE_DROP_GOAL = 5;
+let _blessingBonus = false;   // この報告の祝福で「おまけの1回」を渡すか
+function getTreeDrops() {
+  return Math.max(0, parseInt(localStorage.getItem(TREE_DROP_KEY), 10) || 0);
+}
+// 1つ足す。5つで目覚めアイテムに換える。戻り値 { count, wake }（wake は換えたときだけ）
+function addTreeDrop() {
+  let count = getTreeDrops() + 1;
+  let wake = null;
+  if (count >= TREE_DROP_GOAL) {
+    wake = window.Otomon && window.Otomon.grantRandomWakeItem && window.Otomon.grantRandomWakeItem();
+    // 渡せなかったら雫は満タンのまま残し、次の報告でもう一度換える（消さない）
+    count = wake ? count - TREE_DROP_GOAL : TREE_DROP_GOAL;
+  }
+  safeSetItem(TREE_DROP_KEY, String(count));
+  return { count, wake };
+}
+function treeDropLine(drop) {
+  if (!drop) return '';
+  return drop.wake
+    ? `💧 世界樹の雫が${TREE_DROP_GOAL}つ集まり、目覚めアイテム「${drop.wake.emoji} ${drop.wake.name}」になった！`
+    : `💧 世界樹の雫 +1（${drop.count} / ${TREE_DROP_GOAL}）`;
+}
+
 // 報告のあと、妖精パネルの中身を「祝福」に差し替える。
 // 新しいモーダルは作らない（掟3：モーダルは OverlayManager 経由のみ）。
-function showFairyBlessing(stage, g, tickets) {
+function showFairyBlessing(stage, g, tickets, drop) {
   const box = document.getElementById('fairy-blessing');
   if (!box) { closeFairyModal(); return; }
 
@@ -460,7 +501,8 @@ function showFairyBlessing(stage, g, tickets) {
 
   document.getElementById('fairy-blessing-text').innerHTML =
     `${g ? g.emoji + ' ' + g.name : ''} の樹に <b>${stage.emoji} ${stage.name}</b> が実った。<br>` +
-    `<span style="opacity:.85">よく向き合ったね。お祝いに1回どうぞ（あと ${tickets} 回）</span>`;
+    (drop ? `<b>${treeDropLine(drop)}</b><br>` : '') +
+    `<span style="opacity:.85">よく向き合ったね。いま振ると、祝福で<b>もう1回おまけ</b>（${tickets} 回 → ${tickets + 1} 回）</span>`;
   box.style.display = '';
 }
 
@@ -476,10 +518,11 @@ function resetFairyBlessing() {
   if (acts) acts.style.display = '';
 }
 
-function showFairyToast(stage, g) {
+function showFairyToast(stage, g, drop) {
   Toast.show(`🌳 ${g ? g.emoji + ' ' + g.name : ''} の樹に実がなった<br>` +
-    `<span style="opacity:.85;font-weight:400">${stage.emoji} ${stage.name} — ${stage.desc.split('。')[0]}</span>`,
-    { kind: 'multiline', ms: 3600, priority: 60 });
+    `<span style="opacity:.85;font-weight:400">${stage.emoji} ${stage.name} — ${stage.desc.split('。')[0]}</span>` +
+    (drop ? `<br><span style="font-weight:400">${treeDropLine(drop)}</span>` : ''),
+    { kind: 'multiline', ms: drop ? 4800 : 3600, priority: 60 });
 }
 
 document.getElementById('fairy-text').addEventListener('input', updateFairySave);
@@ -489,6 +532,16 @@ document.getElementById('fairy-skip-btn').addEventListener('click', closeFairyMo
 // 🌟 祝福：ここで振る。演出は すごろく盤面の3Dサイコロをそのまま使う
 //    （告の中に別の演出を作ると、2か所を直す羽目になる。過去にそれで事故った）
 document.getElementById('fairy-blessing-roll')?.addEventListener('click', () => {
+  // 祝福のおまけ：この報告のセッションと同じ出目の権利を、先頭に1回足す。
+  // 下で自動で振るのはこのおまけ。セッションの1回は盤面に残り、自分で振れる
+  if (_blessingBonus && Array.isArray(sugorokuData.tickets) && sugorokuData.tickets.length) {
+    const base = sugorokuData.tickets[sugorokuData.tickets.length - 1];
+    sugorokuData.tickets.unshift({ mode: base.mode, mins: base.mins, partial: !!base.partial,
+                                   at: Date.now(), blessing: true });
+    saveSugorokuData();
+    renderSugorokuTicketBadge();
+  }
+  _blessingBonus = false;
   closeFairyModal();
   setTimeout(() => {
     if (typeof openBoardModal === 'function') openBoardModal();
@@ -500,6 +553,7 @@ document.getElementById('fairy-blessing-roll')?.addEventListener('click', () => 
   }, 260);
 });
 document.getElementById('fairy-blessing-later')?.addEventListener('click', () => {
+  _blessingBonus = false;   // 「あとで」は雫だけ（おまけの1回は付かない）
   const t = SKILL_THRESHOLDS[_fairyStage];
   const g = genres.find(x => x.id === _fairyGenreId);
   closeFairyModal();
@@ -540,4 +594,6 @@ window.closePraiseModal = closePraiseModal;
 window.openFairyModal = openFairyModal;
 window.closeFairyModal = closeFairyModal;
 window.getPraiseLogsForWeek = getPraiseLogsForWeek;
+window.getTreeDrops = getTreeDrops;
+window.TREE_DROP_GOAL = TREE_DROP_GOAL;
 })();

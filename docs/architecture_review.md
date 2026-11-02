@@ -108,7 +108,7 @@
 | プロフィール | gq_player_name, gq_av_type, gq_avatar, gq_summoned, gq_onboard_done, gq_tutorial_seen, gq_guide_tutorial_seen |
 | タイマー | gq_timer_session（誤操作リロード復元用・完了時必ず削除） |
 | クエスト/使命 | gq_daily_quests, gq_mission, gq_mission_reset, gq_nudge_course, gq_nudge_done, gq_vows |
-| ジャンル/スキル | gq_genres, gq_current_genre（選択中ジャンル・リロードで「学習」に戻る事故の対策）, gq_skills, gq_skill_notes |
+| ジャンル/スキル | gq_genres, gq_current_genre（選択中ジャンル・リロードで「学習」に戻る事故の対策）, gq_skills, gq_skill_notes, gq_tree_drops（💧世界樹の雫の数 0〜4。セッション直後に「いま振る」を押さず報告すると+1、5つで目覚めアイテムに換えて減らす） |
 | 褒め/妖精/名言 | growthPraiseLogs（⚠️唯一の命名違反・既存データのため改名不可）, gq_words, gq_words_favs, gq_words_hist |
 | すごろく/装備 | gq_sugoroku, gq_inventory, gq_equipped, gq_item_buffs, gq_active_buffs, gq_item_dex, gq_item_memories, gq_streak_shield_protected, gq_world_seen_cell（大陸図を最後に開いたときの累計位置＝gq_sugoroku.pos。旧値の移行なし）, gq_urgent_quest（⚠緊急依頼。受注中の1件だけ。無いときはキーごと削除） |
 | オトモン | gq_otomon（nushiGranted: ぬしの卵を渡し済みの大陸ID配列。卵・孵化記録の nushiOf も併用して二重配布を防ぐ）, gq_eggs, gq_wake_items, gq_hatch_quest, gq_milestone_rewards（節目の特別報酬を配ったか。バッジは再発火しないので遡って1回だけ配るために要る） |

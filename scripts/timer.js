@@ -324,6 +324,7 @@ function stopTimer() {
     }
     // 告が閉じたら「褒めログ入力」モーダルを案内
     _pendingPraisePrompt = true;
+    _praiseRewardReady   = true;   // 報告すると💧雫（「いま振る」を押したら false）
     _praiseSessionDate   = _today;
     _praiseSessionGenre  = currentGenreId;
     GQ.emit('session:complete', { mins, mode: currentMode, genreId: currentGenreId });
@@ -461,6 +462,7 @@ function completeSession() {
   showKoku(mins, cfg.break, 'complete', 0, _firstXp);
   // 告が閉じたら「褒めログ入力」モーダルを案内
   _pendingPraisePrompt = true;
+  _praiseRewardReady   = true;   // 報告すると💧雫（「いま振る」を押したら false）
   _praiseSessionDate   = _today;
   _praiseSessionGenre  = currentGenreId;
 
@@ -591,15 +593,20 @@ function showKoku(mins, breakMins, kind, equipBonusXp, firstTodayXp) {
       : (_ticketN >= _wl
         ? `<div class="ktc-warn">あと${_max - _ticketN}回で上限（${_max}回）です</div>`
         : '');
+    const _drops    = window.getTreeDrops ? window.getTreeDrops() : 0;
+    const _dropGoal = window.TREE_DROP_GOAL || 5;
     choice.innerHTML = `
       <div class="ktc-lead ktc-kept">🎲 すごろくを振れます（あと ${_ticketN} 回）</div>
       ${_warn}
       <div class="ktc-btns"><button type="button" class="ktc-btn ktc-roll" id="koku-roll-now">🎲 いま振る</button></div>
-      <div class="ktc-lead ktc-kept">振らずに閉じて🌳世界樹に報告すると、祝福として振れます</div>`;
+      <div class="ktc-lead ktc-kept">または、振らずに閉じて🌳世界樹へ報告すると<br>
+        💧世界樹の雫（${_drops} / ${_dropGoal}・${_dropGoal}つで目覚めアイテム）。<br>
+        そのあと振れば、祝福で<b>もう1回おまけ</b></div>`;
     result.appendChild(choice);
     choice.querySelector('#koku-roll-now').addEventListener('click', e => {
       e.stopPropagation();
       _kokuRollNow = true;
+      _praiseRewardReady = false;   // いま振った人は「サイコロ1回のみ」（雫・祝福のおまけなし）
       closeKoku();
     });
   }
