@@ -198,7 +198,7 @@ function startTimer() {
     if (breakInterval) {
       clearInterval(breakInterval);
       breakInterval = null;
-      breakBanner.classList.remove('visible');
+      syncBreakBanner();
     }
     sessionStartHour = new Date().getHours();
     timerStartWall = Date.now();
@@ -478,23 +478,31 @@ function completeSession() {
 let breakRemaining = 0;
 let breakInterval = null;
 
+function syncBreakBanner() {
+  const active = breakInterval !== null;
+  breakBanner.classList.toggle('visible', active && !Overlay.topId());
+  document.body.classList.toggle('has-break-banner', active);
+}
+
 function startBreak(minutes) {
+  if (breakInterval !== null) clearInterval(breakInterval);
   breakStartRemain = minutes * 60;
   breakStartWall = Date.now();
   breakTimerDisplay.textContent = fmtTime(breakStartRemain);
-  breakBanner.classList.add('visible');
   breakInterval = setInterval(() => {
     const rem = getBreakRemainSec();
     breakTimerDisplay.textContent = fmtTime(rem);
     if (rem <= 0) endBreak();
+    else syncBreakBanner();  // 途中で開閉されたモーダルにも追従する
   }, 1000);
+  syncBreakBanner();
 }
 
 function endBreak() {
   clearInterval(breakInterval);
   breakInterval = null;
   breakStartWall = null;
-  breakBanner.classList.remove('visible');
+  syncBreakBanner();
   showTimerNotif('休憩終了', '次のセッションを始めましょう！');
   setTimerForMode(currentMode);
 }
@@ -503,7 +511,7 @@ document.getElementById('break-skip-btn').addEventListener('click', () => {
   clearInterval(breakInterval);
   breakInterval = null;
   breakStartWall = null;
-  breakBanner.classList.remove('visible');
+  syncBreakBanner();
   setTimerForMode(currentMode);
 });
 
@@ -515,6 +523,7 @@ document.addEventListener('visibilitychange', () => {
     const rem = getBreakRemainSec();
     breakTimerDisplay.textContent = fmtTime(rem);
     if (rem <= 0) endBreak();
+    else syncBreakBanner();
   }
 });
 
@@ -578,7 +587,6 @@ function showKoku(mins, breakMins, kind, equipBonusXp, firstTodayXp) {
     if (breakInterval) clearInterval(breakInterval);
     startBreak(breakMins);
     closeKoku();
-    breakBanner.scrollIntoView({ behavior: 'smooth', block: 'center' });
   });
 
   // 🎲 すごろく：勝手には振らない。振るかどうかは本人が選ぶ。

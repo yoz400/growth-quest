@@ -1232,7 +1232,14 @@ function renderSugorokuTicketBadge() {
     badge.classList.toggle('is-full', count >= SG_TICKET_WARN);
   }
   if (countEl) countEl.textContent = count;
-  if (button) button.disabled = count === 0 || !!sgAnimating;
+  if (button) {
+    button.disabled = count === 0 || !!sgAnimating;
+    // 次に使われる効果を、振る前からサイコロの個数で伝える。
+    // 羅針盤の固定出目がある間は、時の砂は消費されず次回に持ち越す。
+    const diceIcon = button.querySelector('.brb-dice');
+    if (diceIcon) diceIcon.textContent = !itemBuffs.fixedDice && itemBuffs.bestOf3
+      ? '🎲🎲🎲' : '🎲';
+  }
   if (hint) {
     hint.textContent = count > 0
       ? '集中を1回終えるごとに1回振れます'

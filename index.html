@@ -40,8 +40,8 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles/app.css?v=guild-213">
-<link rel="stylesheet" href="styles/avatar-status.css?v=guild-213">
+<link rel="stylesheet" href="styles/app.css?v=guild-215">
+<link rel="stylesheet" href="styles/avatar-status.css?v=guild-215">
 </head>
 <body>
 
@@ -164,13 +164,6 @@
     </div>
   </div>
 
-  <!-- BREAK BANNER -->
-  <div id="break-banner">
-    <div class="break-title">☕ 休憩タイム</div>
-    <div id="break-timer-display">05:00</div>
-    <button class="break-skip-btn" id="break-skip-btn">スキップ</button>
-  </div>
-
   <!-- はじめの一歩（新規ユーザー向けガイド・完了で自動的に消える）
        ※タイマーより「下」に置くこと。上に置くと214px押し下げられて
          初回起動時に START が画面外へ沈む（実測で確認済み） -->
@@ -288,6 +281,17 @@
   </section>
 
 </div><!-- #app -->
+
+<!-- 休憩中の固定表示。スクロールしても状態と残り時間が分かる -->
+<div id="break-banner" role="region" aria-label="休憩タイマー">
+  <div class="break-title">☕ 休憩中</div>
+  <div class="break-countdown">
+    <span class="break-remaining-label">残り</span>
+    <span id="break-timer-display" role="timer" aria-label="休憩の残り時間">05:00</span>
+  </div>
+  <button type="button" class="break-skip-btn" id="break-skip-btn">スキップ</button>
+</div>
+
 
 <!-- ─── 告 OVERLAY ─── -->
 <div id="koku-overlay">
@@ -1188,18 +1192,18 @@
 })();
 </script>
 
-<script src="scripts/areas.js?v=guild-213"></script>
-<script src="scripts/core.js?v=guild-213"></script>
-<script src="scripts/home-layers.js?v=guild-213"></script>
-<script src="scripts/progression.js?v=guild-213"></script>
-<script src="scripts/quests.js?v=guild-213"></script>
-<script src="scripts/timer.js?v=guild-213"></script>
-<script src="scripts/settings-genre.js?v=guild-213"></script>
-<script src="scripts/calendar-review.js?v=guild-213"></script>
-<script src="scripts/features.js?v=guild-213"></script>
-<script src="scripts/growth-radar.js?v=guild-213"></script>
-<script src="scripts/boot.js?v=guild-213"></script>
-<script src="scripts/otomon.js?v=guild-213"></script>
+<script src="scripts/areas.js?v=guild-215"></script>
+<script src="scripts/core.js?v=guild-215"></script>
+<script src="scripts/home-layers.js?v=guild-215"></script>
+<script src="scripts/progression.js?v=guild-215"></script>
+<script src="scripts/quests.js?v=guild-215"></script>
+<script src="scripts/timer.js?v=guild-215"></script>
+<script src="scripts/settings-genre.js?v=guild-215"></script>
+<script src="scripts/calendar-review.js?v=guild-215"></script>
+<script src="scripts/features.js?v=guild-215"></script>
+<script src="scripts/growth-radar.js?v=guild-215"></script>
+<script src="scripts/boot.js?v=guild-215"></script>
+<script src="scripts/otomon.js?v=guild-215"></script>
 
 <script>
 // ── Service Worker 登録 ────────────────────────────────

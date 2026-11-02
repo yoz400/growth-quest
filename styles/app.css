@@ -990,20 +990,32 @@ header {
    BREAK BANNER
 ═══════════════════════════════════════ */
 #break-banner {
-  display: none; padding: 14px 20px; text-align: center;
-  border: 1px solid rgba(74,222,128,.25); border-radius: var(--radius);
-  background: rgba(74,222,128,.06);
+  display: none;
+  position: fixed; left: 50%; transform: translateX(-50%);
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 80;
+  width: calc(100% - 32px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+  max-width: 400px; padding: 12px 14px;
+  align-items: center; justify-content: space-between; gap: 12px;
+  border: 1px solid rgba(74,222,128,.5); border-radius: 16px;
+  background: linear-gradient(135deg, #153929, #10251e);
+  box-shadow: 0 8px 32px rgba(0,0,0,.55), 0 0 20px rgba(74,222,128,.12);
 }
-#break-banner.visible { display: block; }
-.break-title { font-size: .9rem; color: #4ade80; font-weight: 700; }
-#break-timer-display { font-size: 1.6rem; font-weight: 900; font-variant-numeric: tabular-nums; margin: 6px 0; }
+#break-banner.visible { display: flex; }
+/* モーダルが開いた瞬間から操作不能の表示を隠す。残り時間の計測は継続。 */
+#break-banner[inert] { display: none; }
+body.has-break-banner { padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px)); }
+.break-title { font-size: .85rem; color: #86efac; font-weight: 700; white-space: nowrap; }
+.break-countdown { display: flex; flex-direction: column; align-items: center; }
+.break-remaining-label { font-size: .6rem; color: #b5d8c4; }
+#break-timer-display { font-size: 1.5rem; font-weight: 900; font-variant-numeric: tabular-nums; color: #f0fdf4; line-height: 1.2; }
 .break-skip-btn {
-  background: none; border: 1px solid rgba(74,222,128,.3);
-  color: #4ade80; border-radius: 8px; padding: 6px 20px;
+  background: rgba(74,222,128,.08); border: 1px solid rgba(74,222,128,.35);
+  color: #bbf7d0; border-radius: 10px; padding: 10px;
+  min-height: 44px; flex-shrink: 0; white-space: nowrap;
   font-family: 'Noto Sans JP',sans-serif; font-size: .75rem;
-  cursor: pointer; margin-top: 6px;
+  cursor: pointer;
 }
-.break-skip-btn:hover { background: rgba(74,222,128,.1); }
+.break-skip-btn:hover { background: rgba(74,222,128,.18); }
 
 /* ═══════════════════════════════════════
    DAILY QUOTE CARD
