@@ -49,22 +49,42 @@ function getBreakRemainSec() {
   return Math.max(0, breakStartRemain - Math.floor((Date.now() - breakStartWall) / 1000));
 }
 
-// 固定表示の時間も壁時計から計算し、停止・再開やバックグラウンド復帰に追従する。
+// 実物のアニメーション・時間・ボタンを移す。複製しないので計測や操作は1つのまま。
+const focusHomeSlots = [];
 function syncFloatingTimer() {
-  const banner = document.getElementById('focus-timer-floating');
-  if (!banner) return;
+  const overlay = document.getElementById('focus-session-overlay');
+  const content = document.getElementById('focus-active-content');
+  if (!overlay || !content) return;
   const active = timerState !== 'idle';
-  banner.classList.toggle('visible', active && !Overlay.topId());
-  banner.classList.toggle('paused', timerState === 'paused');
-  document.body.classList.toggle('has-focus-timer', active);
-  if (!active) return;
-  const sec = getTimerElapsedSec();
-  const flow = currentMode === 'flow';
-  const time = flow ? sec : Math.max(0, MODES[currentMode].focus * 60 - sec);
+  if (!active) {
+    focusHomeSlots.forEach(({ node, home }) => {
+      if (node.parentNode === content) home.parentNode.insertBefore(node, home);
+    });
+    Overlay.close('focus-session-overlay');
+    document.body.classList.remove('focus-session-open');
+    return;
+  }
+
+  // 起動時に別の案内が開いている場合は、閉じるまで待つ。
+  if (!overlay.classList.contains('open') && !Overlay.topId()) {
+    if (!focusHomeSlots.length) {
+      [document.getElementById('anim-stage'), timeWrapper,
+        document.querySelector('#timer-card > .timer-btns')].forEach(node => {
+        const home = document.createComment('集中終了後に戻す位置');
+        node.before(home);
+        focusHomeSlots.push({ node, home });
+      });
+    }
+    focusHomeSlots.forEach(({ node }) => content.appendChild(node));
+    Overlay.open('focus-session-overlay');
+  }
+  const shown = overlay.classList.contains('open');
+  document.body.classList.toggle('focus-session-open', shown);
+  overlay.classList.toggle('paused', timerState === 'paused');
   document.getElementById('focus-floating-status').textContent =
     timerState === 'paused' ? '一時停止中' : '集中中';
-  document.getElementById('focus-floating-label').textContent = flow ? '経過' : '残り';
-  document.getElementById('focus-floating-time').textContent = fmtTime(time);
+  document.getElementById('focus-floating-label').textContent =
+    currentMode === 'flow' ? '経過時間' : '残り時間';
 }
 
 // ── タブタイトル ──────────────────────────────────────────
@@ -1140,7 +1160,7 @@ window.startFiveMinuteSession = () => {
   }
 })();
 
-// 一時停止中もモーダルの開閉に追従する（inertのCSSで開いた瞬間から隠す）。
+// 一時停止中や起動時の案内を閉じたあとも集中パネルを同期する。
 setInterval(() => syncFloatingTimer(), 800);
 
 window.playChime = playChime;

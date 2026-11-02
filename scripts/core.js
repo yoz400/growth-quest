@@ -37,6 +37,7 @@ const Overlay = (() => {
   const DEFS = {
     'login-bonus-overlay':    { openClass: 'open', dismissible: false },
     'koku-overlay':           { openClass: 'active', dismissible: true },
+    'focus-session-overlay':  { openClass: 'open', dismissible: false },
     'genre-overlay':          { openClass: 'open', dismissible: true },
     'badges-overlay':         { openClass: 'open', dismissible: true },
     'equipment-overlay':      { openClass: 'open', dismissible: true },
