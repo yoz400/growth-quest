@@ -3048,6 +3048,27 @@ function maybeShowLoginBonus() {
   // 久しぶりに戻ってきた日は「おかえり」画面に差し替える（喪失の通知を最初に出さない）
   if (_isComebackToday()) renderComebackWelcome(_daysSinceLastStudy(), reward);
   else                    renderLoginBonus(streak, reward);
+  // 中身（連続日数・おかえり判定）は起動時点で決め、開くのだけ待つ
+  _openLoginBonusWhenClear(today, 0);
+}
+
+// ⚠️ 他の画面が開いている間は重ねずに待つ（2026-11-02 ヨージ報告「ボーナスが2回表示される」）。
+//    起動時に、閉じている間に時間が来たセッションを復元すると（restoreTimerSession, setTimeout 0）
+//    その場で告が開く。先にボーナスを開いていると、告が「上」に積まれてボーナスは inert
+//    （見えるのに押せない）になって消え、告と世界樹を閉じたあとに受け取られないまま再登場していた。
+//    告→世界樹の間は 420ms だけ何も開いていない瞬間があるので、500ms 間隔で
+//    「2回続けて空いていた」ときにだけ開く。
+const LOGIN_BONUS_WAIT_MS = 500;
+function _openLoginBonusWhenClear(today, clearCount) {
+  if (localStorage.getItem('gq_loginbonus_seen') === today) return;
+  if (Overlay.topId()) {
+    setTimeout(() => _openLoginBonusWhenClear(today, 0), LOGIN_BONUS_WAIT_MS);
+    return;
+  }
+  if (clearCount < 1) {
+    setTimeout(() => _openLoginBonusWhenClear(today, clearCount + 1), LOGIN_BONUS_WAIT_MS);
+    return;
+  }
   const overlay = document.getElementById('login-bonus-overlay');
   Overlay.open('login-bonus-overlay');
   // 背景タップで閉じる（受け取らずに閉じても、その日は再表示しない）

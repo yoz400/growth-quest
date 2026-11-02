@@ -56,5 +56,5 @@
 
 ## 本番の状態
 
-最新バージョン: guild-210（`version.json` も同じ番号か必ず確認）
+最新バージョン: guild-211（`version.json` も同じ番号か必ず確認）
 デプロイ状態: 正常（main と origin/main は同期済み・未コミットなし）
