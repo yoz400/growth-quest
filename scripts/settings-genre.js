@@ -1274,7 +1274,7 @@ const BADGES = [
   fam('gm','一点集中',['🔬','🧠'],'special', M.gmax, HR([5,50]),'', t => `1ジャンル ${Math.round(t/60)}時間`);
   fam('bd','一日の猛者',['🔥','💥','🌋'],'special', M.bestDay, [60,180,360],'', t => `1日 ${t}分 集中`);
   fam('sp','すごろく',['🎲','🏰','👑'],'special', M.sgPos, [25,75,99],'マス', t => `すごろく ${t}マス`);
-  fam('sg','ステージ',['🚩','🌠'],'special', M.sgStage, [3,5],'', t => `ステージ ${t} 到達`);
+  fam('sg','大陸',['🚩','🌠'],'special', M.sgStage, [3,5],'', t => `${window.Areas.continentForStage(t).name} 到達`);
   fam('td','タイムログ記録',['⏱️','📊'],'special', M.tlDays, [10,100],'日');
   fam('rv','週次レビュー',['📊','🧙'],'special', M.reviews, [4,52],'回');
   fam('bs','連戦',['⚔️','🔥'],'special', M.bestSess, [3,8],'', t => `1日 ${t}セッション`);

@@ -1287,28 +1287,35 @@ function doSugorokuRoll(modeKey, mins, partial) {
   const finalDice = baseDice + diceBonus;
   const roll = finalDice;            // 表示用に統一（既存の roll 参照との互換）
   const prevPos = sugorokuData.pos;
-  const prevStage = sgGetStage(prevPos);
   const newPos = prevPos + finalDice;
   sugorokuData.pos = newPos;
 
   const newStage = sgGetStage(newPos);
-  const stageCleared = newStage > prevStage;
+  const crossed = Math.floor(newPos / 100) > Math.floor(prevPos / 100);
   const cellNum = sgGetCellNum(newPos);
-  const cellType = stageCleared ? 'goal' : BOARD_CELL_TYPES[cellNum] || 'normal';
+  const cellType = crossed ? 'goal' : (cellNum === 100 ? 'normal' : BOARD_CELL_TYPES[cellNum] || 'normal');
 
   let bonusXP = 0, itemGained = null, message = '', evClass = 'ev-normal';
 
-  if (stageCleared || cellType === 'goal') {
+  if (crossed) {
     bonusXP = 100;
     evClass = 'ev-goal';
-    message = `🎊 ゴール！ステージ${prevStage}クリア！ ボーナス +${bonusXP} XP`;
+    const k = Math.floor(newPos / 100);
+    const A = window.Areas;
+    const done = A ? A.continentForStage(k) : null;
+    const next = A ? A.continentForStage(k + 1) : null;
+    message = done && next
+      ? `🎊 ${done.name}を踏破！ 次は ${next.name} へ ＋${bonusXP} XP`
+      : `🎊 ゴール！ステージ${k}クリア！ ボーナス +${bonusXP} XP`;
+    const nushi = window.Otomon && window.Otomon.grantNushiEgg && window.Otomon.grantNushiEgg(k);
+    if (nushi) _sgPendingReward = nushi;
     sugorokuData.stage = newStage;
   } else if (cellType === 'rare') {
     itemGained = sgPickItem(true);
     bonusXP = itemGained.xp;
     evClass = 'ev-rare';
     if (itemGained.type === 'wake') {
-      const granted = window.Otomon ? window.Otomon.grantRandomWakeItem() : null;
+      const granted = window.Otomon && window.Otomon.grantRandomWakeItem && window.Otomon.grantRandomWakeItem();
       if (granted) {
         _sgPendingReward = granted;      // 到着マスで演出（即時には出さない）
         message = `🔆 目覚めアイテム「${granted.emoji} ${granted.name}」を入手！ (+${bonusXP} XP)`;
@@ -1326,7 +1333,7 @@ function doSugorokuRoll(modeKey, mins, partial) {
     }
   } else if (cellType === 'item') {
     // 🥚 一定確率で「目覚めアイテム」を拾う（オトモンの孵化用）
-    const wakeReward = window.Otomon ? window.Otomon.maybeGrantWakeItem(sugorokuData.stage) : null;
+    const wakeReward = window.Otomon && window.Otomon.maybeGrantWakeItem && window.Otomon.maybeGrantWakeItem(newStage);
     if (wakeReward) {
       bonusXP = 8; evClass = 'ev-item';
       _sgPendingReward = wakeReward;
@@ -1336,7 +1343,7 @@ function doSugorokuRoll(modeKey, mins, partial) {
       bonusXP = itemGained.xp;
       evClass = 'ev-item';
       if (itemGained.type === 'wake') {
-        const granted = window.Otomon ? window.Otomon.grantRandomWakeItem() : null;
+        const granted = window.Otomon && window.Otomon.grantRandomWakeItem && window.Otomon.grantRandomWakeItem();
         if (granted) {
           _sgPendingReward = granted;      // 到着マスで演出（即時には出さない）
           message = `🔆 目覚めアイテム「${granted.emoji} ${granted.name}」を入手！ (+${bonusXP} XP)`;
@@ -1367,7 +1374,7 @@ function doSugorokuRoll(modeKey, mins, partial) {
       message = `⚠ 緊急依頼が発生した！ ボーナス +${bonusXP} XP`;
     } else {
       // 🥚 オトモンの卵を拾う（otomon.js 未読込でも落ちないよう存在チェック）
-      const eggReward = window.Otomon ? window.Otomon.maybeDropEgg(sugorokuData.stage) : null;
+      const eggReward = window.Otomon && window.Otomon.maybeDropEgg && window.Otomon.maybeDropEgg(newStage);
       if (eggReward) {
         _sgPendingReward = eggReward;   // 到着マスのGET演出に流す
         message = `🥚 オトモンの卵「${eggReward.name}」を見つけた！ ボーナス +${bonusXP} XP`;
@@ -1380,7 +1387,7 @@ function doSugorokuRoll(modeKey, mins, partial) {
     evClass = 'ev-checkpoint';
     // エリアを抜けたときの言葉（areas.js の AREA_LINES.clear）。
     // まだ書かれていなければ従来のマス数表示に落ちる
-    const cl = window.Areas && window.Areas.lineFor ? window.Areas.lineFor(cellNum, 'clear') : null;
+    const cl = window.Areas && window.Areas.lineFor ? window.Areas.lineFor(cellNum, 'clear', window.Areas.continentForStage(sgGetStage(newPos)).id) : null;
     message = cl
       ? `${cl} ボーナス +${bonusXP} XP`
       : `🏁 チェックポイント ${cellNum}マス！ ボーナス +${bonusXP} XP`;
@@ -1389,7 +1396,7 @@ function doSugorokuRoll(modeKey, mins, partial) {
     evClass = 'ev-normal';
     // いま歩いているエリアの言葉（areas.js の AREA_LINES.lines）。
     // 100マス中40マスがここを通る。空なら従来どおり「順調に進んでいます！」
-    const ln = window.Areas && window.Areas.lineFor ? window.Areas.lineFor(cellNum, 'normal') : null;
+    const ln = window.Areas && window.Areas.lineFor ? window.Areas.lineFor(cellNum, 'normal', window.Areas.continentForStage(sgGetStage(newPos)).id) : null;
     message = ln ? `${ln} +${bonusXP} XP` : `順調に進んでいます！ +${bonusXP} XP`;
   }
 
@@ -1650,9 +1657,21 @@ async function startWalkAnimation(fromPos, toPos) {
     else if (_ct === 'rare')       spawnSgBurst(nextN, '#d8b4fe', 'rare');
     else if (_ct === 'event')      spawnSgBurst(nextN, '#ff8a93', 'event');
     else if (_ct === 'checkpoint') spawnSgBurst(nextN, '#ffb46a', 'checkpoint');
+    const oldContinent = window.Areas.continentForStage(sgGetStage(sgShownPos())).id;
     prevN = nextN;
     sgAnimCell = nextN;      // エリアビューのコマも1マス進める
     buildAreaView();
+    const shownStage = sgGetStage(sgShownPos());
+    const shownContinent = window.Areas.continentForStage(shownStage);
+    document.getElementById('board-panel-sub').textContent =
+      `${shownContinent.name}  ·  マス ${nextN} / 100${shownStage > 8 ? ` ・ ${Math.ceil(shownStage / 8)}巡目` : ''}`;
+    if (oldContinent !== shownContinent.id) {
+      const wrap = document.getElementById('board-svg-wrapper');
+      if (wrap && wrap.querySelector(':scope > svg')) {
+        wrap.querySelectorAll(':scope > svg').forEach(el => el.remove());
+        wrap.appendChild(buildBoardSVG());
+      }
+    }
   }
 
   // 到着：正面向きに戻してホップ停止→着地バウンド→祝福バースト
@@ -1667,7 +1686,7 @@ async function startWalkAnimation(fromPos, toPos) {
   const fromZoneIdx = Math.floor((fromCellN - 1) / 10);
   const toZoneIdx   = Math.floor((toCellN - 1) / 10);
   if (toZoneIdx !== fromZoneIdx || fromPos === 0) {
-    const newZ = SG_ZONES[toZoneIdx];
+    const newZ = sgZones()[toZoneIdx];
     const wrap = document.getElementById('board-svg-wrapper');
     if (wrap && newZ) {
       const banner = document.createElement('div');
@@ -1684,6 +1703,7 @@ async function startWalkAnimation(fromPos, toPos) {
   await new Promise(r => setTimeout(r, 280));
 
   sgAnimating = false;
+  _sgWalkFromPos = null;
   sgAnimCell = null;              // 実際の位置に戻す（以後は本物の pos を描く）
   walkerEl.style.display = 'none';
   renderBoard(); // ドット絵アバターを表示して再描画
@@ -1711,10 +1731,27 @@ function sgCellXY(n) {
 
 // ── すごろくゾーン定義（10マスごとに世界が変わる）──
 // 情報源は scripts/areas.js（唯一の正典）。ここは表示用の形に変換するだけ。
-const SG_ZONES = (window.Areas?.getStage('stage1').areas || []).map(a => ({
-  start: a.range[0], end: a.range[1],
-  name: a.name, terrain: a.terrain, emoji: a.emoji, accent: a.accent, rgb: a.rgb,
-}));
+let _sgZonesFor = null, _sgZonesCache = [];
+// sgAnimCell は周回内の番号。renderBoard の animFromPos と組み合わせて累計位置へ戻す。
+// 歩行開始前は sgPendingWalk の出発点を使い、100→1 でも大陸を保つ。
+let _sgWalkFromPos = null;
+function sgShownPos() {
+  if (_sgWalkFromPos !== null && sgAnimCell != null) {
+    const fromCell = _sgWalkFromPos > 0 ? sgGetCellNum(_sgWalkFromPos) : 0;
+    return _sgWalkFromPos + ((sgAnimCell - fromCell + 100) % 100);
+  }
+  return sugorokuData.pos;
+}
+function sgZones(pos = sgShownPos()) {
+  const st = window.Areas ? window.Areas.continentForStage(sgGetStage(pos)) : null;
+  if (!st) return [];
+  if (_sgZonesFor !== st.id) {
+    _sgZonesFor = st.id;
+    _sgZonesCache = st.areas.map(a => ({ start:a.range[0], end:a.range[1], name:a.name,
+      terrain:a.terrain, emoji:a.emoji, accent:a.accent, rgb:a.rgb }));
+  }
+  return _sgZonesCache;
+}
 
 // ── 地形×タイプ別スポット絵文字 ──
 const SPOT_ICONS = {
@@ -1746,7 +1783,7 @@ const ZONE_PARTICLES = {
 
 function buildBoardSVG() {
   const CS = 36, STEP = 38, PAD = 11, W = 400;
-  const curCell = sgGetCellNum(sugorokuData.pos);
+  const curCell = sgGetCellNum(sgShownPos());
   const curZoneIdx = sugorokuData.pos > 0 ? Math.floor((curCell - 1) / 10) : -1;
 
   const TYPE_BG = {
@@ -1777,8 +1814,8 @@ function buildBoardSVG() {
   </defs>`];
 
   // ── ゾーン背景（行ごとに世界観が変わる）──
-  for (let zi = 0; zi < SG_ZONES.length; zi++) {
-    const z = SG_ZONES[zi];
+  for (let zi = 0; zi < sgZones().length; zi++) {
+    const z = sgZones()[zi];
     const rowIdx = zi;
     const gy = 9 - rowIdx;
     const ry = PAD + gy * STEP - 1;
@@ -1810,7 +1847,7 @@ function buildBoardSVG() {
     const a = sgCellXY(n), b = sgCellXY(n + 1);
     const passed = n < curCell;
     const zi = Math.floor((n - 1) / 10);
-    const zRgb = SG_ZONES[zi].rgb;
+    const zRgb = sgZones()[zi].rgb;
     parts.push(`<line x1="${a.cx}" y1="${a.cy}" x2="${b.cx}" y2="${b.cy}" stroke="${passed ? `rgba(${zRgb},.45)` : 'rgba(255,255,255,.05)'}" stroke-width="${passed ? 2.5 : 1.5}"/>`);
   }
 
@@ -1821,7 +1858,7 @@ function buildBoardSVG() {
     const isCur = n === curCell && sugorokuData.pos > 0;
     const isPassed = n < curCell;
     const zi = Math.floor((n - 1) / 10);
-    const z = SG_ZONES[zi];
+    const z = sgZones()[zi];
     const hue = (n * 3.6 + 200) % 360;
 
     // 背景色：通過済み=虹色, 特別マス=タイプ色, 通常=ゾーン色
@@ -1894,7 +1931,7 @@ function buildBoardSVG() {
     const a = sgCellXY(i), b = sgCellXY(i+1);
     const lh = (i * 3.6 + 200) % 360;
     const zi = Math.floor((i-1)/10);
-    const zRgb = SG_ZONES[zi].rgb;
+    const zRgb = sgZones()[zi].rgb;
     parts.push(`<line x1="${a.cx}" y1="${a.cy}" x2="${b.cx}" y2="${b.cy}"
       stroke="rgba(${zRgb},.65)" stroke-width="3.5" stroke-linecap="round"/>`);
   }
@@ -2009,7 +2046,7 @@ const ITEM_EFFECTS = {
   golden_key: {
     confirm: '目覚めアイテムを1つ入手（オトモンの卵を起こせる）',
     apply() {
-      const g = window.Otomon ? window.Otomon.grantRandomWakeItem() : null;
+      const g = window.Otomon && window.Otomon.grantRandomWakeItem && window.Otomon.grantRandomWakeItem();
       if (g) return `🗝 目覚めアイテム「${g.emoji}${g.name}」を入手！`;
       addBonusXP(EQUIPMENT_DUPLICATE_COMPENSATION_XP);
       return `🗝 代わりに +${EQUIPMENT_DUPLICATE_COMPENSATION_XP}XP`;
@@ -2154,7 +2191,7 @@ function buildAreaView() {
     ? sgAnimCell
     : (sugorokuData.pos > 0 ? sgGetCellNum(sugorokuData.pos) : 0);
   const zi  = cur > 0 ? Math.floor((cur - 1) / 10) : 0;
-  const zone = SG_ZONES[zi];
+  const zone = sgZones()[zi];
 
   // ゾーンヘッダー更新
   const header = document.getElementById('ba-zone-header');
@@ -2216,7 +2253,7 @@ function buildAreaView() {
     const isPast = n < cur;
     const isNxt  = n === cur + 1;
     const czi    = Math.floor((n - 1) / 10);
-    const czone  = SG_ZONES[czi];
+    const czone  = sgZones()[czi];
     const sicons = SPOT_ICONS[czone.terrain] || SPOT_ICONS.grassland;
     const icon   = sicons[type] || sicons.normal;
 
@@ -2285,22 +2322,10 @@ const WM_REVEAL_MS = 900;      // 雲が晴れるアニメの長さ
 let _wmTimer = null;
 let _wmRevealing = false;      // 雲を晴らす演出が進行中か
 
-// 大陸図には「どこまで行ったか」と「いまどこにいるか」の2つが要る。
-// この2つは2周目に入ると食い違うので、必ず別々に出すこと。
-//
-//   ステージ2・pos=155 のとき
-//     到達済み  = 100（1周終えたので雲は全部晴れている）
-//     現在地    = 55 （2周目の55マス目＝鏡面の湖）
-//
-// 以前これを1つの値で兼ねていて、「鏡面の湖にいるのに暁の頂に到達と出る」バグになった。
-
-// 雲の晴れ具合だけに使う。単調増加でなければならない。
-// ⚠️ sgGetCellNum は100で折り返すので、そのまま使うとステージ2で雲が全部戻る。
-//    ステージ1をクリア済みなら100で頭打ちにする。
+// 雲は現在の大陸の到達マスで晴らす。前回の累計位置は描画時に換算する。
 function worldMaxCell() {
   const pos = sugorokuData.pos;
-  if (pos <= 0) return 0;
-  return sgGetStage(pos) > 1 ? 100 : sgGetCellNum(pos);
+  return pos <= 0 ? 0 : sgGetCellNum(pos);
 }
 
 // ▲の位置と足元の表示に使う。すごろく画面のマス番号と必ず一致させる。
@@ -2329,10 +2354,15 @@ function buildWorldMap() {
   const svg = document.getElementById('wm-svg');
   if (!A || !svg) return;
 
-  const areas = A.getStage('stage1').areas;
-  const to    = worldMaxCell();          // 雲用。到達済みの最大マス（2周目は100で頭打ち）
+  cancelWorldMapReveal();
+  const pos = sugorokuData.pos;
+  const stage = sgGetStage(pos);
+  const st = A.continentForStage(stage);
+  const areas = st.areas;
+  const to    = worldMaxCell();          // 現在の大陸の到達マス
   const at    = worldCurrentCell();      // 表示用。いまいるマス（すごろく画面と同じ数字）
-  const from  = A.revealDiff(to).from;   // 前回この画面を見たときの到達マス
+  const seen = A.revealDiff(to, st.id).from;
+  const from = Math.min(100, Math.max(0, (Number.isFinite(seen) ? seen : 0) - (stage - 1) * 100));
   const animate = to > from;             // 進んでいるときだけアニメを出す
 
   // ① 道：10エリアを map 座標の順につなぐ。通った区間だけ明るい線を重ねる
@@ -2381,7 +2411,7 @@ function buildWorldMap() {
     </defs>
 
     <rect class="wm-sea" x="0" y="0" width="680" height="383"/>
-    <image class="wm-art" href="assets/worldmap.webp" x="0" y="0" width="680" height="383"/>
+    <image class="wm-art" ${st.mapTint ? `style="filter:${st.mapTint}"` : ''} href="assets/worldmap.webp" x="0" y="0" width="680" height="383"/>
     <rect class="wm-veil" x="0" y="0" width="680" height="383"/>
 
     <polyline class="wm-road" points="${all}"/>
@@ -2393,13 +2423,13 @@ function buildWorldMap() {
   const lap = sgGetStage(sugorokuData.pos);
   const sub = document.getElementById('wm-sub');
   if (sub) {
-    sub.textContent = `習慣の大陸 ・ マス ${at} / 100`
-                    + (lap > 1 ? ` ・ ${lap}周目` : '');
+    sub.textContent = `${st.name} ・ マス ${at} / 100`
+                    + (lap > 8 ? ` ・ ${Math.ceil(lap / 8)}巡目` : '');
   }
 
   const foot = document.getElementById('wm-foot');
   if (foot) {
-    const cur = at > 0 ? A.areaOf(at) : null;
+    const cur = at > 0 ? A.areaOf(at, st.id) : null;
     if (!cur) {
       foot.innerHTML = `<div class="wm-foot-next">サイコロを振ると、地図が広がっていきます。</div>`;
     } else {
@@ -2425,12 +2455,12 @@ function buildWorldMap() {
       // requestAnimationFrame はページが裏に回ると止まるが setTimeout は動くため、
       // 外に置くと「雲は動いていないのに見たことにされる」＝演出を永久に取り逃がす。
       _wmTimer = setTimeout(() => {
-        if (_wmRevealing) A.markSeen(to);
+        if (_wmRevealing) A.markSeen(pos);
         _wmTimer = null; _wmRevealing = false;
       }, WM_REVEAL_MS + 120);
     });
   } else {
-    A.markSeen(to);
+    A.markSeen(pos);
   }
 }
 
@@ -2592,6 +2622,7 @@ function renderBoard() {
     const { fromPos, rollTime } = sgPendingWalk;
     if (Date.now() - rollTime < 60000) {
       animFromPos = fromPos;
+      _sgWalkFromPos = fromPos;
       sgAnimating = true;
       // 歩き出す前に、まず出発点を描いておく。これが無いと、この直後の
       // buildAreaView() が実際の位置（＝到着点）を描いてしまい、
@@ -2615,10 +2646,10 @@ function renderBoard() {
   }
 
   // ③ ヘッダーのマス情報を更新
-  const stage = sgGetStage(sugorokuData.pos);
-  const cell  = sgGetCellNum(sugorokuData.pos);
+  const stage = sgGetStage(sgShownPos());
+  const cell  = sgGetCellNum(sgShownPos());
   document.getElementById('board-panel-sub').textContent =
-    `ステージ ${stage}  ·  マス ${cell} / 100`;
+    `${window.Areas.continentForStage(stage).name}  ·  マス ${cell} / 100${stage > 8 ? ` ・ ${Math.ceil(stage / 8)}巡目` : ''}`;
 
   // ③.5 効果中の時限バフを表示
   renderActiveBuffs();
@@ -2834,7 +2865,7 @@ function showSugorokuInKoku(result) {
   // 到着マスの「土地（ゾーン）」と、そこにあるスポット絵文字を割り出す
   const destCellNum = sgGetCellNum(newPos);
   const zoneIdx = Math.max(0, Math.min(9, Math.floor((destCellNum - 1) / 10)));
-  const zone    = SG_ZONES[zoneIdx];
+  const zone    = sgZones()[zoneIdx];
   const spot    = SPOT_ICONS[zone.terrain] || SPOT_ICONS.grassland;
   const typeKey = (evClass || 'ev-normal').replace('ev-', '');
   const destIcon = spot[typeKey] || spot.normal;
@@ -2859,7 +2890,7 @@ function showSugorokuInKoku(result) {
     </div>
     <div class="koku-sg-event ${evClass}" id="${evId}" style="display:none">${message}</div>
     <div class="koku-sg-reward" id="${evId}-reward" style="display:none"></div>
-    <div class="koku-sg-pos" id="${evId}-pos" style="display:none">ステージ${stage} · マス ${destCellNum} / 100</div>
+    <div class="koku-sg-pos" id="${evId}-pos" style="display:none">${window.Areas.continentForStage(stage).name} · マス ${destCellNum} / 100</div>
     <div class="koku-sg-countdown" id="${ctId}" style="display:none">タップして閉じる</div>
   `;
   kokuResult.appendChild(sec);
@@ -3087,7 +3118,7 @@ window.spawnSgBurst = spawnSgBurst;
 window.getWalkerCellPos = getWalkerCellPos;
 window.startWalkAnimation = startWalkAnimation;
 window.sgCellXY = sgCellXY;
-window.SG_ZONES = SG_ZONES;
+Object.defineProperty(window, 'SG_ZONES', { get: () => sgZones() });
 window.SPOT_ICONS = SPOT_ICONS;
 window.ZONE_PARTICLES = ZONE_PARTICLES;
 window.buildBoardSVG = buildBoardSVG;

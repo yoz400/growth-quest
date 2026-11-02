@@ -37,6 +37,7 @@ const STAGES = [
     no: 1,
     name: '習慣の大陸',
     cells: 100,
+    habitat: 'forest', nushi: 'minaraifenikkusu', mapTint: '',
     areas: [
       {
         id: 'sougen', no: 1, range: [1, 10],
@@ -157,13 +158,125 @@ const STAGES = [
   },
 ];
 
+
+// 大陸ごとの短い表。配色は地形、地図上の位置は並び順で引き継ぐ。
+const CONTINENT_DEFS = [
+  { id: "stage2", no: 2, name: "静寂の大陸", habitat: "cave", nushi: "kuristalrabit", mapTint: "hue-rotate(200deg) saturate(.8)",
+    areas: [
+      ["s2_irie", "霧の入り江", "lake", "🌊", "着く", "渡し場"],
+      ["s2_jukai", "しじまの樹海", "forest", "🌲", "雑念を置く", "倒木の門"],
+      ["s2_domon", "苔むす洞門", "ruins", "🕳", "潜り始める", "洞門"],
+      ["s2_shizuku", "しずくの回廊", "marsh", "💧", "静けさに慣れる", "地底の泉"],
+      ["s2_suisho", "水晶の坑道", "snow", "💎", "没頭", "水晶柱"],
+      ["s2_sado", "音のない砂洞", "desert", "⏳", "退屈との対話", "砂時計の間"],
+      ["s2_tomoshibi", "灯火の地下街", "ember", "🔦", "小さな手応え", "古いランプ"],
+      ["s2_hankyo", "反響の大空洞", "storm", "⚡", "雑音の嵐", "反響の柱"],
+      ["s2_kagami", "鏡の地底湖", "lake", "🪞", "澄んだ集中", "静水の岸"],
+      ["s2_tenmado", "天窓の出口", "summit", "✨", "浮上", "光の天窓"],
+    ] },
+  { id: "stage3", no: 3, name: "根気の大陸", habitat: "snow", nushi: "koorinotonakai", mapTint: "hue-rotate(170deg) brightness(1.1)",
+    areas: [
+      ["s3_shimono", "霜おりる野", "grassland", "🌾", "冷たい朝", "霜の柵"],
+      ["s3_shinyo", "針葉の森", "forest", "🌲", "毎日の一歩", "樵の小屋"],
+      ["s3_fukidamari", "吹きだまりの道", "snow", "❄️", "足が重い", "道しるべの杭"],
+      ["s3_itetsuku", "凍てつく湖", "lake", "🧊", "変化が見えない", "氷上の轍"],
+      ["s3_shirogiri", "白い霧原", "marsh", "🌫", "迷い", "霧笛の塔"],
+      ["s3_umoremura", "雪に埋もれた村", "ruins", "🏚", "先に歩いた人", "村の鐘"],
+      ["s3_neyuki", "根雪の尾根", "snow", "🏔", "積み重ね", "尾根の石塚"],
+      ["s3_fubuki", "吹雪の峠", "storm", "🌨", "やめたくなる日", "避難小屋"],
+      ["s3_yukemuri", "湯けむりの谷", "ember", "♨️", "ひと息", "湯治場"],
+      ["s3_juhyo", "樹氷の頂", "summit", "🌄", "続けた者の景色", "樹氷の回廊"],
+    ] },
+  { id: "stage4", no: 4, name: "工夫の大陸", habitat: "desert", nushi: "nazonazosufinkusu", mapTint: "hue-rotate(-20deg) saturate(1.2)",
+    areas: [
+      ["s4_oasis", "オアシスの町", "grassland", "🌴", "備える", "隊商宿"],
+      ["s4_hatenai", "果てない砂原", "desert", "🌵", "同じ毎日", "風紋の丘"],
+      ["s4_karakuri", "からくり市場", "ruins", "⚙️", "やり方を変える", "歯車の門"],
+      ["s4_caravan", "キャラバンの道", "desert", "🐪", "道連れ", "水場"],
+      ["s4_shinkiro", "蜃気楼の沼", "marsh", "🌫", "見せかけの近道", "蜃気楼"],
+      ["s4_hoshiyomi", "星読みの泉", "lake", "💧", "振り返り", "星図の石"],
+      ["s4_shakunetsu", "灼熱の岩場", "ember", "☀️", "暑さをしのぐ知恵", "日除けの岩"],
+      ["s4_sunaarashi", "砂嵐の回廊", "storm", "🌪", "試練", "砂嵐の門"],
+      ["s4_kakurezato", "椰子の隠れ里", "forest", "🌿", "自分の型", "隠れ里の井戸"],
+      ["s4_nazokake", "謎かけの台地", "summit", "🗿", "答えを持つ", "謎かけの台座"],
+    ] },
+  { id: "stage5", no: 5, name: "探究の大陸", habitat: "ruins", nushi: "kaerusennin", mapTint: "sepia(.4) hue-rotate(-10deg)",
+    areas: [
+      ["s5_shosha", "書写の丘", "grassland", "📜", "問いを持つ", "写本小屋"],
+      ["s5_manabiya", "学び舎の森", "forest", "🌳", "先人の跡", "古い学び舎"],
+      ["s5_shoko", "沈黙の書庫", "ruins", "🏛", "読む", "書庫の扉"],
+      ["s5_sennin", "仙人の沼", "marsh", "🐸", "師に会う", "蓮の飛び石"],
+      ["s5_hakkutsu", "発掘の砂丘", "desert", "🏺", "掘り下げる", "発掘坑"],
+      ["s5_kioku", "記憶の湖", "lake", "🪞", "振り返り", "記憶の祠"],
+      ["s5_meikyu", "封印の迷宮", "ruins", "🗝", "難問", "迷宮の鍵"],
+      ["s5_tenmondai", "雷鳴の天文台", "storm", "🔭", "常識が崩れる", "天文台"],
+      ["s5_tomyo", "灯明の地下聖堂", "ember", "🕯", "理解が灯る", "聖堂の燭台"],
+      ["s5_kenja", "賢者の頂", "summit", "🌅", "自分の言葉", "賢者の椅子"],
+    ] },
+  { id: "stage6", no: 6, name: "絆の大陸", habitat: "shore", nushi: "irukahakase", mapTint: "hue-rotate(160deg) saturate(1.1)",
+    areas: [
+      ["s6_hama", "はじまりの浜", "lake", "🐚", "出会い", "貝殻の浜"],
+      ["s6_minato", "花咲く港町", "grassland", "🌼", "声をかける", "港の灯台"],
+      ["s6_komorebi", "木漏れ日の小径", "forest", "🌲", "寄り添う", "木漏れ日の橋"],
+      ["s6_higata", "干潟の市場", "marsh", "🦀", "分け合う", "干潟の市"],
+      ["s6_iruka", "イルカの湾", "lake", "🐬", "教わる", "湾の桟橋"],
+      ["s6_shiosai", "潮騒の遺跡", "ruins", "🏛", "振り返り", "潮だまりの神殿"],
+      ["s6_shirasuna", "白砂の島", "desert", "🏝", "ひとりの時間", "漂着の舟"],
+      ["s6_misaki", "嵐の岬", "storm", "🌊", "すれ違い", "岬の灯"],
+      ["s6_yunagi", "夕凪の入江", "ember", "🎐", "仲直り", "夕凪の祠"],
+      ["s6_todai", "灯台の丘", "summit", "🌅", "誰かの灯りになる", "大灯台"],
+    ] },
+  { id: "stage7", no: 7, name: "静心の大陸", habitat: "shrine", nushi: "piisugenbu", mapTint: "hue-rotate(-40deg) saturate(.9)",
+    areas: [
+      ["s7_sando", "鳥居の参道", "grassland", "⛩", "立ち止まる", "一の鳥居"],
+      ["s7_chikurin", "竹林の小径", "forest", "🎋", "呼吸", "竹林の門"],
+      ["s7_hasuike", "蓮池の庭", "marsh", "🪷", "静める", "蓮池の橋"],
+      ["s7_kodera", "古寺の回廊", "ruins", "🏯", "手放す", "鐘楼"],
+      ["s7_karesansui", "枯山水の庭", "desert", "🪨", "余白", "石庭"],
+      ["s7_mizukagami", "水鏡の池", "lake", "🪞", "振り返り", "水鏡"],
+      ["s7_yukimi", "雪見の山寺", "snow", "❄️", "冷静", "雪見灯籠"],
+      ["s7_raijin", "雷神の滝", "storm", "⛈", "揺さぶり", "滝行の岩"],
+      ["s7_toro", "灯籠の谷", "ember", "🏮", "内なる火", "千の灯籠"],
+      ["s7_genbu", "玄武の社", "summit", "🐢", "揺るがない心", "奥の院"],
+    ] },
+  { id: "stage8", no: 8, name: "結びの大陸", habitat: "guild", nushi: "kouhukufenikkusu", mapTint: "saturate(1.3) brightness(1.05)",
+    areas: [
+      ["s8_machi", "冒険者の街", "grassland", "🏘", "帰還", "街の大門"],
+      ["s8_minarai", "見習いの森", "forest", "🌳", "昔の自分", "見習いの木"],
+      ["s8_toginjo", "試練の闘技場", "ruins", "⚔️", "力を試す", "闘技場の門"],
+      ["s8_funsui", "憩いの噴水広場", "lake", "⛲", "語り合う", "噴水"],
+      ["s8_chizushi", "地図職人の荒野", "desert", "🗺", "道を残す", "道標の塔"],
+      ["s8_omoide", "思い出の湿原", "marsh", "🌫", "振り返り", "記念の碑"],
+      ["s8_shihan", "師範の雪山", "snow", "🏔", "教える", "師範の庵"],
+      ["s8_ryu", "竜の渓谷", "storm", "🐉", "最後の試練", "竜の門"],
+      ["s8_kaji", "鍛冶の谷", "ember", "🔥", "磨き上げる", "炉の火"],
+      ["s8_tou", "大ギルドの塔", "summit", "🏆", "次の誰かへ", "ギルドの紋章"],
+    ] },
+];
+function expandContinent(def) {
+  return { ...def, cells: 100, areas: def.areas.map(([id, name, terrain, emoji, theme, landmark], i) => {
+    const color = STAGES[0].areas.find(a => a.terrain === terrain);
+    const slot = STAGES[0].areas[i];
+    return { id, no: i + 1, range: [i * 10 + 1, i * 10 + 10], name, terrain, emoji, theme,
+      accent: color.accent, rgb: color.rgb, palette: { ...color.palette },
+      map: { ...slot.map }, intensity: slot.intensity, review: slot.review, goal: slot.goal,
+      landmark: { id: id + '_lm', name: landmark } };
+  }) };
+}
+CONTINENT_DEFS.forEach(def => STAGES.push(expandContinent(def)));
+const CONTINENT_COUNT = 8;
+function continentForStage(stageNo) {
+  const n = Math.max(1, Number(stageNo) || 1);
+  return STAGES[(n - 1) % CONTINENT_COUNT];
+}
+
 // ---- localStorage キー（gq_ 接頭辞の規約に従う） ----
 //
 // 到達した最大マスは保存しない。gq_sugoroku の pos が既に持っており、
 // 2か所に分けると「片方だけ更新される日」が必ず来るため（掟5・§6.2）。
 
 const KEYS = {
-  // 大陸図を最後に開いたときの到達マス。雲が晴れる差分アニメだけに使う。
+  // 大陸図を最後に開いたときの累計位置（gq_sugoroku.pos）。雲が晴れる差分アニメだけに使う。
   seenCell: 'gq_world_seen_cell',
 };
 
@@ -224,8 +337,8 @@ function cloudOpacity(area, maxCell) {
 
 /**
  * 大陸図を開いたときの差分。前回見たときから今回までに晴れるエリアを返す。
- * @param {number} maxCell 到達済み最大マス（1〜100）。呼ぶ側が
- *        sgGetCellNum(sugorokuData.pos) を渡す。
+ * @param {number} maxCell 現在の大陸内の到達マス（0〜100）。
+ * from は保存済みの累計位置。呼ぶ側が現在の周回のマスに換算する。
  */
 function revealDiff(maxCell, stageId = 'stage1') {
   const to = maxCell;
@@ -236,7 +349,7 @@ function revealDiff(maxCell, stageId = 'stage1') {
   return { from, to, areas };
 }
 
-/** 差分アニメの再生後に呼ぶ。引数は revealDiff に渡したのと同じ maxCell */
+/** 差分アニメの再生後に呼ぶ。引数は累計位置（pos）。既存値の移行はしない。 */
 function markSeen(maxCell) {
   lsSet(KEYS.seenCell, String(maxCell));
 }
@@ -276,6 +389,10 @@ const AREA_LINES = {
   itadaki:   { lines: [], clear: '' },   // 10 暁の頂        — 到達
 };
 
+CONTINENT_DEFS.forEach(def => def.areas.forEach(([id]) => {
+  AREA_LINES[id] = { lines: [], clear: '' };
+}));
+
 /**
  * そのマスで出す言葉を1つ返す。まだ書かれていなければ null。
  * 呼ぶ側は null のとき従来の文言を使うこと（＝空でも壊れない）。
@@ -295,7 +412,7 @@ function lineFor(cell, kind = 'normal', stageId = 'stage1') {
 // ---- 公開窓口（otomon.js と同じ流儀。export は使わない） ----
 
 window.Areas = {
-  STAGES, KEYS, AREA_LINES,
+  STAGES, KEYS, AREA_LINES, CONTINENT_COUNT, continentForStage,
   getStage, areaOf, progressInArea, isBoundary,
   cloudOpacity, revealDiff, markSeen,
   lineFor,

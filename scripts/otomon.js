@@ -398,6 +398,7 @@
     { id:'shirotsu_egg', name:'しろつの卵',   habitat:'shrine', emoji:'🥚', rarity:'R',  accepts:['confidence_bookmark','smile_bell'] },
     // ギルド
     { id:'random_egg',   name:'ランダム卵',   habitat:'guild',  emoji:'🥚', rarity:'R',  accepts:['echo_flute','power_nut','sun_blanket','drowse_feather','tidy_broom','smile_bell','ward_charm','read_bookmark','repair_kit','adventure_map','travel_compass'] },
+    { id:'nushi_egg',   name:'ぬしの卵',   habitat:null,  emoji:'🥚', rarity:'SR',  accepts:['echo_flute','power_nut','sun_blanket','drowse_feather','tidy_broom','smile_bell','ward_charm','read_bookmark','repair_kit','adventure_map','travel_compass'] },
     { id:'special_egg',  name:'特別卵',       habitat:'guild',  emoji:'🥚', rarity:'SSR',accepts:['confidence_bookmark','rainbow_drop'] },
   ];
 
@@ -410,6 +411,7 @@
   // 旅先 → その旅先で出る卵ID（EGG_MASTER から自動生成）
   const HABITAT_EGGS = {};
   EGG_MASTER.forEach(e => {
+    if (!e.habitat) return;
     if (!HABITAT_EGGS[e.habitat]) HABITAT_EGGS[e.habitat] = [];
     HABITAT_EGGS[e.habitat].push(e.id);
   });
@@ -556,14 +558,14 @@
 
   // ── localStorage（既存パターンに合わせて load/save 一対）──
   function loadEggs() { try { return JSON.parse(localStorage.getItem('gq_eggs') || '[]') || []; } catch { return []; } }
-  function saveEggs() { safeSetItem('gq_eggs', JSON.stringify(eggs)); notifyChange(); }
+  function saveEggs() { const ok = safeSetItem('gq_eggs', JSON.stringify(eggs)); notifyChange(); return ok; }
   let eggs = loadEggs();
 
   function loadHatchQuest() { try { return JSON.parse(localStorage.getItem('gq_hatch_quest') || 'null'); } catch { return null; } }
   function saveHatchQuest() { safeSetItem('gq_hatch_quest', JSON.stringify(hatchQuest)); notifyChange(); }
   let hatchQuest = loadHatchQuest();
 
-  const DEFAULT_OTOMON = { discovered:{}, active:'', nudgeOn:true };
+  const DEFAULT_OTOMON = { discovered:{}, active:'', nudgeOn:true, nushiGranted:[] };
   function loadOtomon() {
     try { return Object.assign({}, DEFAULT_OTOMON, JSON.parse(localStorage.getItem('gq_otomon') || '{}')); }
     catch { return { ...DEFAULT_OTOMON, discovered:{} }; }
@@ -689,6 +691,9 @@
   // ═══ ① 卵入手 ═════════════════════════════════════════
   // 双六ステージ → 旅先 を循環で対応づけ（stage1=森, 2=洞窟 … 8=ギルド, 以降くり返し）
   function habitatForStage(stage) {
+    const st = window.Areas && window.Areas.continentForStage
+      ? window.Areas.continentForStage(stage) : null;
+    if (st && st.habitat && HABITATS.includes(st.habitat)) return st.habitat;
     const i = ((Number(stage) || 1) - 1) % HABITATS.length;
     return HABITATS[i < 0 ? 0 : i];
   }
@@ -708,6 +713,42 @@
       effect: { desc: `${HABITAT_LABEL[hab]}で見つけた卵` },
       flavorText: '静かに震えている……', _eggUid: egg.uid,
     };
+  }
+
+  function nushiGrantedSet() {
+    const set = new Set(Array.isArray(otomonState.nushiGranted) ? otomonState.nushiGranted : []);
+    eggs.forEach(e => { if (e.nushiOf) set.add(e.nushiOf); });
+    Object.values(otomonState.discovered).forEach(r => { if (r && r.nushiOf) set.add(r.nushiOf); });
+    return set;
+  }
+  function grantNushiEgg(stageNo) {
+    const st = window.Areas && window.Areas.continentForStage(stageNo);
+    if (!st || !st.nushi || !OTOMON_BY_ID[st.nushi]) return null;
+    if (nushiGrantedSet().has(st.id)) return grantRandomWakeItem();
+    const rarity = OTOMON_BY_ID[st.nushi].rarity;
+    const egg = { uid:newUid(), eggId:'nushi_egg', gauge:0, goal:HATCH_GOAL[rarity] || 4,
+      usedItem:null, sleeping:false, gotAt:Date.now(), pendingId:st.nushi, nushiOf:st.id };
+    eggs.push(egg);
+    if (!saveEggs()) {
+      eggs = eggs.filter(x => x.uid !== egg.uid);
+      notifyChange();
+      return null;
+    }
+    const g = Array.isArray(otomonState.nushiGranted) ? otomonState.nushiGranted : [];
+    if (!g.includes(st.id)) g.push(st.id);
+    otomonState.nushiGranted = g; saveOtomon();
+    return { name:'ぬしの卵', emoji:'🥚', rarity:'rare',
+      effect:{ desc:`${st.name}のぬしが眠っている` },
+      flavorText:'大陸を歩ききった者にだけ託される卵。', _eggUid:egg.uid };
+  }
+  function grantMissedNushiEggs(pos) {
+    let n = 0;
+    const done = Math.min(Math.floor(Math.max(0, Number(pos) || 0) / 100), 8);
+    for (let k = 1; k <= done; k++) {
+      const st = window.Areas && window.Areas.continentForStage(k);
+      if (st && !nushiGrantedSet().has(st.id) && grantNushiEgg(k)) n++;
+    }
+    return n;
   }
 
   function listEggs() { return eggs.slice(); }
@@ -775,12 +816,14 @@
   //    全100体そろったときだけ、元のプールに戻して重複を許す（count が増える）。
   function isOwned(id) { return !!otomonState.discovered[id]; }
 
+  const NUSHI_IDS = () => window.Areas ? window.Areas.STAGES.map(s => s.nushi).filter(Boolean) : [];
   function candidatePoolIds(item) {
-    const favors = (item && item.favors || []).filter(id => OTOMON_BY_ID[id]);
+    const nushi = new Set(NUSHI_IDS());
+    const favors = (item && item.favors || []).filter(id => OTOMON_BY_ID[id] && !nushi.has(id));
     const byAttr = (item && item.attribute)
-      ? OTOMON_MASTER.filter(o => o.attribute === item.attribute).map(o => o.id)
+      ? OTOMON_MASTER.filter(o => o.attribute === item.attribute && !nushi.has(o.id)).map(o => o.id)
       : [];
-    const all = OTOMON_MASTER.map(o => o.id);
+    const all = OTOMON_MASTER.filter(o => !nushi.has(o.id)).map(o => o.id);
 
     // 未所持を優先して、favors → 属性 → 全体 の順に降りていく
     for (const tier of [favors, byAttr, all]) {
@@ -838,12 +881,13 @@
     // この卵は重複対策（2026-09-08）より前に候補が決まっていた可能性があるため。
     // pendingId は孵化するまで画面に出ないので、引き直しても体験は変わらない。
     let id = (e.pendingId && OTOMON_BY_ID[e.pendingId]) ? e.pendingId : null;
-    if (!id || isOwned(id)) {
+    if (!id || (!e.nushiOf && (isOwned(id) || NUSHI_IDS().includes(id)))) {
       const retry = pick(candidatePoolIds(item));   // 未所持がいれば未所持だけが返る
-      if (retry && (!id || !isOwned(retry))) id = retry;
+      if (retry) id = retry;
     }
 
     const rec = otomonState.discovered[id] || makeRecord();  // 新規は統一スキーマで生成
+    if (e.nushiOf && !rec.nushiOf) rec.nushiOf = e.nushiOf;
     rec.count = (rec.count || 0) + 1;                          // 入手回数+1（既存も新規も）
     otomonState.discovered[id] = rec;                         // 既存なら firstMetAt 等は保持
     if (!otomonState.active) otomonState.active = id;   // 最初の1体は自動でお供に
@@ -1099,6 +1143,7 @@
     HABITATS, HABITAT_LABEL, HABITAT_EGGS,
     // ① 入手
     habitatForStage, maybeDropEgg, listEggs, getEgg, acceptedItems,
+    grantNushiEgg, grantMissedNushiEggs, _candidatePoolIds: candidatePoolIds,
     // ②③ アイテム使用→クエスト
     useWakeItem, getActiveQuest,
     // 目覚めアイテムの在庫
@@ -3187,9 +3232,13 @@
     // （判断基準3「集中直後の余韻を奪わない」）、次に開いたときに知らせる。
     let _mileGot = [];
     try { _mileGot = O.claimMilestoneRewards() || []; } catch (e) {}
+    const nushiGot = O.grantMissedNushiEggs(sugorokuData.pos);
     setTimeout(() => {
-      if (_mileGot.length) showNudge('🌈', milestoneHintText(_mileGot));   // 挨拶より優先
-      else                 fireNudge('home_open');                        // 起動時にそっと挨拶
+      const notices = [];
+      if (_mileGot.length) notices.push(milestoneHintText(_mileGot));
+      if (nushiGot) notices.push(`これまで踏破した大陸のぬしの卵が届いた（${nushiGot}個）`);
+      if (notices.length) showNudge(_mileGot.length ? '🌈' : '🥚', notices.join(' ／ '));
+      else fireNudge('home_open');
     }, 1200);
   }
 
