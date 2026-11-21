@@ -17,3 +17,6 @@ folder2/
 folder3/
 memo/
 scripts/__pycache__/
+
+# ヨージの記録データ（個人データ。コミットしない）
+growth-quest-backup-*.json

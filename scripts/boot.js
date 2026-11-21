@@ -764,8 +764,9 @@ function renderUnloggedBadge() {
   const now = new Date();
   const key = dkey(now);
   const blocks = (dayLog[key] || []).slice();
-  // 睡眠ルーティンなどの自動ブロックだけの日は「まだ何も記録していない日」として扱う
-  const hasOwn = blocks.some(b => !b.auto && !b.routine);
+  // 睡眠ルーティン（毎日自動で入る）だけの日は「まだ何も記録していない日」として扱う。
+  // タイマーの記録も auto:true なので、auto ではなく routine で見分ける
+  const hasOwn = blocks.some(b => !b.routine);
   if (!unlocked || !hasOwn) { if (el) el.remove(); return; }
 
   // 今日ぶんの空白を「今の時刻まで」合計する（まだ来ていない時間は未記録ではない）。
