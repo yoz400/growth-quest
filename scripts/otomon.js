@@ -1645,7 +1645,7 @@
     if (met) rows.push(['出会った日', met]);
     rows.push(['一緒に過ごした日数', (rec.metDays || 0) + '日']);
     rows.push(['一緒に学習した時間', (rec.totalMins || 0) + '分']);
-    if ((rec.streak || 0) >= 2) rows.push(['連続ふれあい', '🔥 ' + rec.streak + '日']);
+    if (liveStreak(rec) >= 2) rows.push(['連続ふれあい', '🔥 ' + liveStreak(rec) + '日']);
     const rowsHtml = rows.map(r =>
       '<div class="od-row"><span>' + r[0] + '</span><b>' + r[1] + '</b></div>').join('');
 
@@ -1740,8 +1740,14 @@
   }
 
   // 連続ふれあいバッジ（streak≥2のときだけ「🔥 N日連続」。共通データ）
+  // 最後に会ったのが今日か昨日のときだけ「続いている」。それより前なら途切れている
+  // （保存値の streak は次にふれあった日に1へ戻るので、表示側で古い数字を出さない）
+  function liveStreak(rec) {
+    if (!rec || !rec.streak) return 0;
+    return (rec.lastSeen === todayKey() || rec.lastSeen === yesterdayKey()) ? rec.streak : 0;
+  }
   function streakBadge(rec) {
-    const s = (rec && rec.streak) || 0;
+    const s = liveStreak(rec);
     return s >= 2 ? '<div class="otomon-buddy-meta">🔥 ' + s + '日連続</div>' : '';
   }
 

@@ -761,12 +761,19 @@ function renderUnloggedBadge() {
 
   // 解放前・記録が1件も無い日は出さない（何もしていない人を急かさない）
   const unlocked = (typeof featUnlocks !== 'undefined') && featUnlocks.has('timelog');
-  const key = dkey(new Date());
+  const now = new Date();
+  const key = dkey(now);
   const blocks = (dayLog[key] || []).slice();
-  if (!unlocked || !blocks.length) { if (el) el.remove(); return; }
+  // 睡眠ルーティンなどの自動ブロックだけの日は「まだ何も記録していない日」として扱う
+  const hasOwn = blocks.some(b => !b.auto && !b.routine);
+  if (!unlocked || !hasOwn) { if (el) el.remove(); return; }
 
-  // 今日ぶんの空白を合計（15分未満の細切れは無視。追いかけても意味がない）
-  const gaps = _tlFindGaps(blocks.sort((a,b) => _tlToMin(a.start) - _tlToMin(b.start)), 15);
+  // 今日ぶんの空白を「今の時刻まで」合計する（まだ来ていない時間は未記録ではない）。
+  // 15分未満の細切れは無視。追いかけても意味がない
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  const gaps = _tlFindGaps(blocks.sort((a,b) => _tlToMin(a.start) - _tlToMin(b.start)), 15)
+    .map(([a, z]) => [a, Math.min(z, nowMin)])
+    .filter(([a, z]) => z - a >= 15);
   const total = gaps.reduce((s, [a, z]) => s + (z - a), 0);
   if (!total) { if (el) el.remove(); return; }
 
@@ -2135,6 +2142,8 @@ if (typeof window.renderDailyQuests === 'function') window.renderDailyQuests();
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState !== 'visible') return;
   if (resetDailyMissionChecks()) renderMissionCard();
+  // 未記録は「今の時刻まで」で数えるので、戻ってきたら数え直す
+  try { renderUnloggedBadge(); } catch (e) {}
 });
 
 // ═══════════════════════════════════════════════════════

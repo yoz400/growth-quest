@@ -2,14 +2,15 @@
 //  Growth Quest — Service Worker
 //  バージョンを上げると古いキャッシュが自動削除されます
 // ═══════════════════════════════════════════════════════
-const CACHE_NAME = 'gq-cache-v16';
+// v17: 古い版のJS/CSSが溜まり続けていたのを一度まとめて捨てる（activate で旧キャッシュ削除）
+const CACHE_NAME = 'gq-cache-v17';
 
 // インストール時に事前キャッシュするファイル一覧
 const PRECACHE_URLS = [
   './',
   './index.html',
   './styles/app.css',
-  // scripts/ は11本（旧 scripts/app.js は存在しない）。
+  // scripts/ は12本（旧 scripts/app.js は存在しない）。
   // index.html の <script> と同じ並び・同じ依存順で列挙する。
   // areas.js は core.js より前に読む土台。ここに無いとオフラインで起動しない。
   './scripts/areas.js',
@@ -21,6 +22,7 @@ const PRECACHE_URLS = [
   './scripts/settings-genre.js',
   './scripts/calendar-review.js',
   './scripts/features.js',
+  './scripts/growth-radar.js',
   './scripts/boot.js',
   './scripts/otomon.js',
   './manifest.json',
@@ -145,7 +147,18 @@ self.addEventListener('fetch', event => {
         // 正常なレスポンスだけキャッシュに追加
         if (res && res.status === 200 && res.type === 'basic') {
           const clone = res.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
+          caches.open(CACHE_NAME).then(async cache => {
+            await cache.put(request, clone);
+            // ?v=guild-N 付きの新しい版を入れたら、同じファイルの古い版を捨てる。
+            // （キャッシュ名は固定なので、放っておくと更新のたびに約1.3MBずつ溜まる）
+            if (!url.searchParams.has('v')) return;
+            const keys = await cache.keys();
+            await Promise.all(keys.map(k => {
+              const u = new URL(k.url);
+              return (u.pathname === url.pathname && u.searchParams.get('v') !== url.searchParams.get('v'))
+                ? cache.delete(k) : null;
+            }));
+          }).catch(() => {});
         }
         return res;
       });

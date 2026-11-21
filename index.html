@@ -40,8 +40,8 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles/app.css?v=guild-218">
-<link rel="stylesheet" href="styles/avatar-status.css?v=guild-218">
+<link rel="stylesheet" href="styles/app.css?v=guild-219">
+<link rel="stylesheet" href="styles/avatar-status.css?v=guild-219">
 </head>
 <body>
 
@@ -1200,18 +1200,18 @@
 })();
 </script>
 
-<script src="scripts/areas.js?v=guild-218"></script>
-<script src="scripts/core.js?v=guild-218"></script>
-<script src="scripts/home-layers.js?v=guild-218"></script>
-<script src="scripts/progression.js?v=guild-218"></script>
-<script src="scripts/quests.js?v=guild-218"></script>
-<script src="scripts/timer.js?v=guild-218"></script>
-<script src="scripts/settings-genre.js?v=guild-218"></script>
-<script src="scripts/calendar-review.js?v=guild-218"></script>
-<script src="scripts/features.js?v=guild-218"></script>
-<script src="scripts/growth-radar.js?v=guild-218"></script>
-<script src="scripts/boot.js?v=guild-218"></script>
-<script src="scripts/otomon.js?v=guild-218"></script>
+<script src="scripts/areas.js?v=guild-219"></script>
+<script src="scripts/core.js?v=guild-219"></script>
+<script src="scripts/home-layers.js?v=guild-219"></script>
+<script src="scripts/progression.js?v=guild-219"></script>
+<script src="scripts/quests.js?v=guild-219"></script>
+<script src="scripts/timer.js?v=guild-219"></script>
+<script src="scripts/settings-genre.js?v=guild-219"></script>
+<script src="scripts/calendar-review.js?v=guild-219"></script>
+<script src="scripts/features.js?v=guild-219"></script>
+<script src="scripts/growth-radar.js?v=guild-219"></script>
+<script src="scripts/boot.js?v=guild-219"></script>
+<script src="scripts/otomon.js?v=guild-219"></script>
 
 <script>
 // ── Service Worker 登録 ────────────────────────────────
@@ -1221,6 +1221,16 @@ if ('serviceWorker' in navigator) {
       .then(reg => console.log('[GQ] SW registered:', reg.scope))
       .catch(err => console.warn('[GQ] SW registration failed:', err));
   });
+}
+// ── 記録データを「消さないで」とブラウザに申請する ──────────
+// 端末の容量が足りなくなったとき、ブラウザはサイトのデータを丸ごと消すことがある。
+// 申請が通ると、その対象から外れる（ホーム画面に追加したアプリは通りやすい）。
+// 保存キーは増やさない。結果は毎回ブラウザに聞けばわかる。
+if (navigator.storage && navigator.storage.persist) {
+  navigator.storage.persisted()
+    .then(already => already || navigator.storage.persist())
+    .then(ok => console.log('[GQ] storage persisted:', ok))
+    .catch(() => {});
 }
 </script>
 </body>
