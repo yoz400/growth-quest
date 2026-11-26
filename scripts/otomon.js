@@ -1742,9 +1742,14 @@
   // 連続ふれあいバッジ（streak≥2のときだけ「🔥 N日連続」。共通データ）
   // 最後に会ったのが今日か昨日のときだけ「続いている」。それより前なら途切れている
   // （保存値の streak は次にふれあった日に1へ戻るので、表示側で古い数字を出さない）
+  // ⚠ ここは2つ目のIIFE（UI層）。yesterdayKey は1つ目（データ層）の中にしか無く、
+  //   ここからは見えない（guild-219〜220 で起動不能になった）。
+  //   グローバルの todayKey（core.js）は日付変化の通知という副作用を持つので使わず、自前で作る
   function liveStreak(rec) {
     if (!rec || !rec.streak) return 0;
-    return (rec.lastSeen === todayKey() || rec.lastSeen === yesterdayKey()) ? rec.streak : 0;
+    const k = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    const t = new Date(), y = new Date(); y.setDate(y.getDate() - 1);
+    return (rec.lastSeen === k(t) || rec.lastSeen === k(y)) ? rec.streak : 0;
   }
   function streakBadge(rec) {
     const s = liveStreak(rec);
