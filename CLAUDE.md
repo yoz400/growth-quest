@@ -30,6 +30,8 @@ claude-practice/
    → **JSを編集したら `python3 tools/check_load_order.py` を実行**（数秒で終わる）。
      「読み込み時に、後から読まれるファイルの関数を裸で呼んでいないか」を機械的に調べる。
      3回とも目視では見つけられなかった（guild-141 は本番が起動不能になった）
+   → 同じファイル内の**別IIFEにしか無い関数**の呼び出しも検出する（guild-219〜220 で本番が起動不能。
+     otomon.js はデータ層とUI層の2つのIIFE。UI層からデータ層の dayKey・yesterdayKey 等は見えない）
 3. モーダルは OverlayManager（core.js）の DEFS 登録 + Overlay.open/close のみ
 4. localStorage 新キーは gq_接頭辞 + architecture_review.md §6 の台帳へ追記 +
    exportAllData() に含める

@@ -33,6 +33,9 @@ claude-practice/
 2. **ファイルをまたぐ「読み込み時参照」は禁止**。コールバックは `() => fn()` で包む。
    前のファイルから後のファイルの関数・変数は、読み込み時点では見えない
    （function宣言の巻き上げはファイル内でしか効かない。typeofもTDZには無力）
+   JSを編集したら `python3 tools/check_load_order.py` を実行する。
+   同じファイル内でも**別のIIFEの関数は見えない**（otomon.js のUI層からデータ層の
+   dayKey・yesterdayKey 等を呼んで本番が起動不能になった・guild-219〜220）。これも同じツールで検出する
 3. モーダルは OverlayManager（core.js）の DEFS 登録 + Overlay.open/close のみ
 4. localStorage 新キーは gq_接頭辞 + architecture_review.md §6 の台帳へ追記 +
    exportAllData() に含める

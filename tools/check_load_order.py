@@ -233,11 +233,64 @@ def analyze(src):
     return found, set(funcs) | set(re.findall(r'\b(?:const|let|var)\s+(\w+)\s*=', code))
 
 
+DECL_RE = re.compile(r'(?:\bfunction\s+([A-Za-z_$][\w$]*)|\b(?:const|let|var)\s+([A-Za-z_$][\w$]*))')
+CALL_RE = re.compile(r'(?<![\w$.])([A-Za-z_$][\w$]*)\s*\(')
+
+
+def check_iife_scope(order):
+    """同じファイル内の別IIFEにしか無い関数を呼んでいないか（guild-219〜220 の起動不能）。
+
+    otomon.js はデータ層とUI層の2つの (function(){ … })() に分かれていて、
+    片方の中で作った関数はもう片方から見えない。呼ぶと ReferenceError。
+    しかも条件付きの分岐（例: 最後に会ったのが今日でない人だけ）で踏むので、
+    プレビューの検証では一度も出なかった。これは読み込み時に限らず、全部の呼び出しを見る。
+    """
+    raw = {f: open(os.path.join(ROOT, 'scripts', f + '.js'), encoding='utf-8').read() for f in order}
+    srcs = {f: strip_noise(t) for f, t in raw.items()}
+    # どこからでも見える名前: いずれかのファイルのIIFE外の宣言＋window.X の公開
+    glob, blocks = set(), {}
+    for f, s in srcs.items():
+        spans = []
+        for m in re.finditer(r'^\(function\s*\([^)]*\)\s*\{', s, re.M):
+            spans.append((m.start(), match_brace(s, m.end() - 1)))
+        blocks[f] = spans
+        outside, last = [], 0
+        for a, b in spans:
+            outside.append(s[last:a]); last = b
+        outside.append(s[last:])
+        glob |= {x or y for x, y in DECL_RE.findall(''.join(outside))}
+        # window.X = の公開は元のソースから拾う（strip_noise は正規表現リテラル中の引用符で
+        #  以降を文字列と誤認することがあり、core.js の window.todayKey を見落とした）
+        glob |= set(re.findall(r'\bwindow\.(\w+)\s*=', raw[f]))
+
+    problems = []
+    for f, spans in blocks.items():
+        if len(spans) < 2:
+            continue
+        s = srcs[f]
+        decl = [{x or y for x, y in DECL_RE.findall(s[a:b])} for a, b in spans]
+        for k, (a, b) in enumerate(spans):
+            others = set().union(*(d for j, d in enumerate(decl) if j != k)) - decl[k] - glob
+            for m in CALL_RE.finditer(s, a, b):
+                name = m.group(1)
+                if name in others and name not in IGNORE:
+                    problems.append((f, name, s.count('\n', 0, m.start()) + 1))
+    return problems
+
+
 def main():
     order = load_order()
     if not order:
         print('エラー: index.html から <script> の並びを読めません')
         return 1
+
+    scope = check_iife_scope(order)
+    if scope:
+        print('🚨 同じファイルの「別のIIFE」にしか無い関数を呼んでいます（呼んだ瞬間に ReferenceError）:')
+        for f, name, line in scope:
+            print(f'  {f}.js:{line}  →  {name}()')
+        print('  直し方: その IIFE の中に同じ処理を用意する／もう片方で window.X に公開して window.X() で呼ぶ')
+        print()
 
     info = {}
     for f in order:
@@ -268,8 +321,12 @@ def main():
             problems.append((f, name, later[name], sorted(set(lines))))
 
     if not problems:
+        if scope:
+            print('（読み込み順のほうは問題なし。上の IIFE の件を直してください）')
+            return 1
         print('✅ 問題なし。')
         print('   読み込み時に到達する範囲で、後から読まれるファイルの関数を裸で呼んでいる箇所はありません。')
+        print('   別のIIFEにしか無い関数を呼んでいる箇所もありません。')
         return 0
 
     print('🚨 読み込み時に、後から読まれるファイルの関数を裸で呼んでいます:')
