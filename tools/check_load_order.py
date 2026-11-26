@@ -39,9 +39,53 @@ def load_order():
     return re.findall(r'<script src="scripts/([\w.-]+)\.js\?', html)
 
 
+# 直後の / が「割り算」ではなく「正規表現の始まり」になる記号と単語
+REGEX_AFTER_CHAR = set('(,=:[!&|?{};+-*%<>~^')
+REGEX_AFTER_WORD = {
+    'return', 'typeof', 'case', 'do', 'else', 'in', 'of', 'new', 'delete',
+    'void', 'throw', 'instanceof', 'yield', 'await',
+}
+
+
+def skip_regex(src, i):
+    """src[i] の / から正規表現リテラルを読み、終わりの次の位置を返す。
+
+    [...] の中の / と、\\ でエスケープされた文字は終わりとみなさない。
+    改行まで閉じが無ければ正規表現ではない（None を返す）。
+    """
+    n, j, in_class = len(src), i + 1, False
+    while j < n:
+        ch = src[j]
+        if ch == '\n':
+            return None
+        if ch == '\\':
+            j += 2; continue
+        if in_class:
+            if ch == ']':
+                in_class = False
+        elif ch == '[':
+            in_class = True
+        elif ch == '/':
+            j += 1
+            while j < n and (src[j].isalnum() or src[j] in '_$'):   # g / i / u などのフラグ
+                j += 1
+            return j
+        j += 1
+    return None
+
+
 def strip_noise(src):
-    """コメントと文字列を空白で潰す。中身の括弧に釣られないため"""
+    """コメントと文字列と正規表現を空白で潰す。中身の括弧や引用符に釣られないため。
+
+    ⚠️ 正規表現 /["']/ の中の引用符を「文字列の始まり」と誤解すると、
+       そこからファイルの残りが全部「文字列の中」扱いで消える。
+       実際に core.js は 819行目の .replace(/"/g, …) から先が丸ごと検査されていなかった
+       （2026-11-26 に発覚）。改行と全体の長さは必ず元のまま保つ（行番号がずれるため）。
+    """
     out, i, n = [], 0, len(src)
+    last = None          # 直前の「意味のある1文字」（空白・コメント以外）
+    word = ''            # 直前の単語（return / typeof など）
+    in_word = False
     while i < n:
         c = src[i]
         if c == '/' and i + 1 < n and src[i + 1] == '/':
@@ -66,6 +110,7 @@ def strip_noise(src):
                     j = end; continue
                 out.append(src[j] if src[j] == '\n' else ' '); j += 1
             out.append(' '); i = min(j + 1, n)
+            last, word, in_word = '"', '', False
         elif c in '"\'':
             q, j = c, i + 1
             while j < n and src[j] != q:
@@ -74,8 +119,26 @@ def strip_noise(src):
                 j += 1
             j = min(j + 1, n)
             out.append(''.join(ch if ch == '\n' else ' ' for ch in src[i:j])); i = j
+            last, word, in_word = '"', '', False
+        elif c == '/' and (last is None or last in REGEX_AFTER_CHAR
+                           or (in_word or last.isalnum() or last in '_$') and word in REGEX_AFTER_WORD):
+            j = skip_regex(src, i)
+            if j is None:                      # 閉じが無い＝正規表現ではなかった
+                out.append(c); i += 1
+                last, word, in_word = c, '', False
+                continue
+            out.append(' ' * (j - i)); i = j
+            last, word, in_word = '"', '', False
         else:
             out.append(c); i += 1
+            if c.isalnum() or c in '_$':
+                word = word + c if in_word else c
+                in_word = True
+                last = c
+            elif c.isspace():
+                in_word = False
+            else:
+                last, word, in_word = c, '', False
     return ''.join(out)
 
 
@@ -133,6 +196,20 @@ def blank_out_callbacks(code):
     for m in re.finditer(
             r'\bwindow\.\w+\s*=\s*(?:async\s+)?'
             r'(?:function\s*\w*\s*\([^)]*\)|\([^)]*\)\s*=>|\w+\s*=>)\s*\{', code):
+        blank(m.end(), match_brace(code, m.end() - 1))
+
+    # オブジェクトのメソッド定義 `apply() { … }`（function を書かない省略形）
+    #   定義しただけでは動かない（呼ばれたときに動く）。呼び出し `foo()` の直後に
+    #   同じ行で `{` が来る書き方は JS では書けないので、この形＝定義と判断できる。
+    #   （実例: core.js の ITEM_EFFECTS の apply() { addConfidence(…) } を
+    #    読み込み時と誤検出した・2026-11-26。それまでは strip_noise の不具合で
+    #    core.js の後半が見えておらず、この誤検出も隠れていた）
+    #   ⚠️ if (…) { / for (…) { などの制御文と、function foo() { の宣言は除く。
+    for m in re.finditer(r'(?<![.\w$])(\w+)\s*\([^()]*\)[ \t]*\{', code):
+        if m.group(1) in IGNORE or m.group(1) == 'with':
+            continue
+        if re.search(r'\bfunction\s+$', code[max(0, m.start() - 20):m.start()]):
+            continue
         blank(m.end(), match_brace(code, m.end() - 1))
 
     for m in re.finditer(r'=>\s*', code):
@@ -259,8 +336,8 @@ def check_iife_scope(order):
             outside.append(s[last:a]); last = b
         outside.append(s[last:])
         glob |= {x or y for x, y in DECL_RE.findall(''.join(outside))}
-        # window.X = の公開は元のソースから拾う（strip_noise は正規表現リテラル中の引用符で
-        #  以降を文字列と誤認することがあり、core.js の window.todayKey を見落とした）
+        # window.X = の公開は元のソースから拾う（念のため。かつて strip_noise が正規表現の
+        #  引用符で以降を文字列と誤認し、core.js の window.todayKey を見落とした。2026-11-26 修正済み）
         glob |= set(re.findall(r'\bwindow\.(\w+)\s*=', raw[f]))
 
     problems = []
@@ -282,6 +359,28 @@ def main():
     order = load_order()
     if not order:
         print('エラー: index.html から <script> の並びを読めません')
+        return 1
+
+    # 自己点検: strip_noise がコードを消しすぎていないか。
+    #   行頭の window.X = は必ず本物のコードなので、潰した後も残っていなければおかしい。
+    #   消えていたら、そこから先は検査できていない（2026-11-26 まで core.js の後半が
+    #   丸ごと見えていなかったのに、誰も気づけなかった）
+    blind = []
+    for f in order:
+        path = os.path.join(ROOT, 'scripts', f + '.js')
+        if not os.path.exists(path):
+            continue
+        src = open(path, encoding='utf-8').read()
+        after = strip_noise(src).split('\n')
+        for k, line in enumerate(src.split('\n')):
+            if re.match(r'\s*window\.\w+\s*=', line) and not re.match(r'\s*window\.\w+\s*=', after[k]):
+                blind.append((f, k + 1)); break
+    if blind:
+        print('🚨 検査ツール自身の不具合: コードを文字列やコメントと誤解して消しています。')
+        for f, line in blind:
+            print(f'  {f}.js:{line} の window 公開が消えています'
+                  f'（それより前のどこかから先が検査できていません。strip_noise を直してください）')
+        print()
         return 1
 
     scope = check_iife_scope(order)
